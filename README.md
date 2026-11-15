@@ -12,8 +12,8 @@ A global public-source research agent that identifies and classifies reported wo
 2. Collect accessible HTML and PDF documents with public-network URL checks, redirect limits and download-size caps.
 3. Extract reported workforce problems using Gemini.
 4. Require a verbatim source excerpt for every accepted finding; the excerpt is checked against collected text and is not exported as an Evidence column.
-5. Export a manager-facing Excel workbook with Run Overview, Workforce Findings, New Findings, Recurring Findings, Source Register and Research Summary sheets.
-6. Update a persistent JSONL history so findings can be compared across weekly runs.
+5. Classify source domains using transparent heuristics (government, multilateral, academic, research/consulting, possible industry body or unclassified); these labels are prioritization hints, not endorsements.\n6. Export a manager-facing Excel workbook with Run Overview, Workforce Findings, New Findings, Recurring Findings, Source Register and Research Summary sheets.
+7. Update a persistent JSONL history so findings can be compared across weekly runs.
 
 Search-result dates are stored separately from publication dates stated in source material. Search country is not treated as proof of actual finding geography. Findings still need human review before external circulation.
 
@@ -42,7 +42,7 @@ The GitHub Actions workflow is configured for Mondays at 06:00 UTC (11:30 India 
 A run uploads the Excel report as an artifact retained for 30 days and commits updates to `data/findings_history.jsonl` on `main`. The workflow requires `contents: write` permission. The history contains public-source finding metadata and source URLs; do not place private or sensitive material in it.
 
 ## Workbook fields
-The findings sheet contains problem type, description, country, region, industry, sub-industry, company, source name, source URL, publication date, data period and review status. Evidence, Confidence and HR Category columns are intentionally excluded. The source register records source metadata, collection status, search-result date, source publication date and verification status.
+The findings sheet contains problem type, description, country, region, industry, sub-industry, company, source name, source URL, publication date, data period and review status. Evidence, Confidence and HR Category columns are intentionally excluded. The source register records source metadata, collection status, search-result date, source publication date, heuristic source class and verification status.
 
 ## Current limitations
 - Tavily results are candidates, not endorsements or independently verified sources.
