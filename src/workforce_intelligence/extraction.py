@@ -16,7 +16,7 @@ GEOGRAPHY RULES:
 - Do not infer a country from the search query, source domain, company headquarters, or an example.
 - Populate country/region only when the source explicitly connects the problem to that geography. Use Global only when the source explicitly describes a global problem.
 - Return null for unsupported fields.
-Return only JSON in this shape: {"findings":[{"problem_type":"...","description":"...","industry":"...","country":null,"region":null,"sub_industry":null,"company":null,"publication_date":null,"data_period":null}]}. Each finding needs problem_type and a concise description. Do not add evidence, confidence, or HR category fields."""
+Return only JSON in this shape: {"findings":[{"problem_type":"...","description":"...","industry":"...","country":null,"region":null,"sub_industry":null,"company":null,"publication_date":null,"data_period":null}]}. Each finding needs problem_type, concise description, and supporting_quote: an exact short excerpt copied verbatim from the source text. Do not add evidence, confidence, or HR category fields."""
 
 _COUNTRY_ALIASES = {
     "united states": ("united states", "u.s.", "u.s.a.", "usa", "american"),
@@ -90,6 +90,9 @@ def parse_extraction_response(response_text, source_metadata, source_text=""):
         row = {k: item.get(k) for k in EXTRACTION_FIELDS}
         if not row.get("problem_type") or not row.get("description"):
             continue
+        quote = str(item.get('supporting_quote') or '').strip()
+        if not quote or quote.casefold() not in str(source_text).casefold():
+            continue
         target_industry = source_metadata.get("industry", "")
         if not _industry_relevant(row, target_industry, source_text):
             continue
@@ -122,6 +125,6 @@ def parse_extraction_response(response_text, source_metadata, source_text=""):
         if row.get("region") and str(row["region"]).casefold() in {"global", "worldwide"} and not re.search(r"\b(global|worldwide|across the world)\b", source_text, re.I):
             row["region"] = None
         # Never let model output alter source attribution.
-        row.update(source_name=source_metadata.get("title"), source_url=source_metadata.get("url"), review_status="Needs source verification")
+        row.update(source_name=source_metadata.get("title"), source_url=source_metadata.get("url"), review_status="Source excerpt verified")
         output.append(row)
     return output
