@@ -5,7 +5,7 @@ from workforce_intelligence.gemini_client import GeminiExtractor
 class GeminiAdapterTests(unittest.TestCase):
     def test_mocked_gemini_response(self):
         client=Mock()
-        client.models.generate_content.return_value=Mock(text='{"findings":[{"problem_type":"Labour shortage","description":"Vacancies in automotive manufacturing plants","industry":"Automotive manufacturing"}]}')
+        client.models.generate_content.return_value=Mock(text='{"findings":[{"problem_type":"Labour shortage","description":"Vacancies in automotive manufacturing plants","supporting_quote":"shortage in automotive manufacturing plants","industry":"Automotive manufacturing"}]}')
         extractor=GeminiExtractor(api_key="test-key",client=client)
         rows=extractor.extract("The source reports a shortage in automotive manufacturing plants.",{"title":"Report","url":"https://example.org/report","industry":"Automotive manufacturing"})
         self.assertEqual(len(rows),1)
