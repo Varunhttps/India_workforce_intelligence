@@ -90,8 +90,30 @@ def parse_extraction_response(response_text, source_metadata, source_text=""):
         row = {k: item.get(k) for k in EXTRACTION_FIELDS}
         if not row.get("problem_type") or not row.get("description"):
             continue
-        if not _industry_relevant(row, source_metadata.get("industry", ""), source_text):
+        target_industry = source_metadata.get("industry", "")
+        if not _industry_relevant(row, target_industry, source_text):
             continue
+        # Do not label a broad manufacturing claim as a specific manufacturing sub-sector.
+        if "manufactur" in str(target_industry).casefold():
+            target_low = str(target_industry).casefold()
+            combined = (source_text + " " + str(row.get("description") or "")).casefold()
+            specific_terms = {
+                "automotive": ("automotive", "automobile", "vehicle", "car maker", "auto parts"),
+                "electronics": ("electronics", "electronic components", "circuit board"),
+                "semiconductor": ("semiconductor", "chipmaker", "chip manufacturing", "wafer fab", "foundry"),
+                "machinery": ("machinery", "machine tool", "industrial equipment"),
+                "chemical": ("chemical", "petrochemical"),
+                "pharmaceutical": ("pharma", "pharmaceutical", "drug manufacturing"),
+                "food": ("food processing", "food and beverage", "food manufacturing", "beverage manufacturing"),
+                "textile": ("textile", "apparel", "garment"),
+                "metal": ("metals", "steelmaking", "metal fabrication", "aluminium", "aluminum"),
+                "aerospace": ("aerospace", "aircraft manufacturing", "aviation manufacturing"),
+            }
+            specific = next((terms for key, terms in specific_terms.items() if key in target_low), ())
+            if specific and not any(term in combined for term in specific):
+                row["industry"] = "Manufacturing"
+            elif not row.get("industry"):
+                row["industry"] = target_industry
         # Geography must be explicitly present in the source text, not inferred by the model.
         for field in ("country", "region"):
             value = row.get(field)
