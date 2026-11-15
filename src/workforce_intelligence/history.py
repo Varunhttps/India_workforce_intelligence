@@ -32,8 +32,12 @@ def update_history(findings, history_path, observed_at=None):
                 continue
 
     new_findings, recurring_findings = [], []
+    seen_this_run = set()
     for finding in findings:
         key = finding_key(finding)
+        if key in seen_this_run:
+            continue
+        seen_this_run.add(key)
         prior = existing.get(key)
         if prior:
             prior["last_seen"] = observed
