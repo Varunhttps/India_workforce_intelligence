@@ -1,44 +1,17 @@
 import unittest
-
-from workforce_intelligence.records import deduplicate_findings, normalize_finding
-from workforce_intelligence.research_modes import (
-    MANUFACTURING_INDUSTRIES, OTHER_INDUSTRIES, build_research_plan,
-)
-
-
-class ResearchModeTests(unittest.TestCase):
-    def test_default_is_manufacturing(self):
-        plan = build_research_plan("manufacturing")
-        self.assertEqual(plan.industries, MANUFACTURING_INDUSTRIES)
-
-    def test_other_industries_excludes_manufacturing(self):
-        plan = build_research_plan("explore other industries")
-        self.assertEqual(plan.industries, OTHER_INDUSTRIES)
-
-    def test_all_industries_contains_both(self):
-        plan = build_research_plan("all")
-        self.assertTrue(set(MANUFACTURING_INDUSTRIES).issubset(plan.industries))
-        self.assertTrue(set(OTHER_INDUSTRIES).issubset(plan.industries))
-
-    def test_invalid_mode_rejected(self):
-        with self.assertRaises(ValueError):
-            build_research_plan("india only")
-
-
-class RecordTests(unittest.TestCase):
-    def test_geography_is_not_inferred(self):
-        row = normalize_finding({"country_searched": "Germany", "problem_type": "Skill shortage"})
-        self.assertIsNone(row["country"])
-
-    def test_duplicate_rows_removed(self):
-        row = {"problem_type": "Skill shortage", "country": "Germany",
-               "source_url": "https://example.org/report", "description": "Shortage"}
-        self.assertEqual(len(deduplicate_findings([row, row])), 1)
-
-    def test_invalid_url_rejected(self):
-        with self.assertRaises(ValueError):
-            normalize_finding({"source_url": "javascript:alert(1)"})
-
-
-if __name__ == "__main__":
-    unittest.main()
+from workforce_intelligence.research_modes import build_research_plan,MANUFACTURING,OTHER
+from workforce_intelligence.records import normalize_finding,deduplicate_findings
+class Modes(unittest.TestCase):
+ def test_default_manufacturing(self): self.assertEqual(build_research_plan().industries,MANUFACTURING)
+ def test_other(self): self.assertEqual(build_research_plan("Explore Other Industries").industries,OTHER)
+ def test_all(self): self.assertEqual(set(build_research_plan("all").industries),set(MANUFACTURING+OTHER))
+ def test_bad_mode(self):
+  with self.assertRaises(ValueError): build_research_plan("India only")
+class Records(unittest.TestCase):
+ def test_search_country_not_inferred(self): self.assertIsNone(normalize_finding({"country_searched":"Germany"})["country"])
+ def test_deduplicate(self):
+  x={"problem_type":"Skill shortage","country":"Germany","source_url":"https://example.org/a","description":"Shortage"}
+  self.assertEqual(len(deduplicate_findings([x,x])),1)
+ def test_reject_bad_url(self):
+  with self.assertRaises(ValueError): normalize_finding({"source_url":"javascript:alert(1)"})
+if __name__=="__main__": unittest.main()

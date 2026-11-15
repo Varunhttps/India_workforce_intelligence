@@ -1,0 +1,13 @@
+.env
+*.pem
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.pytest_cache/
+raw_documents/
+processed_data/
+exports/
+checkpoints/
+logs/
+*.xlsx
+*.csv

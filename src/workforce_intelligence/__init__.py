@@ -1,3 +1,2 @@
-"""Global Workforce Intelligence research pipeline."""
-
+"""Global Workforce Intelligence."""
 __version__ = "0.1.0"
