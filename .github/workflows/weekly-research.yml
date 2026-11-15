@@ -1,0 +1,55 @@
+name: Weekly workforce research
+
+on:
+  schedule:
+    # Mondays at 06:00 UTC (11:30 India Standard Time).
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Research scope
+        required: true
+        type: choice
+        options:
+          - manufacturing
+          - other_industries
+          - all_industries
+        default: manufacturing
+      max_sources_per_industry:
+        description: Candidate sources per industry
+        required: true
+        type: number
+        default: 3
+
+permissions:
+  contents: read
+
+jobs:
+  weekly-research:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Run global manufacturing-first research
+        env:
+          TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          if [ -z "$TAVILY_API_KEY" ] || [ -z "$GEMINI_API_KEY" ]; then
+            echo "Repository secrets TAVILY_API_KEY and GEMINI_API_KEY must be configured." >&2
+            exit 1
+          fi
+          MODE="${{ inputs.mode || 'manufacturing' }}"
+          LIMIT="${{ inputs.max_sources_per_industry || '3' }}"
+          PYTHONPATH=src python main.py --mode "$MODE" --max-sources-per-industry "$LIMIT" --output-dir research_output
+      - name: Publish report as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: weekly-global-workforce-report
+          path: research_output/Global_Workforce_Intelligence_Report.xlsx
+          if-no-files-found: error
+          retention-days: 30
