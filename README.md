@@ -8,7 +8,7 @@ A global public-source research agent that identifies and classifies reported wo
 - **All Industries**: both groups.
 
 ## Pipeline
-1. Discover candidate public sources using Tavily.
+1. Discover candidate public sources using Tavily, including a dedicated LinkedIn-indexed search channel within the same research pipeline.
 2. Collect accessible HTML and PDF documents with public-network URL checks, redirect limits and download-size caps.
 3. Extract reported workforce problems using Gemini.
 4. Require a verbatim source excerpt for every accepted finding; the excerpt is checked against collected text and is not exported as an Evidence column.
@@ -42,7 +42,7 @@ The GitHub Actions workflow is configured for Mondays at 06:00 UTC (11:30 India 
 A run uploads the Excel report as an artifact retained for 30 days and commits updates to `data/findings_history.jsonl` on `main`. The workflow requires `contents: write` permission. The history contains public-source finding metadata and source URLs; do not place private or sensitive material in it.
 
 ## Workbook fields
-The findings sheet contains problem type, description, country, region, industry, sub-industry, company, source name, source URL, publication date, data period and review status. Evidence, Confidence and HR Category columns are intentionally excluded. The source register records source metadata, collection status, search-result date, source publication date, heuristic source class and verification status.
+The findings sheet contains problem type, description, country, region, industry, sub-industry, company, source name, source URL, source platform, publication date, data period and review status. LinkedIn findings retain the direct original LinkedIn URL; search-engine result URLs are never substituted. LinkedIn pages that cannot be publicly collected remain inaccessible candidates in the Source Register and are not treated as traceable findings. Evidence, Confidence and HR Category columns are intentionally excluded. The source register records source metadata, collection status, search-result date, source publication date, heuristic source class and verification status.
 
 ## Current limitations
 - Tavily results are candidates, not endorsements or independently verified sources.
@@ -51,3 +51,6 @@ The findings sheet contains problem type, description, country, region, industry
 - History identifies recurring records using text, industry, country and source URL; it does not establish that a workforce problem has been resolved when it disappears from later searches.
 - Research coverage depends on search-engine indexing, source accessibility, API limits and the selected candidate-source cap.
 - Human review remains required before presenting findings as confirmed facts to management.
+
+## LinkedIn source handling
+LinkedIn is a discovery channel inside the existing pipeline, not a separate agent. The agent uses search-engine indexing to discover public LinkedIn post/article URLs and only attempts ordinary public-page collection; it does not scrape logged-in content, profiles, contact details or private data. Access restrictions or login walls are recorded as collection failures. Every accepted LinkedIn finding carries `source_platform=LinkedIn` and the original direct LinkedIn `source_url`; the pipeline attaches attribution from source metadata rather than asking the language model to reproduce it. Findings remain candidates requiring human review.

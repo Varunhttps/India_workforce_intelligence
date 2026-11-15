@@ -21,7 +21,7 @@ def run_research(mode="manufacturing", country_searched=None, max_sources_per_in
 
     for source in sources:
         source_row = {
-            "Source title": source.get("title"), "Source URL": source.get("url"),
+            "Source title": source.get("title"), "Source URL": source.get("url"), "Source platform": source.get("source_platform", "Web"),
             "Candidate source class (domain heuristic)": source.get("source_class", "Other / unclassified"),
             "Industry searched": source.get("industry"), "Country searched": source.get("country_searched"),
             "Actual geographic scope": None, "Region": None, "Publication date": None,
@@ -35,6 +35,12 @@ def run_research(mode="manufacturing", country_searched=None, max_sources_per_in
             document_text = Path(collected["local_path"]).read_text(encoding="utf-8")
             rows = model.extract(document_text, source)
             for row in rows:
+                # Attribution is attached by the pipeline, never trusted to model-generated text.
+                row["source_url"] = source.get("url")
+                row["source_name"] = source.get("title")
+                row["source_platform"] = source.get("source_platform", "Web")
+                if row["source_platform"] == "LinkedIn" and not row["source_url"]:
+                    raise ValueError("LinkedIn finding rejected: original source URL is missing")
                 row["review_status"] = row.get("review_status") or "Needs source verification"
                 findings.append(row)
             source_row["Relevance status"] = "Findings extracted" if rows else "No qualifying finding extracted"

@@ -1,7 +1,7 @@
 """Workbook schema, normalization and duplicate removal."""
 from urllib.parse import urlparse
-FINDING_COLUMNS = ["problem_type", "description", "country", "region", "industry", "sub_industry", "company", "source_name", "source_url", "publication_date", "data_period", "review_status"]
-SOURCE_COLUMNS = ["Source title", "Source URL", "Candidate source class (domain heuristic)", "Industry searched", "Country searched", "Actual geographic scope", "Region", "Publication date", "Search result date", "Collection status", "Relevance status", "Verification status", "Review notes"]
+FINDING_COLUMNS = ["problem_type", "description", "country", "region", "industry", "sub_industry", "company", "source_name", "source_url", "source_platform", "publication_date", "data_period", "review_status"]
+SOURCE_COLUMNS = ["Source title", "Source URL", "Source platform", "Candidate source class (domain heuristic)", "Industry searched", "Country searched", "Actual geographic scope", "Region", "Publication date", "Search result date", "Collection status", "Relevance status", "Verification status", "Review notes"]
 
 def valid_http_url(value):
     if not isinstance(value, str):
@@ -16,6 +16,12 @@ def normalize_finding(item):
             row[key] = str(row[key]).strip() or None
     if row["source_url"] and not valid_http_url(row["source_url"]):
         raise ValueError("source_url must be a valid HTTP(S) URL")
+    if str(row.get("source_platform") or "").casefold() == "linkedin":
+        if not valid_http_url(row["source_url"]):
+            raise ValueError("LinkedIn findings require their original source_url")
+        host = (urlparse(row["source_url"]).hostname or "").lower().removeprefix("www.")
+        if host != "linkedin.com" and not host.endswith(".linkedin.com"):
+            raise ValueError("LinkedIn findings must retain a direct LinkedIn URL")
     for key in ("country", "region"):
         if row[key] in {"Not specified", "Unknown", ""}:
             row[key] = None

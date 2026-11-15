@@ -5,6 +5,10 @@ from urllib.parse import urlparse
 import requests
 TAVILY_URL="https://api.tavily.com/search"
 TERMS='"workforce shortage" OR "labour shortage" OR "labor shortage" OR "skills gap" OR "skills shortage" OR "recruitment difficulties" OR "employee retention" OR "talent shortage"'
+LINKEDIN_TERMS='"workforce shortage" OR "skills gap" OR "hiring difficulties" OR "production workers" OR "talent shortage"'
+def source_platform(url):
+    host = (urlparse(url).hostname or "").lower().removeprefix("www.")
+    return "LinkedIn" if host == "linkedin.com" or host.endswith(".linkedin.com") else "Web"
 def classify_source_domain(domain):
     host = (domain or "").lower().split(":")[0].removeprefix("www.")
     if host.endswith(".gov") or ".gov." in host or host.endswith(".gov.uk") or host.endswith(".gov.in"):
@@ -28,13 +32,18 @@ def discover_sources(industries,api_key=None,country=None,max_results=5,timeout=
     if not 1<=max_results<=20: raise ValueError("max_results must be between 1 and 20.")
     client=session or requests.Session(); found={}
     for industry in industries:
-        query=make_query(industry,country)
-        response=client.post(TAVILY_URL,json={"api_key":key,"query":query,"topic":"general","search_depth":"basic","max_results":max_results,"include_answer":False,"include_raw_content":False},timeout=timeout)
-        response.raise_for_status()
-        for item in response.json().get("results",[]):
-            url=(item.get("url") or "").strip(); parsed=urlparse(url)
-            if parsed.scheme not in {"http","https"} or not parsed.netloc: continue
-            found.setdefault(url,{"industry":industry,"country_searched":country,"title":item.get("title"),"url":url,"domain":parsed.netloc.lower(),"source_class":classify_source_domain(parsed.netloc),"snippet":item.get("content"),"search_score":item.get("score"),"search_published_date":item.get("published_date"),"discovered_at":datetime.now(timezone.utc).isoformat(),"discovery_status":"Candidate - not verified"})
+        queries = [(make_query(industry,country), "Web"),
+                   (f'site:linkedin.com/posts OR site:linkedin.com/pulse "{industry}" {country or "global"} {LINKEDIN_TERMS}', "LinkedIn")]
+        for query, requested_platform in queries:
+            response=client.post(TAVILY_URL,json={"api_key":key,"query":query,"topic":"general","search_depth":"basic","max_results":max_results,"include_answer":False,"include_raw_content":False},timeout=timeout)
+            response.raise_for_status()
+            for item in response.json().get("results",[]):
+                url=(item.get("url") or "").strip(); parsed=urlparse(url)
+                if parsed.scheme not in {"http","https"} or not parsed.netloc: continue
+                host=(parsed.hostname or "").lower().removeprefix("www.")
+                platform="LinkedIn" if host == "linkedin.com" or host.endswith(".linkedin.com") else "Web"
+                if requested_platform == "LinkedIn" and platform != "LinkedIn": continue
+                found.setdefault(url,{"industry":industry,"country_searched":country,"title":item.get("title"),"url":url,"domain":parsed.netloc.lower(),"source_platform":platform,"source_class":classify_source_domain(parsed.netloc),"snippet":item.get("content"),"search_score":item.get("score"),"search_published_date":item.get("published_date"),"discovered_at":datetime.now(timezone.utc).isoformat(),"discovery_status":"Candidate - not verified"})
     priority = {"Government domain (heuristic)": 0, "Intergovernmental / multilateral (heuristic)": 1,
                 "Academic domain (heuristic)": 2, "Research / consulting publisher (heuristic)": 3,
                 "Possible industry body (heuristic)": 4, "Other / unclassified": 5}
