@@ -22,6 +22,7 @@ def run_research(mode="manufacturing", country_searched=None, max_sources_per_in
     for source in sources:
         source_row = {
             "Source title": source.get("title"), "Source URL": source.get("url"),
+            "Candidate source class (domain heuristic)": source.get("source_class", "Other / unclassified"),
             "Industry searched": source.get("industry"), "Country searched": source.get("country_searched"),
             "Actual geographic scope": None, "Region": None, "Publication date": None,
             "Search result date": source.get("search_published_date"), "Collection status": "Not collected",
