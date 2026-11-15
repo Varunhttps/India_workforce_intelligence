@@ -16,7 +16,7 @@ GEOGRAPHY RULES:
 - Do not infer a country from the search query, source domain, company headquarters, or an example.
 - Populate country/region only when the source explicitly connects the problem to that geography. Use Global only when the source explicitly describes a global problem.
 - Return null for unsupported fields.
-Return only JSON in this shape: {"findings":[{"problem_type":"...","description":"...","industry":"...","country":null,"region":null,"sub_industry":null,"company":null,"publication_date":null,"data_period":null}]}. Each finding needs problem_type, concise description, and supporting_quote: an exact short excerpt copied verbatim from the source text. Do not add evidence, confidence, or HR category fields."""
+Return only JSON in this shape: {"findings":[{"problem_type":"...","description":"...","supporting_quote":"exact verbatim excerpt","industry":"...","country":null,"region":null,"sub_industry":null,"company":null,"publication_date":null,"data_period":null}]}. Each finding needs problem_type, concise description, and supporting_quote: an exact short excerpt copied verbatim from the source text. Do not add evidence, confidence, or HR category fields."""
 
 _COUNTRY_ALIASES = {
     "united states": ("united states", "u.s.", "u.s.a.", "usa", "american"),
