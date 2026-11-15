@@ -2,6 +2,7 @@
 from __future__ import annotations
 import json
 import re
+from urllib.parse import urlparse
 from typing import Any
 
 EXTRACTION_FIELDS = ("problem_type", "description", "country", "region", "industry", "sub_industry", "company", "publication_date", "data_period")
@@ -125,6 +126,9 @@ def parse_extraction_response(response_text, source_metadata, source_text=""):
         if row.get("region") and str(row["region"]).casefold() in {"global", "worldwide"} and not re.search(r"\b(global|worldwide|across the world)\b", source_text, re.I):
             row["region"] = None
         # Never let model output alter source attribution.
-        row.update(source_name=source_metadata.get("title"), source_url=source_metadata.get("url"), review_status="Quote matched; human review required")
+        host = (urlparse(str(source_metadata.get("url") or "")).hostname or "").lower().removeprefix("www.")
+        platform = source_metadata.get("source_platform") or ("LinkedIn" if host == "linkedin.com" or host.endswith(".linkedin.com") else "Web")
+        row.update(source_name=source_metadata.get("title"), source_url=source_metadata.get("url"),
+                   source_platform=platform, review_status="Quote matched; human review required")
         output.append(row)
     return output
