@@ -32,7 +32,6 @@ def run_research(mode="manufacturing", country_searched=None, max_sources_per_in
             document_text = Path(collected["local_path"]).read_text(encoding="utf-8")
             rows = model.extract(document_text, source)
             for row in rows:
-                row["industry"] = row.get("industry") or source.get("industry")
                 row["review_status"] = "Needs source verification"
                 findings.append(row)
             source_row["Relevance status"] = "Findings extracted" if rows else "No qualifying finding extracted"
@@ -46,7 +45,11 @@ def run_research(mode="manufacturing", country_searched=None, max_sources_per_in
             if len(regions) == 1:
                 source_row["Region"] = next(iter(regions))
         except Exception as exc:
-            source_row["Collection status"] = "Failed"
+            if source_row["Collection status"] == "Not collected":
+                source_row["Collection status"] = "Failed"
+            else:
+                source_row["Collection status"] = "Collected"
+                source_row["Relevance status"] = "Extraction failed"
             source_row["Review notes"] = f"{type(exc).__name__}: {exc}"[:500]
         source_rows.append(source_row)
 
