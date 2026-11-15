@@ -46,7 +46,7 @@ def run_research(mode="manufacturing", country_searched=None, max_sources_per_in
                 source_row["Actual geographic scope"] = next(iter(countries))
             if len(regions) == 1:
                 source_row["Region"] = next(iter(regions))
-            if rows:
+            if rows and all(row.get("review_status") == "Source excerpt verified" for row in rows):
                 source_row["Verification status"] = "Exact source excerpt checked"
         except Exception as exc:
             if source_row["Collection status"] == "Not collected":
