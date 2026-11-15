@@ -6,7 +6,7 @@ from .extraction import build_extraction_prompt,parse_extraction_response
 class GeminiExtractor:
     def __init__(self,api_key=None,model=None,client=None):
         self.api_key=api_key or os.getenv("GEMINI_API_KEY")
-        self.model=model or os.getenv("GEMINI_MODEL","gemini-2.5-flash")
+        self.model=model or os.getenv("GEMINI_MODEL","gemini-3.8-flash")
         self._client=client
         if self._client is None:
             if not self.api_key: raise ValueError("Set GEMINI_API_KEY before using Gemini extraction.")
