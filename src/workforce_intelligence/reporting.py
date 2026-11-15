@@ -1,5 +1,6 @@
 """Manager-facing Excel workbook export."""
 from pathlib import Path
+from copy import copy
 import pandas as pd
 from .records import FINDING_COLUMNS, SOURCE_COLUMNS, deduplicate_findings
 
@@ -13,7 +14,10 @@ def _style_workbook(writer):
             width = min(max(max(len(str(cell.value or "")) for cell in cells) + 2, 12), 55)
             sheet.column_dimensions[cells[0].column_letter].width = width
         for cell in sheet[1]:
-            cell.font = cell.font.copy(bold=True, color="FFFFFF")
+            font = copy(cell.font)
+            font.bold = True
+            font.color = "FFFFFF"
+            cell.font = font
             cell.fill = __import__("openpyxl").styles.PatternFill("solid", fgColor="1F4E78")
 
 def export_workbook(findings, sources, output_path, new_findings=None, recurring_findings=None):
