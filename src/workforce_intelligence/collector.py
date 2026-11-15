@@ -14,7 +14,7 @@ try:
 except ImportError:
     trafilatura = None
 try:
-    import fitz
+    import pymupdf as fitz
 except ImportError:
     fitz = None
 
