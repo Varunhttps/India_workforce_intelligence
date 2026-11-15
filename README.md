@@ -9,11 +9,13 @@ A global public-source research agent that identifies and classifies reported wo
 
 ## Pipeline
 1. Discover candidate public sources using Tavily.
-2. Collect accessible HTML and PDF documents.
-3. Extract reported workforce problems into structured records using Gemini.
-4. Export a manager-facing Excel workbook with Workforce Findings, Source Register and Research Summary sheets.
+2. Collect accessible HTML and PDF documents with public-network URL checks, redirect limits and download-size caps.
+3. Extract reported workforce problems using Gemini.
+4. Require a verbatim source excerpt for every accepted finding; the excerpt is checked against collected text and is not exported as an Evidence column.
+5. Export a manager-facing Excel workbook with Run Overview, Workforce Findings, New Findings, Recurring Findings, Source Register and Research Summary sheets.
+6. Update a persistent JSONL history so findings can be compared across weekly runs.
 
-All model-extracted findings remain marked **Needs source verification**. Search-result dates are stored separately from publication dates stated in source material. Search country is not treated as proof of the actual geography of a finding.
+Search-result dates are stored separately from publication dates stated in source material. Search country is not treated as proof of actual finding geography. Findings still need human review before external circulation.
 
 ## Setup
 Python 3.10+ recommended.
@@ -28,16 +30,24 @@ PYTHONPATH=src python main.py --mode manufacturing --max-sources-per-industry 3
 
 Available modes: `manufacturing`, `other_industries`, `all_industries`.
 
-## Weekly automation
-The scheduled GitHub Actions workflow is configured for Mondays at 06:00 UTC (11:30 India Standard Time). It requires repository Actions secrets named `TAVILY_API_KEY` and `GEMINI_API_KEY`. A successful run publishes the Excel workbook as a downloadable workflow artifact retained for 30 days.
+To use a persistent history file locally:
 
-**Activation requirements:** GitHub Actions schedules run from the repository's default branch. Merge this workflow to the default branch and add both repository secrets under Settings → Secrets and variables → Actions. Until those steps are completed and a scheduled/manual run succeeds, weekly updates are configured but not operational.
+```bash
+PYTHONPATH=src python main.py --mode manufacturing --max-sources-per-industry 3 --history-path data/findings_history.jsonl
+```
+
+## Weekly automation
+The GitHub Actions workflow is configured for Mondays at 06:00 UTC (11:30 India Standard Time). It requires repository Actions secrets named `TAVILY_API_KEY` and `GEMINI_API_KEY`. Manual runs support all three research modes.
+
+A run uploads the Excel report as an artifact retained for 30 days and commits updates to `data/findings_history.jsonl` on `main`. The workflow requires `contents: write` permission. The history contains public-source finding metadata and source URLs; do not place private or sensitive material in it.
 
 ## Workbook fields
-The findings sheet contains problem type, description, country, region, industry, sub-industry, company, source name, source URL, publication date, data period and review status. Evidence, Confidence and HR Category columns are intentionally excluded. The source register records source metadata, collection status, search-result date, source publication date, and verification status.
+The findings sheet contains problem type, description, country, region, industry, sub-industry, company, source name, source URL, publication date, data period and review status. Evidence, Confidence and HR Category columns are intentionally excluded. The source register records source metadata, collection status, search-result date, source publication date and verification status.
 
 ## Current limitations
-- Search results are candidates, not independently verified findings.
-- AI extraction may miss context or misclassify a problem; source-level review is required before manager circulation.
-- The weekly workflow produces a new report artifact; it does not yet merge new findings into a persistent historical master dataset.
-- The scheduled workflow must be activated on the default branch with API secrets configured.
+- Tavily results are candidates, not endorsements or independently verified sources.
+- Verbatim quote matching confirms that a supporting excerpt exists in the collected text; it does not prove that the model's full interpretation is correct.
+- Geography validation is conservative but still needs human review for ambiguous references and regional attribution.
+- History identifies recurring records using text, industry, country and source URL; it does not establish that a workforce problem has been resolved when it disappears from later searches.
+- Research coverage depends on search-engine indexing, source accessibility, API limits and the selected candidate-source cap.
+- Human review remains required before presenting findings as confirmed facts to management.
