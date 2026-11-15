@@ -53,7 +53,7 @@ def update_history(findings, history_path, observed_at=None):
                     "occurrences": 1, "problem_type": finding.get("problem_type"),
                     "description": finding.get("description"), "country": finding.get("country"),
                     "region": finding.get("region"), "industry": finding.get("industry"),
-                    "source_name": finding.get("source_name"), "source_url": finding.get("source_url")}
+                    "source_name": finding.get("source_name"), "source_url": finding.get("source_url"), "source_platform": finding.get("source_platform")}
             existing[key] = item
             new_findings.append({**finding, "history_status": "New",
                                  "first_seen": observed, "last_seen": observed, "occurrences": 1})
