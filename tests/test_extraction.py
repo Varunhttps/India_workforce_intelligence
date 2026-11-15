@@ -1,16 +1,44 @@
 import json
 import unittest
-from workforce_intelligence.extraction import parse_extraction_response,build_extraction_prompt
+from workforce_intelligence.extraction import parse_extraction_response, build_extraction_prompt
+
 class ExtractionTests(unittest.TestCase):
- def test_source_metadata_overrides_model_attribution(self):
-  metadata={"title":"Official report","url":"https://example.org/report"}
-  response=json.dumps({"findings":[{"problem_type":"Skill shortage","description":"Shortage in plants","source_url":"https://wrong.example","country":"Germany","evidence":"ignored","confidence":0.9}]})
-  row=parse_extraction_response(response,metadata)[0]
-  self.assertEqual(row["source_url"],metadata["url"]); self.assertEqual(row["source_name"],metadata["title"])
-  self.assertNotIn("evidence",row); self.assertNotIn("confidence",row)
- def test_incomplete_findings_dropped(self):
-  self.assertEqual(parse_extraction_response('{"findings":[{"problem_type":"Shortage"}]}',{}),[])
- def test_search_country_is_not_claimed_as_fact(self):
-  prompt=build_extraction_prompt("The report says nothing about country.",{"country_searched":"India"})
-  self.assertIn("not proof of geography",prompt)
-if __name__=="__main__": unittest.main()
+    def test_source_metadata_overrides_model_attribution(self):
+        metadata={"title":"Official report","url":"https://example.org/report"}
+        response=json.dumps({"findings":[{"problem_type":"Skill shortage","description":"Shortage in plants","source_url":"https://wrong.example","country":"Germany","evidence":"ignored","confidence":0.9}]})
+        row=parse_extraction_response(response,metadata,source_text="The report discusses a skills shortage in industrial plants.")
+        self.assertEqual(row[0]["source_url"],metadata["url"])
+        self.assertEqual(row[0]["source_name"],metadata["title"])
+        self.assertIsNone(row[0]["country"])
+        self.assertNotIn("evidence",row[0])
+        self.assertNotIn("confidence",row[0])
+
+    def test_unrelated_healthcare_finding_rejected_in_manufacturing_run(self):
+        metadata={"title":"Talent report","url":"https://example.org/report","industry":"Automotive manufacturing"}
+        response=json.dumps({"findings":[
+            {"problem_type":"Nursing shortage","description":"Hospitals face nursing vacancies.","industry":"Healthcare"},
+            {"problem_type":"Production skills shortage","description":"Automotive plants struggle to hire skilled production workers.","industry":"Automotive manufacturing"}
+        ]})
+        rows=parse_extraction_response(response,metadata,source_text="Automotive manufacturing plants report skilled production worker shortages. The report separately mentions healthcare.")
+        self.assertEqual(len(rows),1)
+        self.assertEqual(rows[0]["industry"],"Automotive manufacturing")
+
+    def test_generic_manufacturing_not_mislabeled_as_automotive(self):
+        metadata={"title":"Report","url":"https://example.org/report","industry":"Automotive manufacturing"}
+        response=json.dumps({"findings":[{"problem_type":"Labour shortage","description":"Manufacturing employers report production vacancies.","industry":"Automotive manufacturing"}]})
+        rows=parse_extraction_response(response,metadata,source_text="Manufacturing employers report production vacancies.")
+        self.assertEqual(rows[0]["industry"],"Manufacturing")
+
+    def test_country_must_be_explicitly_supported_by_source(self):
+        metadata={"title":"Report","url":"https://example.org/report","industry":"Manufacturing"}
+        response=json.dumps({"findings":[{"problem_type":"Shortage","description":"Manufacturers report vacancies.","industry":"Manufacturing","country":"Germany","region":"Bavaria"}]})
+        rows=parse_extraction_response(response,metadata,source_text="Manufacturers in Germany's Bavaria region report vacancies.")
+        self.assertEqual(rows[0]["country"],"Germany")
+        self.assertEqual(rows[0]["region"],"Bavaria")
+
+    def test_search_country_is_not_claimed_as_fact(self):
+        prompt=build_extraction_prompt("The report says nothing about country.",{"country_searched":"India"})
+        self.assertIn("not proof of geography",prompt)
+
+if __name__=="__main__":
+    unittest.main()
