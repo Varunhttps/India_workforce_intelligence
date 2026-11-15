@@ -125,6 +125,6 @@ def parse_extraction_response(response_text, source_metadata, source_text=""):
         if row.get("region") and str(row["region"]).casefold() in {"global", "worldwide"} and not re.search(r"\b(global|worldwide|across the world)\b", source_text, re.I):
             row["region"] = None
         # Never let model output alter source attribution.
-        row.update(source_name=source_metadata.get("title"), source_url=source_metadata.get("url"), review_status="Source excerpt verified")
+        row.update(source_name=source_metadata.get("title"), source_url=source_metadata.get("url"), review_status="Quote matched; human review required")
         output.append(row)
     return output
