@@ -6,10 +6,14 @@ from .collector import collect_document
 from .gemini_client import GeminiExtractor
 from .history import update_history
 from .reporting import export_workbook
+from .google_sheets import publish_to_google_sheets
+
 
 def run_research(mode="manufacturing", country_searched=None, max_sources_per_industry=5,
                  output_dir="research_output", tavily_api_key=None, gemini_api_key=None,
-                 extractor=None, session=None, history_path=None):
+                 extractor=None, session=None, history_path=None,
+                 publish_google_sheets=False, google_sheet_id=None,
+                 google_service_account_json=None):
     plan = build_research_plan(mode)
     sources = discover_sources(plan.industries, api_key=tavily_api_key, country=country_searched,
                                max_results=max_sources_per_industry, session=session)
@@ -35,7 +39,6 @@ def run_research(mode="manufacturing", country_searched=None, max_sources_per_in
             document_text = Path(collected["local_path"]).read_text(encoding="utf-8")
             rows = model.extract(document_text, source)
             for row in rows:
-                # Attribution is attached by the pipeline, never trusted to model-generated text.
                 row["source_url"] = source.get("url")
                 row["source_name"] = source.get("title")
                 row["source_platform"] = source.get("source_platform", "Web")
@@ -67,10 +70,20 @@ def run_research(mode="manufacturing", country_searched=None, max_sources_per_in
     history = update_history(findings, history_file)
     output = Path(output_dir) / "Global_Workforce_Intelligence_Report.xlsx"
     export_workbook(findings, source_rows, output, history["new"], history["recurring"])
+
+    google_sheet_url = None
+    if publish_google_sheets:
+        google_sheet_url = publish_to_google_sheets(
+            findings, source_rows, spreadsheet_id=google_sheet_id,
+            service_account_json=google_service_account_json,
+            new_findings=history["new"], recurring_findings=history["recurring"],
+        )
+
     return {
         "mode": plan.mode, "industries": list(plan.industries),
         "sources_discovered": len(sources), "findings_extracted": len(findings),
         "new_findings": len(history["new"]), "recurring_findings": len(history["recurring"]),
         "history_records": history["history_records"], "history_path": history["history_path"],
-        "workbook_path": str(output), "findings": findings, "sources": source_rows,
+        "workbook_path": str(output), "google_sheet_url": google_sheet_url,
+        "findings": findings, "sources": source_rows,
     }
