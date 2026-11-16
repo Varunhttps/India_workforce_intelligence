@@ -12,39 +12,57 @@ A global public-source research agent that identifies and classifies reported wo
 2. Collect accessible HTML and PDF documents with public-network URL checks, redirect limits and download-size caps.
 3. Extract reported workforce problems using Gemini.
 4. Require a verbatim source excerpt for every accepted finding; the excerpt is checked against collected text and is not exported as an Evidence column.
-5. Classify source domains using transparent heuristics (government, multilateral, academic, research/consulting, possible industry body or unclassified); these labels are prioritization hints, not endorsements.\n6. Export a manager-facing Excel workbook with Run Overview, Workforce Findings, New Findings, Recurring Findings, Source Register and Research Summary sheets.
+5. Classify source domains using transparent heuristics; these labels are prioritization hints, not endorsements.
+6. Publish the manager-facing report to one persistent Google spreadsheet.
 7. Update a persistent JSONL history so findings can be compared across weekly runs.
 
 Search-result dates are stored separately from publication dates stated in source material. Search country is not treated as proof of actual finding geography. Findings still need human review before external circulation.
 
-## Setup
+## Google Sheets setup
+
+The weekly workflow writes into the same Google spreadsheet on every run; it clears and refreshes the report tabs rather than creating a new spreadsheet each week.
+
+1. Create a Google Cloud project and enable the **Google Sheets API**.
+2. Create a service account and generate a JSON key.
+3. Create one Google spreadsheet and copy its spreadsheet ID from its URL (the text between `/d/` and `/edit`).
+4. Share that spreadsheet with the service account's email address and grant **Editor** access.
+5. Add these GitHub repository Actions secrets under **Settings → Secrets and variables → Actions**:
+   - `GOOGLE_SHEET_ID`: spreadsheet ID from the Google Sheets URL.
+   - `GOOGLE_SERVICE_ACCOUNT_JSON`: complete JSON key contents (keep it secret; never commit it).
+   - Existing `TAVILY_API_KEY` and `GEMINI_API_KEY` remain required.
+
+The workflow refreshes these tabs in the same spreadsheet:
+- **Run Overview**
+- **Workforce Findings**
+- **New Findings**
+- **Recurring Findings**
+- **Source Register**
+- **Research Summary**
+
+The Source Register includes the requested source-tracking fields: Source ID, Source Title, Source URL, Source Type, Publisher / Author, Industry, Publication Date, Access Date, Source Credibility, Key Information and Related Research IDs, plus collection and verification status. Publisher / Author is left blank unless the source data explicitly identifies it; credibility starts as Pending review rather than being invented. Source URLs are stored as direct URLs.
+
+## Weekly automation
+
+GitHub Actions runs every Monday at 06:00 UTC (11:30 India Standard Time). Manual runs support all three research modes. The workflow requires `contents: write` permission to commit updates to `data/findings_history.jsonl`, as well as the four API/Google Sheets secrets listed above. If Google credentials or spreadsheet access are missing, the run fails visibly rather than silently reporting a successful publication.
+
+## Local setup and tests
+
 Python 3.10+ recommended.
 
 ```bash
 pip install -r requirements.txt
 export TAVILY_API_KEY="your-key"
 export GEMINI_API_KEY="your-key"
+export GOOGLE_SHEET_ID="your-spreadsheet-id"
+export GOOGLE_SERVICE_ACCOUNT_JSON='{"type":"service_account", ...}'
 PYTHONPATH=src python -m unittest discover -s tests -v
-PYTHONPATH=src python main.py --mode manufacturing --max-sources-per-industry 3
+PYTHONPATH=src python main.py --mode manufacturing --max-sources-per-industry 3 --publish-google-sheets
 ```
 
 Available modes: `manufacturing`, `other_industries`, `all_industries`.
 
-To use a persistent history file locally:
-
-```bash
-PYTHONPATH=src python main.py --mode manufacturing --max-sources-per-industry 3 --history-path data/findings_history.jsonl
-```
-
-## Weekly automation
-The GitHub Actions workflow is configured for Mondays at 06:00 UTC (11:30 India Standard Time). It requires repository Actions secrets named `TAVILY_API_KEY` and `GEMINI_API_KEY`. Manual runs support all three research modes.
-
-A run uploads the Excel report as an artifact retained for 30 days and commits updates to `data/findings_history.jsonl` on `main`. The workflow requires `contents: write` permission. The history contains public-source finding metadata and source URLs; do not place private or sensitive material in it.
-
-## Workbook fields
-The findings sheet contains problem type, description, country, region, industry, sub-industry, company, source name, source URL, source platform, publication date, data period and review status. LinkedIn findings retain the direct original LinkedIn URL; search-engine result URLs are never substituted. LinkedIn pages that cannot be publicly collected remain inaccessible candidates in the Source Register and are not treated as traceable findings. Evidence, Confidence and HR Category columns are intentionally excluded. The source register records source metadata, collection status, search-result date, source publication date, heuristic source class and verification status.
-
 ## Current limitations
+
 - Tavily results are candidates, not endorsements or independently verified sources.
 - Verbatim quote matching confirms that a supporting excerpt exists in the collected text; it does not prove that the model's full interpretation is correct.
 - Geography validation is conservative but still needs human review for ambiguous references and regional attribution.
@@ -53,4 +71,5 @@ The findings sheet contains problem type, description, country, region, industry
 - Human review remains required before presenting findings as confirmed facts to management.
 
 ## LinkedIn source handling
+
 LinkedIn is a discovery channel inside the existing pipeline, not a separate agent. The agent uses search-engine indexing to discover public LinkedIn post/article URLs and only attempts ordinary public-page collection; it does not scrape logged-in content, profiles, contact details or private data. Access restrictions or login walls are recorded as collection failures. Every accepted LinkedIn finding carries `source_platform=LinkedIn` and the original direct LinkedIn `source_url`; the pipeline attaches attribution from source metadata rather than asking the language model to reproduce it. Findings remain candidates requiring human review.
