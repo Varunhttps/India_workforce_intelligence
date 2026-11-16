@@ -41,18 +41,22 @@ jobs:
           python-version: "3.11"
       - name: Install dependencies
         run: python -m pip install -r requirements.txt
-      - name: Run global workforce research
+      - name: Run research and update the persistent Google Sheet
         env:
           TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
         run: |
-          if [ -z "$TAVILY_API_KEY" ] || [ -z "$GEMINI_API_KEY" ]; then
-            echo "Repository secrets TAVILY_API_KEY and GEMINI_API_KEY must be configured." >&2
-            exit 1
-          fi
+          for SECRET_NAME in TAVILY_API_KEY GEMINI_API_KEY GOOGLE_SHEET_ID GOOGLE_SERVICE_ACCOUNT_JSON; do
+            if [ -z "${!SECRET_NAME}" ]; then
+              echo "Repository secret $SECRET_NAME must be configured." >&2
+              exit 1
+            fi
+          done
           MODE="${{ inputs.mode || 'manufacturing' }}"
           LIMIT="${{ inputs.max_sources_per_industry || '3' }}"
-          PYTHONPATH=src python main.py --mode "$MODE" --max-sources-per-industry "$LIMIT" --output-dir research_output --history-path data/findings_history.jsonl
+          PYTHONPATH=src python main.py --mode "$MODE" --max-sources-per-industry "$LIMIT" --output-dir research_output --history-path data/findings_history.jsonl --publish-google-sheets
       - name: Commit updated public-source research history
         run: |
           git config user.name "github-actions[bot]"
@@ -64,10 +68,3 @@ jobs:
             git commit -m "Update workforce research history"
             git push origin HEAD:main
           fi
-      - name: Publish report as workflow artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: weekly-global-workforce-report
-          path: research_output/Global_Workforce_Intelligence_Report.xlsx
-          if-no-files-found: error
-          retention-days: 30
