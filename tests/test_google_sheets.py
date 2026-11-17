@@ -42,6 +42,34 @@ class GoogleSheetsPayloadTests(unittest.TestCase):
         self.assertEqual(set(payloads), set(SHEET_HEADERS))
         self.assertTrue(all(len(rows) == 1 for rows in payloads.values()))
 
+    def test_distinct_problem_count_is_not_source_count(self):
+        findings = [
+            {"problem_type": "Skilled worker shortage", "description": "Shortage at plant A",
+             "industry": "Automotive", "source_url": "https://example.com/a"},
+            {"problem_type": "skilled   worker shortage", "description": "Shortage at plant B",
+             "industry": "Automotive", "source_url": "https://example.com/b"},
+        ]
+        payloads = build_sheet_payloads(findings, [])
+        rows = payloads["Market Insights & Trends"]
+        insight = next(row for row in rows[1:] if row[1] == "Consolidated Workforce Challenges")
+        self.assertEqual(insight[4], 1)
+        self.assertEqual(insight[5], 2)
+
+    def test_historical_findings_are_retained_in_cumulative_payload(self):
+        history = [{
+            "problem_type": "Payroll forecasting gap",
+            "description": "Old historical finding",
+            "industry": "Industrial manufacturing",
+            "source_name": "Prior report",
+            "source_url": "https://example.com/old",
+            "source_platform": "Web",
+            "country": "Germany",
+        }]
+        payloads = build_sheet_payloads([], [], history_records=history)
+        self.assertEqual(len(payloads["Market Research"]), 2)
+        self.assertEqual(payloads["Market Research"][1][-1], "https://example.com/old")
+        self.assertEqual(len(payloads["Source Register"]), 2)
+
 
 if __name__ == "__main__":
     unittest.main()
