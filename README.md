@@ -73,3 +73,17 @@ Available modes: `manufacturing`, `other_industries`, `all_industries`.
 ## LinkedIn source handling
 
 LinkedIn is a discovery channel inside the existing pipeline, not a separate agent. The agent uses search-engine indexing to discover public LinkedIn post/article URLs and only attempts ordinary public-page collection; it does not scrape logged-in content, profiles, contact details or private data. Access restrictions or login walls are recorded as collection failures. Every accepted LinkedIn finding carries `source_platform=LinkedIn` and the original direct LinkedIn `source_url`; the pipeline attaches attribution from source metadata rather than asking the language model to reproduce it. Findings remain candidates requiring human review.
+
+
+## Streamlit frontend
+
+Run the frontend locally from the repository root:
+
+```bash
+pip install -r requirements.txt
+streamlit run frontend/app.py
+```
+
+Configure Streamlit secrets (or environment variables) for `GOOGLE_SHEET_ID` and `GOOGLE_SERVICE_ACCOUNT_JSON` to read the four tabs. To enable the **Start Research** control, also configure `GITHUB_TOKEN` with permission to dispatch repository Actions workflows. Do not commit these credentials. The control currently supports the existing research scopes (Manufacturing, Other Industries, All Industries), an optional country filter (blank means global) and the source cap per industry. The pipeline's existing discovery channels are web search and public, search-indexed LinkedIn.
+
+The dashboard displays distinct problem counts by industry, the four data tabs, and a link to open the full spreadsheet. Research findings and generated opportunity mappings are candidates for human review, not verified market conclusions or approved Nexplan product commitments.
