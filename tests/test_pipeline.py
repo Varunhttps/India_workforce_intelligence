@@ -24,7 +24,7 @@ class PipelineTests(unittest.TestCase):
                     "source_name": "Old report",
                     "source_url": "https://example.org/old",
                     "source_platform": "Web",
-                }) + "\\n",
+                }) + "\n",
                 encoding="utf-8",
             )
             result = run_research(
