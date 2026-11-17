@@ -1,5 +1,6 @@
 """End-to-end orchestration for one research run."""
 from pathlib import Path
+import json
 from .research_modes import build_research_plan
 from .discovery import discover_sources
 from .collector import collect_document
@@ -73,10 +74,20 @@ def run_research(mode="manufacturing", country_searched=None, max_sources_per_in
 
     google_sheet_url = None
     if publish_google_sheets:
+        historical_records = []
+        history_path_obj = Path(history_file)
+        if history_path_obj.exists():
+            for line in history_path_obj.read_text(encoding="utf-8").splitlines():
+                if line.strip():
+                    try:
+                        historical_records.append(json.loads(line))
+                    except json.JSONDecodeError:
+                        continue
         google_sheet_url = publish_to_google_sheets(
             findings, source_rows, spreadsheet_id=google_sheet_id,
             service_account_json=google_service_account_json,
             new_findings=history["new"], recurring_findings=history["recurring"],
+            history_records=historical_records,
         )
 
     return {
