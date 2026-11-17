@@ -1,4 +1,5 @@
 import tempfile
+import json
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -16,9 +17,14 @@ class PipelineTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             history = Path(tmp) / "history.jsonl"
             history.write_text(
-                '{"problem_type":"Payroll forecasting gap","description":"Historical finding",'
-                '"industry":"Manufacturing","source_name":"Old report",'
-                '"source_url":"https://example.org/old","source_platform":"Web"}\n',
+                json.dumps({
+                    "problem_type": "Payroll forecasting gap",
+                    "description": "Historical finding",
+                    "industry": "Manufacturing",
+                    "source_name": "Old report",
+                    "source_url": "https://example.org/old",
+                    "source_platform": "Web",
+                }) + "\\n",
                 encoding="utf-8",
             )
             result = run_research(
