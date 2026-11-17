@@ -18,7 +18,7 @@ class PipelineTests(unittest.TestCase):
             history.write_text(
                 '{"problem_type":"Payroll forecasting gap","description":"Historical finding",'
                 '"industry":"Manufacturing","source_name":"Old report",'
-                '"source_url":"https://example.org/old","source_platform":"Web"}\\n',
+                '"source_url":"https://example.org/old","source_platform":"Web"}\n',
                 encoding="utf-8",
             )
             result = run_research(
