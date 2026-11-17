@@ -18,6 +18,7 @@ class PipelineTests(unittest.TestCase):
             history = Path(tmp) / "history.jsonl"
             history.write_text(
                 json.dumps({
+                    "finding_key": "historical-payroll-gap",
                     "problem_type": "Payroll forecasting gap",
                     "description": "Historical finding",
                     "industry": "Manufacturing",
