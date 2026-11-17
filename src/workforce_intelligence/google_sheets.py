@@ -87,10 +87,28 @@ def _opportunity(row: dict) -> dict | None:
     return None
 
 
-def build_sheet_payloads(findings, sources, research_date=None):
-    """Create four linked tabs. Counts are based on distinct normalized findings."""
+def build_sheet_payloads(findings, sources, research_date=None, history_records=None):
+    """Build a cumulative four-tab view; history records retain earlier weekly findings."""
     today = research_date or date.today().isoformat()
-    normalized = deduplicate_findings(findings or [])
+    all_findings = list(findings or []) + list(history_records or [])
+    normalized = deduplicate_findings(all_findings)
+    sources = list(sources or [])
+    known_urls = {s.get("Source URL") for s in sources}
+    for old in history_records or []:
+        url = old.get("source_url")
+        if url and url not in known_urls:
+            sources.append({
+                "Source title": old.get("source_name") or "Previously collected source",
+                "Source URL": url,
+                "Source platform": old.get("source_platform") or "Web",
+                "Industry searched": old.get("industry"),
+                "Publication date": "",
+                "Collection status": "Previously collected",
+                "Relevance status": "Historical finding",
+                "Verification status": "Not verified",
+                "Review notes": "Retained from append-only research history",
+            })
+            known_urls.add(url)
     source_id_by_url = {}
     source_rows = []
     for source in sources or []:
@@ -123,8 +141,12 @@ def build_sheet_payloads(findings, sources, research_date=None):
             "", "", today, _cell(row.get("review_status") or "Needs source verification"),
             _cell(row.get("country")), _cell(row.get("region")), _cell(row.get("source_url")),
         ])
-        key = (row.get("industry") or "Unclassified", row.get("problem_type") or "Unclassified")
-        group = industry_groups.setdefault(key, {"ids": [], "urls": set(), "countries": set()})
+        problem = " ".join(str(row.get("problem_type") or "Unclassified").casefold().split())
+        display_problem = row.get("problem_type") or "Unclassified"
+        key = (row.get("industry") or "Unclassified", problem)
+        group = industry_groups.setdefault(key, {
+            "problem": display_problem, "ids": [], "urls": set(), "countries": set()
+        })
         group["ids"].append(rid)
         if row.get("source_url"):
             group["urls"].add(row["source_url"])
@@ -149,23 +171,24 @@ def build_sheet_payloads(findings, sources, research_date=None):
         ids = group["ids"]
         insight_rows.append([
             _stable_id("INS", industry + "|" + problem), "Consolidated Workforce Challenges",
-            industry, problem, len(ids), len(group["urls"]), ", ".join(ids),
+            industry, group["problem"], 1, len(group["urls"]), ", ".join(ids),
             ", ".join(sorted(group["countries"])), today, "AI-derived; human review required",
         ])
 
     # Recurrence and cross-industry trends are only labelled when repeated distinct records exist.
     problem_groups = {}
-    for (industry, problem), group in industry_groups.items():
-        problem_groups.setdefault(problem, []).append((industry, group))
-    for problem, groups in problem_groups.items():
-        count = sum(len(g["ids"]) for _, g in groups)
-        if count >= 2:
+    for (industry, problem_key), group in industry_groups.items():
+        problem_groups.setdefault(problem_key, []).append((industry, group))
+    for problem_key, groups in problem_groups.items():
+        distinct_industries = {industry for industry, _ in groups}
+        if len(distinct_industries) >= 2:
             ids = [rid for _, g in groups for rid in g["ids"]]
             urls = set().union(*(g["urls"] for _, g in groups))
             countries = set().union(*(g["countries"] for _, g in groups))
+            display_problem = groups[0][1]["problem"]
             insight_rows.append([
-                _stable_id("INS", "recurring|" + problem), "Top 5 Recurring Workforce Challenges",
-                "Multiple industries", problem, count, len(urls), ", ".join(ids),
+                _stable_id("INS", "recurring|" + problem_key), "Cross-industry Workforce Challenges",
+                "Multiple industries", display_problem, len(distinct_industries), len(urls), ", ".join(ids),
                 ", ".join(sorted(countries)), today, "Repeated in collected research; not prevalence proof",
             ])
 
@@ -178,15 +201,15 @@ def build_sheet_payloads(findings, sources, research_date=None):
     }
 
 
-def publish_to_google_sheets(findings, sources, spreadsheet_id=None, service_account_json=None):
-    """Refresh the four report tabs in one existing spreadsheet."""
+def publish_to_google_sheets(findings, sources, spreadsheet_id=None, service_account_json=None, new_findings=None, recurring_findings=None, history_records=None):
+    """Publish the cumulative research history to the four report tabs."""
     spreadsheet_id = spreadsheet_id or os.getenv("GOOGLE_SHEET_ID")
     service_account_json = service_account_json or os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON")
     if not spreadsheet_id or not service_account_json:
         raise RuntimeError("Set GOOGLE_SHEET_ID and GOOGLE_SERVICE_ACCOUNT_JSON to publish Google Sheets.")
     client = gspread.service_account_from_dict(json.loads(service_account_json))
     spreadsheet = client.open_by_key(spreadsheet_id)
-    payloads = build_sheet_payloads(findings, sources)
+    payloads = build_sheet_payloads(findings, sources, history_records=history_records)
     for title, values in payloads.items():
         try:
             worksheet = spreadsheet.worksheet(title)
