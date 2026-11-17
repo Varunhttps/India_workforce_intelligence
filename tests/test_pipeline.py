@@ -10,6 +10,27 @@ class FakeExtractor:
         return [{"problem_type": "Labour shortage", "description": "Unfilled production roles.", "country": "Germany", "region": "Bavaria", "publication_date": "2026-08", "source_name": source["title"], "source_url": source["url"]}]
 
 class PipelineTests(unittest.TestCase):
+    @patch("workforce_intelligence.pipeline.publish_to_google_sheets", return_value="https://docs.google.com/spreadsheets/d/test")
+    @patch("workforce_intelligence.pipeline.discover_sources", return_value=[])
+    def test_google_sheets_publisher_receives_cumulative_history(self, discover, publish):
+        with tempfile.TemporaryDirectory() as tmp:
+            history = Path(tmp) / "history.jsonl"
+            history.write_text(
+                '{"problem_type":"Payroll forecasting gap","description":"Historical finding",'
+                '"industry":"Manufacturing","source_name":"Old report",'
+                '"source_url":"https://example.org/old","source_platform":"Web"}\n',
+                encoding="utf-8",
+            )
+            result = run_research(
+                output_dir=tmp, history_path=str(history), publish_google_sheets=True,
+                google_sheet_id="sheet-id", google_service_account_json="{}",
+            )
+            self.assertEqual(result["google_sheet_url"], "https://docs.google.com/spreadsheets/d/test")
+            kwargs = publish.call_args.kwargs
+            self.assertEqual(kwargs["history_records"][0]["problem_type"], "Payroll forecasting gap")
+            self.assertIn("new_findings", kwargs)
+            self.assertIn("recurring_findings", kwargs)
+
     @patch("workforce_intelligence.pipeline.discover_sources", return_value=[])
     def test_empty_discovery_does_not_require_gemini_key(self, discover):
         with tempfile.TemporaryDirectory() as tmp:
