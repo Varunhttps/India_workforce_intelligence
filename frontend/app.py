@@ -94,11 +94,38 @@ else:
     d.metric("Countries identified", countries)
 
     st.subheader("Top 5 industries by distinct workforce problems")
-    if not findings.empty and "Industry" in findings:
+    insights = data["Market Insights & Trends"]
+    if not insights.empty and {"Section", "Industry", "Distinct Problem Count"}.issubset(insights.columns):
+        consolidated = insights[
+            insights["Section"].astype(str).str.casefold() == "consolidated workforce challenges"
+        ].copy()
+        consolidated["Distinct Problem Count"] = pd.to_numeric(
+            consolidated["Distinct Problem Count"], errors="coerce"
+        ).fillna(0)
+        ranking = (consolidated.groupby("Industry", as_index=False)["Distinct Problem Count"]
+                   .sum().sort_values("Distinct Problem Count", ascending=False).head(5))
+    elif not findings.empty and {"Industry", "Identified Problem"}.issubset(findings.columns):
+        # Fallback for older spreadsheets that predate the consolidated insights tab.
         ranking = (findings.groupby("Industry")["Identified Problem"].nunique()
-                   .sort_values(ascending=False).head(5).rename("Distinct problems").reset_index())
+                   .sort_values(ascending=False).head(5).rename("Distinct Problem Count").reset_index())
+    else:
+        ranking = pd.DataFrame(columns=["Industry", "Distinct Problem Count"])
+
+    if not ranking.empty:
         st.bar_chart(ranking.set_index("Industry"))
         st.dataframe(ranking, use_container_width=True, hide_index=True)
+        st.subheader("Top 5 industry research reports")
+        for industry in ranking["Industry"].tolist():
+            with st.expander(str(industry)):
+                report = findings[findings["Industry"].astype(str) == str(industry)].copy()
+                if report.empty:
+                    st.info("No detailed research records are available for this industry yet.")
+                else:
+                    display_columns = [c for c in [
+                        "Identified Problem", "Problem Description", "Business Impact",
+                        "Country", "Region", "Research Date", "Research Status", "Source URL"
+                    ] if c in report.columns]
+                    st.dataframe(report[display_columns], use_container_width=True, hide_index=True)
     else:
         st.info("No research findings have been published yet.")
 
