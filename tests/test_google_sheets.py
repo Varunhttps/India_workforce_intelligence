@@ -32,7 +32,10 @@ class GoogleSheetsPayloadTests(unittest.TestCase):
         self.assertTrue(row["Related Research IDs"].startswith("RES-"))
         research = payloads["Market Research"]
         self.assertEqual(research[1][1], row["Source ID"])
-        self.assertEqual(research[1][-1], url)
+        research_row = dict(zip(research[0], research[1]))
+        self.assertEqual(research_row["Source URL"], url)
+        self.assertEqual(research_row["Weekly Status"], "New this week")
+        self.assertEqual(research_row["First Seen"], "")
         self.assertTrue(payloads["Product Feature Opportunities"][1][0].startswith("OPP-"))
         self.assertTrue(any(r[1] == "Consolidated Workforce Challenges"
                             for r in payloads["Market Insights & Trends"][1:]))
@@ -64,10 +67,16 @@ class GoogleSheetsPayloadTests(unittest.TestCase):
             "source_url": "https://example.com/old",
             "source_platform": "Web",
             "country": "Germany",
+            "first_seen": "2026-11-09", "last_seen": "2026-11-16",
+            "first_seen_week": "2026-11-09", "last_seen_week": "2026-11-16",
+            "weeks_seen": ["2026-11-09", "2026-11-16"], "occurrences": 2,
         }]
         payloads = build_sheet_payloads([], [], history_records=history)
         self.assertEqual(len(payloads["Market Research"]), 2)
-        self.assertEqual(payloads["Market Research"][1][-1], "https://example.com/old")
+        history_row = dict(zip(payloads["Market Research"][0], payloads["Market Research"][1]))
+        self.assertEqual(history_row["Source URL"], "https://example.com/old")
+        self.assertEqual(history_row["Weekly Status"], "Not observed this week")
+        self.assertEqual(history_row["Occurrences"], 2)
         self.assertEqual(len(payloads["Source Register"]), 2)
 
 
