@@ -1,7 +1,7 @@
 import tempfile
 import unittest
 from pathlib import Path
-from workforce_intelligence.history import update_history
+from workforce_intelligence.history import update_history, week_start
 
 class HistoryTests(unittest.TestCase):
     def test_new_then_recurring_finding(self):
@@ -18,6 +18,12 @@ class HistoryTests(unittest.TestCase):
             self.assertEqual(second["recurring"][0]["first_seen"], "2026-11-15")
             self.assertEqual(second["recurring"][0]["occurrences"], 2)
             self.assertEqual(second["history_records"], 1)
+            self.assertEqual(first["week_start"], "2026-11-09")
+            self.assertEqual(second["recurring"][0]["weekly_status"], "Recurring this week")
+            self.assertEqual(second["recurring"][0]["weeks_seen"], ["2026-11-09", "2026-11-16"])
+
+    def test_week_start_is_monday(self):
+        self.assertEqual(week_start("2026-11-19"), "2026-11-16")
 
     def test_different_source_is_separate_observation(self):
         a={"problem_type":"Skills shortage","description":"Plants report unfilled roles","industry":"Manufacturing","source_url":"https://example.org/a"}
