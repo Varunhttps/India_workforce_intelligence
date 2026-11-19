@@ -24,7 +24,7 @@ SHEET_HEADERS = {
         "Workforce Planning Area", "Identified Problem", "Problem Description",
         "Business Impact", "Evidence / Supporting Information", "Research Date",
         "Research Status", "Country", "Region", "Source URL",
-        "First Seen", "Last Seen", "Weeks Seen", "Weekly Status",
+        "First Seen", "Last Seen", "Weeks Seen", "Occurrences", "Weekly Status",
     ],
     "Market Insights & Trends": [
         "Insight ID", "Section", "Industry", "Insight / Challenge",
@@ -169,7 +169,7 @@ def build_sheet_payloads(findings, sources, research_date=None, history_records=
             _cell(row.get("country")), _cell(row.get("region")), _cell(row.get("source_url")),
             _cell(meta.get("first_seen")), _cell(meta.get("last_seen")),
             _cell(meta.get("weeks_seen") or [meta.get("first_seen_week"), meta.get("last_seen_week")]),
-            _weekly_status(meta, current_week),
+            _cell(meta.get("occurrences", 1)), _weekly_status(meta, current_week),
         ])
         problem = " ".join(str(row.get("problem_type") or "Unclassified").casefold().split())
         display_problem = row.get("problem_type") or "Unclassified"
