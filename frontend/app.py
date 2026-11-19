@@ -1,9 +1,11 @@
-"""Streamlit frontend for the Global Workforce Intelligence project."""
+"""Streamlit frontend for Global Workforce Intelligence."""
 import os
-import requests
-import streamlit as st
+from datetime import date, timedelta
+
 import gspread
 import pandas as pd
+import requests
+import streamlit as st
 
 st.set_page_config(page_title="Global Workforce Intelligence", page_icon="🌍", layout="wide")
 
@@ -52,17 +54,24 @@ def trigger_research(mode, country, limit):
         raise RuntimeError(f"GitHub rejected the research request ({response.status_code}): {response.text[:500]}")
 
 
+def week_start(today=None):
+    today = today or date.today()
+    return today - timedelta(days=today.weekday())
+
+
 st.title("🌍 Global Workforce Intelligence")
 st.caption("Research • Workforce challenges • Market trends • Nexplan opportunities")
 
 with st.sidebar:
     st.header("Research controls")
-    scope = st.selectbox("Research scope", ["Manufacturing", "Other industries", "All industries"])
+    scope = st.selectbox(
+        "Research scope", ["All industries", "Manufacturing", "Other industries"], index=0
+    )
     mode = {"Manufacturing": "manufacturing", "Other industries": "other_industries",
             "All industries": "all_industries"}[scope]
     country = st.text_input("Country (optional)", placeholder="Leave blank for global research")
     limit = st.number_input("Sources per industry", min_value=1, max_value=20, value=3)
-    st.caption("The current research pipeline searches the web and public, search-indexed LinkedIn sources.")
+    st.caption("Searches the web and public, search-indexed LinkedIn sources. Weekly discovery prioritises sources published in the past week.")
     if st.button("▶ Start Research", type="primary", use_container_width=True):
         try:
             trigger_research(mode, country, int(limit))
@@ -82,19 +91,49 @@ if not loaded:
     st.info("Connect the Google Sheet using GOOGLE_SHEET_ID and GOOGLE_SERVICE_ACCOUNT_JSON in Streamlit secrets.")
 else:
     data, sheet_url = loaded
-    findings = data["Market Research"]
+    findings = data["Market Research"].copy()
     sources = data["Source Register"]
-    opportunities = data["Product Feature Opportunities"]
+    insights = data["Market Insights & Trends"]
+
+    if not findings.empty and "Weekly Status" in findings.columns:
+        weekly_status = findings["Weekly Status"].fillna("").astype(str)
+    else:
+        weekly_status = pd.Series([""] * len(findings), index=findings.index)
+
+    new_week = findings[weekly_status == "New this week"].copy() if not findings.empty else findings.copy()
+    recurring_week = findings[weekly_status == "Recurring this week"].copy() if not findings.empty else findings.copy()
+    not_observed = findings[weekly_status == "Not observed this week"].copy() if not findings.empty else findings.copy()
+
     industries = findings["Industry"].dropna().nunique() if "Industry" in findings else 0
     countries = findings["Country"].dropna().nunique() if "Country" in findings else 0
     a, b, c, d = st.columns(4)
-    a.metric("Distinct research records", len(findings))
-    b.metric("Industries", industries)
-    c.metric("Sources", len(sources))
-    d.metric("Countries identified", countries)
+    a.metric("Historical findings", len(findings))
+    b.metric("New this week", len(new_week))
+    c.metric("Recurring this week", len(recurring_week))
+    d.metric("Industries", industries)
+
+    st.subheader(f"Weekly research changes · Week of {week_start().isoformat()}")
+    st.caption("Weekly status is based on first-seen and last-seen week metadata. 'Not observed this week' does not mean a workforce problem has been resolved.")
+    weekly_tabs = st.tabs(["New this week", "Recurring this week", "Not observed this week"])
+    weekly_frames = [new_week, recurring_week, not_observed]
+    for tab, frame in zip(weekly_tabs, weekly_frames):
+        with tab:
+            if frame.empty:
+                st.info("No records in this category for the current weekly period, or the sheet has not yet been refreshed with weekly metadata.")
+            else:
+                columns = [c for c in [
+                    "Industry", "Identified Problem", "Problem Description", "Country",
+                    "Region", "First Seen", "Last Seen", "Occurrences", "Weeks Seen", "Source URL"
+                ] if c in frame.columns]
+                st.dataframe(frame[columns], use_container_width=True, hide_index=True)
+
+    st.subheader("Cumulative research overview")
+    e, f, g = st.columns(3)
+    e.metric("Sources", len(sources))
+    f.metric("Countries identified", countries)
+    g.metric("Historical records", len(findings))
 
     st.subheader("Top 5 industries by distinct workforce problems")
-    insights = data["Market Insights & Trends"]
     if not insights.empty and {"Section", "Industry", "Distinct Problem Count"}.issubset(insights.columns):
         consolidated = insights[
             insights["Section"].astype(str).str.casefold() == "consolidated workforce challenges"
@@ -105,7 +144,6 @@ else:
         ranking = (consolidated.groupby("Industry", as_index=False)["Distinct Problem Count"]
                    .sum().sort_values("Distinct Problem Count", ascending=False).head(5))
     elif not findings.empty and {"Industry", "Identified Problem"}.issubset(findings.columns):
-        # Fallback for older spreadsheets that predate the consolidated insights tab.
         ranking = (findings.groupby("Industry")["Identified Problem"].nunique()
                    .sort_values(ascending=False).head(5).rename("Distinct Problem Count").reset_index())
     else:
@@ -123,7 +161,7 @@ else:
                 else:
                     display_columns = [c for c in [
                         "Identified Problem", "Problem Description", "Business Impact",
-                        "Country", "Region", "Research Date", "Research Status", "Source URL"
+                        "Country", "Region", "Research Date", "Weekly Status", "Research Status", "Source URL"
                     ] if c in report.columns]
                     st.dataframe(report[display_columns], use_container_width=True, hide_index=True)
     else:
@@ -132,8 +170,7 @@ else:
     tabs = st.tabs(SHEET_NAMES)
     for tab, name in zip(tabs, SHEET_NAMES):
         with tab:
-            frame = data[name]
-            st.dataframe(frame, use_container_width=True, hide_index=True)
+            st.dataframe(data[name], use_container_width=True, hide_index=True)
     st.link_button("Open full Google Spreadsheet", sheet_url)
 
 st.caption("Research findings and product opportunities are AI-assisted candidates and require human review.")
