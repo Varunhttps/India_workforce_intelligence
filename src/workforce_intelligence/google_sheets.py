@@ -111,7 +111,15 @@ def build_sheet_payloads(findings, sources, research_date=None, history_records=
     history_records = list(history_records or [])
     all_raw = list(findings or []) + history_records
     metadata_by_identity = {_identity(row) + "|" + str(row.get("source_url") or ""): row
-                            for row in all_raw}
+                            for row in history_records}
+    for row in findings or []:
+        key = _identity(row) + "|" + str(row.get("source_url") or "")
+        if key not in metadata_by_identity:
+            metadata_by_identity[key] = {
+                **row, "first_seen": today, "last_seen": today,
+                "first_seen_week": current_week, "last_seen_week": current_week,
+                "weeks_seen": [current_week], "occurrences": 1,
+            }
     normalized = deduplicate_findings(all_raw)
     sources = list(sources or [])
     known_urls = {s.get("Source URL") for s in sources}
