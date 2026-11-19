@@ -101,7 +101,7 @@ def _weekly_status(metadata: dict, current_week: str) -> str:
         return "New this week"
     if last_week == current_week:
         return "Recurring this week"
-    return "Not observed this week"
+    return "Last seen before this week"
 
 
 def build_sheet_payloads(findings, sources, research_date=None, history_records=None):
