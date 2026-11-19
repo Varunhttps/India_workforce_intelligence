@@ -67,9 +67,9 @@ class GoogleSheetsPayloadTests(unittest.TestCase):
             "source_url": "https://example.com/old",
             "source_platform": "Web",
             "country": "Germany",
-            "first_seen": "2026-11-09", "last_seen": "2026-11-16",
-            "first_seen_week": "2026-11-09", "last_seen_week": "2026-11-16",
-            "weeks_seen": ["2026-11-09", "2026-11-16"], "occurrences": 2,
+            "first_seen": "2026-11-02", "last_seen": "2026-11-09",
+            "first_seen_week": "2026-11-02", "last_seen_week": "2026-11-09",
+            "weeks_seen": ["2026-11-02", "2026-11-09"], "occurrences": 2,
         }]
         payloads = build_sheet_payloads([], [], history_records=history)
         self.assertEqual(len(payloads["Market Research"]), 2)
