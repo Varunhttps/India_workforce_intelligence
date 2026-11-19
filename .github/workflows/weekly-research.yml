@@ -13,7 +13,7 @@ on:
           - manufacturing
           - other_industries
           - all_industries
-        default: manufacturing
+        default: all_industries
       country_searched:
         description: Optional country filter (leave blank for global research)
         required: false
@@ -57,7 +57,7 @@ jobs:
               exit 1
             fi
           done
-          MODE="${{ inputs.mode || 'manufacturing' }}"
+          MODE="${{ inputs.mode || 'all_industries' }}"
           LIMIT="${{ inputs.max_sources_per_industry || '3' }}"
           COUNTRY="${{ inputs.country_searched }}"
           COUNTRY_ARGS=()
