@@ -9,7 +9,7 @@ from pathlib import Path
 
 
 def _clean(value):
-    return re.sub(r"\\s+", " ", str(value or "")).strip().casefold()
+    return re.sub(r"\s+", " ", str(value or "")).strip().casefold()
 
 
 def finding_key(row):
@@ -38,7 +38,6 @@ def update_history(findings, history_path, observed_at=None):
             try:
                 item = json.loads(line)
                 if item.get("finding_key"):
-                    # Backfill week metadata for records created by older versions.
                     first = item.get("first_seen") or observed
                     last = item.get("last_seen") or first
                     item.setdefault("first_seen_week", week_start(first))
@@ -87,9 +86,8 @@ def update_history(findings, history_path, observed_at=None):
                                  "first_seen_week": current_week, "last_seen_week": current_week,
                                  "weeks_seen": [current_week], "occurrences": 1})
 
-    # A finding not seen in this run is not deleted or marked resolved. Its last_seen
-    # date remains unchanged and the dashboard may label it "Not observed this week".
-    content = "".join(json.dumps(existing[key], ensure_ascii=False, sort_keys=True) + "\\n"
+    # Missing from this run does not mean resolved; retain the original last_seen date.
+    content = "".join(json.dumps(existing[key], ensure_ascii=False, sort_keys=True) + "\n"
                       for key in sorted(existing))
     path.write_text(content, encoding="utf-8")
     return {"new": new_findings, "recurring": recurring_findings,
