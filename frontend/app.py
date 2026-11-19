@@ -102,7 +102,7 @@ else:
 
     new_week = findings[weekly_status == "New this week"].copy() if not findings.empty else findings.copy()
     recurring_week = findings[weekly_status == "Recurring this week"].copy() if not findings.empty else findings.copy()
-    not_observed = findings[weekly_status == "Not observed this week"].copy() if not findings.empty else findings.copy()
+    not_observed = findings[weekly_status == "Last seen before this week"].copy() if not findings.empty else findings.copy()
 
     industries = findings["Industry"].dropna().nunique() if "Industry" in findings else 0
     countries = findings["Country"].dropna().nunique() if "Country" in findings else 0
@@ -113,8 +113,8 @@ else:
     d.metric("Industries", industries)
 
     st.subheader(f"Weekly research changes · Week of {week_start().isoformat()}")
-    st.caption("Weekly status is based on first-seen and last-seen week metadata. 'Not observed this week' does not mean a workforce problem has been resolved.")
-    weekly_tabs = st.tabs(["New this week", "Recurring this week", "Not observed this week"])
+    st.caption("Weekly status is based on first-seen and last-seen week metadata. Older findings are retained; not seeing them in the latest research does not mean the problem has been resolved.")
+    weekly_tabs = st.tabs(["New this week", "Recurring this week", "Last seen before this week"])
     weekly_frames = [new_week, recurring_week, not_observed]
     for tab, frame in zip(weekly_tabs, weekly_frames):
         with tab:
