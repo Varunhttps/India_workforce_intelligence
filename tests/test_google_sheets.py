@@ -35,7 +35,7 @@ class GoogleSheetsPayloadTests(unittest.TestCase):
         research_row = dict(zip(research[0], research[1]))
         self.assertEqual(research_row["Source URL"], url)
         self.assertEqual(research_row["Weekly Status"], "New this week")
-        self.assertEqual(research_row["First Seen"], "")
+        self.assertTrue(research_row["First Seen"])
         self.assertTrue(payloads["Product Feature Opportunities"][1][0].startswith("OPP-"))
         self.assertTrue(any(r[1] == "Consolidated Workforce Challenges"
                             for r in payloads["Market Insights & Trends"][1:]))
