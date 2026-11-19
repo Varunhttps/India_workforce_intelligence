@@ -37,7 +37,7 @@ class GoogleSheetsPayloadTests(unittest.TestCase):
         self.assertEqual(research_row["Weekly Status"], "New this week")
         self.assertTrue(research_row["First Seen"])
         self.assertTrue(payloads["Product Feature Opportunities"][1][0].startswith("OPP-"))
-        self.assertTrue(any(r[1] == "Consolidated Workforce Challenges"
+        self.assertTrue(any(r[1] == "Industry Summary"
                             for r in payloads["Market Insights & Trends"][1:]))
 
     def test_empty_run_still_returns_four_headers(self):
