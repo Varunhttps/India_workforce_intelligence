@@ -75,7 +75,7 @@ class GoogleSheetsPayloadTests(unittest.TestCase):
         self.assertEqual(len(payloads["Market Research"]), 2)
         history_row = dict(zip(payloads["Market Research"][0], payloads["Market Research"][1]))
         self.assertEqual(history_row["Source URL"], "https://example.com/old")
-        self.assertEqual(history_row["Weekly Status"], "Not observed this week")
+        self.assertEqual(history_row["Weekly Status"], "Last seen before this week")
         self.assertEqual(history_row["Occurrences"], 2)
         self.assertEqual(len(payloads["Source Register"]), 2)
 
