@@ -5,7 +5,7 @@ import re
 from urllib.parse import urlparse
 from typing import Any
 
-EXTRACTION_FIELDS = ("problem_type", "description", "country", "region", "industry", "sub_industry", "company", "publication_date", "data_period")
+EXTRACTION_FIELDS = ("problem_type", "description", "business_impact", "country", "region", "industry", "sub_industry", "company", "publication_date", "data_period")
 
 SYSTEM_PROMPT = """Identify only explicitly reported workforce problems in the supplied source text. Do not propose solutions or recommendations.
 INDUSTRY RULES:
@@ -17,7 +17,7 @@ GEOGRAPHY RULES:
 - Do not infer a country from the search query, source domain, company headquarters, or an example.
 - Populate country/region only when the source explicitly connects the problem to that geography. Use Global only when the source explicitly describes a global problem.
 - Return null for unsupported fields.
-Return only JSON in this shape: {"findings":[{"problem_type":"...","description":"...","supporting_quote":"exact verbatim excerpt","industry":"...","country":null,"region":null,"sub_industry":null,"company":null,"publication_date":null,"data_period":null}]}. Each finding needs problem_type, concise description, and supporting_quote: an exact short excerpt copied verbatim from the source text. Do not add evidence, confidence, or HR category fields."""
+For each finding, also write a concise business_impact describing the operational or financial consequence explicitly stated or directly supported by the source. Do not invent numerical impacts or causal claims. Return only JSON in this shape: {"findings":[{"problem_type":"...","description":"...","business_impact":"...","supporting_quote":"exact verbatim excerpt","industry":"...","country":null,"region":null,"sub_industry":null,"company":null,"publication_date":null,"data_period":null}]}. Each finding needs problem_type, concise description, business_impact and supporting_quote: an exact short excerpt copied verbatim from the source text. If impact is not supported, return null. Do not add confidence or HR category fields."""
 
 _COUNTRY_ALIASES = {
     "united states": ("united states", "u.s.", "u.s.a.", "usa", "american"),
