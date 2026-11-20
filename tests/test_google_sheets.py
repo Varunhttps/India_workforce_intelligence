@@ -37,7 +37,7 @@ class GoogleSheetsPayloadTests(unittest.TestCase):
         self.assertEqual(research_row["Weekly Status"], "New this week")
         self.assertTrue(research_row["First Seen"])
         self.assertTrue(payloads["Product Feature Opportunities"][1][0].startswith("OPP-"))
-        self.assertTrue(any(r[1] == "Consolidated Workforce Challenges"
+        self.assertTrue(any(r[1] == "Industry Summary"
                             for r in payloads["Market Insights & Trends"][1:]))
 
     def test_empty_run_still_returns_four_headers(self):
@@ -45,18 +45,28 @@ class GoogleSheetsPayloadTests(unittest.TestCase):
         self.assertEqual(set(payloads), set(SHEET_HEADERS))
         self.assertTrue(all(len(rows) == 1 for rows in payloads.values()))
 
-    def test_distinct_problem_count_is_not_source_count(self):
+    def test_market_insights_are_one_row_per_industry_with_aggregated_counts(self):
         findings = [
             {"problem_type": "Skilled worker shortage", "description": "Shortage at plant A",
              "industry": "Automotive", "source_url": "https://example.com/a"},
             {"problem_type": "skilled   worker shortage", "description": "Shortage at plant B",
              "industry": "Automotive", "source_url": "https://example.com/b"},
+            {"problem_type": "Employee attrition", "description": "High turnover at plant C",
+             "industry": "Automotive", "source_url": "https://example.com/c"},
+            {"problem_type": "Skills gap", "description": "Missing technical skills",
+             "industry": "Healthcare", "source_url": "https://example.com/d"},
         ]
         payloads = build_sheet_payloads(findings, [])
         rows = payloads["Market Insights & Trends"]
-        insight = next(row for row in rows[1:] if row[1] == "Consolidated Workforce Challenges")
-        self.assertEqual(insight[4], 1)
-        self.assertEqual(insight[5], 2)
+        self.assertEqual(len(rows), 3)  # header + one summary row per industry
+        summaries = {row[2]: row for row in rows[1:]}
+        automotive = summaries["Automotive"]
+        self.assertEqual(automotive[1], "Industry Summary")
+        self.assertEqual(automotive[4], 2)  # shortage is deduplicated; attrition is distinct
+        self.assertEqual(automotive[5], 3)  # supporting source count remains separate
+        self.assertIn("Skilled worker shortage", automotive[3])
+        self.assertIn("Employee attrition", automotive[3])
+        self.assertEqual(summaries["Healthcare"][4], 1)
 
     def test_historical_findings_are_retained_in_cumulative_payload(self):
         history = [{

@@ -195,29 +195,30 @@ def build_sheet_payloads(findings, sources, research_date=None, history_records=
     for source in source_rows:
         source[10] = ", ".join(finding_ids.get(source[2], []))
 
-    insight_rows = []
-    for (industry, problem), group in sorted(industry_groups.items()):
-        insight_rows.append([
-            _stable_id("INS", industry + "|" + problem), "Consolidated Workforce Challenges",
-            industry, group["problem"], 1, len(group["urls"]), ", ".join(group["ids"]),
-            ", ".join(sorted(group["countries"])), today, "AI-derived; human review required",
-        ])
-
-    problem_groups = {}
+    # Manager-facing insights are consolidated to one row per industry.
+    # Detailed individual findings remain available in the Market Research tab.
+    industry_summaries = {}
     for (industry, problem_key), group in industry_groups.items():
-        problem_groups.setdefault(problem_key, []).append((industry, group))
-    for problem_key, groups in problem_groups.items():
-        distinct_industries = {industry for industry, _ in groups}
-        if len(distinct_industries) >= 2:
-            ids = [rid for _, group in groups for rid in group["ids"]]
-            urls = set().union(*(group["urls"] for _, group in groups))
-            countries = set().union(*(group["countries"] for _, group in groups))
-            insight_rows.append([
-                _stable_id("INS", "recurring|" + problem_key), "Cross-industry Workforce Challenges",
-                "Multiple industries", groups[0][1]["problem"], len(distinct_industries),
-                len(urls), ", ".join(ids), ", ".join(sorted(countries)), today,
-                "Repeated in collected research; not prevalence proof",
-            ])
+        summary = industry_summaries.setdefault(industry, {
+            "problem_keys": set(), "problem_labels": [], "ids": [],
+            "urls": set(), "countries": set(),
+        })
+        summary["problem_keys"].add(problem_key)
+        summary["problem_labels"].append(group["problem"])
+        summary["ids"].extend(group["ids"])
+        summary["urls"].update(group["urls"])
+        summary["countries"].update(group["countries"])
+
+    insight_rows = []
+    for industry, summary in sorted(industry_summaries.items()):
+        problems = sorted(set(summary["problem_labels"]), key=str.casefold)
+        insight_rows.append([
+            _stable_id("INS", industry), "Industry Summary", industry,
+            "; ".join(problems), len(summary["problem_keys"]), len(summary["urls"]),
+            ", ".join(sorted(set(summary["ids"]))),
+            ", ".join(sorted(summary["countries"])), today,
+            "AI-derived; human review required",
+        ])
 
     opportunity_rows = list({row[0]: row for row in opportunity_rows}.values())
     return {
