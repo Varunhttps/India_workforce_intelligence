@@ -6,6 +6,7 @@ from workforce_intelligence.discovery import discover_sources
 class FakeResponse:
     def __init__(self, url):
         self.url = url
+        self.status_code = 200
 
     def raise_for_status(self):
         return None
