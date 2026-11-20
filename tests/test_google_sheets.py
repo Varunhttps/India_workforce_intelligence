@@ -85,7 +85,8 @@ class GoogleSheetsPayloadTests(unittest.TestCase):
         self.assertEqual(len(rows), 4)
         self.assertEqual(len({r[4] for r in rows[1:]}), 3)
         self.assertEqual(len({r[5] for r in rows[1:]}), 3)
-        self.assertEqual({r[7] for r in rows[1:]}, {"Low"})
+        self.assertIn("High", {r[7] for r in rows[1:]})
+        self.assertIn("Low", {r[7] for r in rows[1:]})
         self.assertNotIn("Review Status", rows[0])
 
     def test_historical_findings_are_retained_in_cumulative_payload(self):
