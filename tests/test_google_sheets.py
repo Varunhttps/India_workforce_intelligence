@@ -18,7 +18,7 @@ class GoogleSheetsPayloadTests(unittest.TestCase):
             "Source title": "Company post", "Source URL": url,
             "Source platform": "LinkedIn", "Industry searched": "Automotive manufacturing",
             "Collection status": "Collected", "Relevance status": "Findings extracted",
-            "Verification status": "Not verified",
+            "Candidate source class (domain heuristic)": "Intergovernmental / multilateral (heuristic)",
         }]
         payloads = build_sheet_payloads(findings, sources)
         self.assertEqual(set(payloads), set(SHEET_HEADERS))
@@ -27,7 +27,7 @@ class GoogleSheetsPayloadTests(unittest.TestCase):
         row = dict(zip(headers, payloads["Source Register"][1]))
         self.assertEqual(row["Source URL"], url)
         self.assertEqual(row["Source Type"], "LinkedIn")
-        self.assertEqual(row["Source Credibility"], "Pending review")
+        self.assertEqual(row["Source Credibility Assessment"], "Limited — user-generated platform; verify author and cited evidence")
         self.assertTrue(row["Source ID"].startswith("SRC-"))
         self.assertTrue(row["Related Research IDs"].startswith("RES-"))
         research = payloads["Market Research"]
@@ -36,27 +36,57 @@ class GoogleSheetsPayloadTests(unittest.TestCase):
         self.assertEqual(research_row["Source URL"], url)
         self.assertEqual(research_row["Weekly Status"], "New this week")
         self.assertTrue(research_row["First Seen"])
+        self.assertIn("Business Impact", research_row)
+        self.assertIn("Publication Date", research_row)
+        self.assertNotIn("Evidence / Supporting Information", research_row)
+        self.assertNotIn("Research Status", research_row)
+        self.assertNotIn("Verification Status", row)
+        self.assertNotIn("Review Notes", row)
         self.assertTrue(payloads["Product Feature Opportunities"][1][0].startswith("OPP-"))
-        self.assertTrue(any(r[1] == "Consolidated Workforce Challenges"
+        self.assertTrue(any(r[1] == "Industry Summary"
                             for r in payloads["Market Insights & Trends"][1:]))
+        self.assertNotIn("Interpretation Status", payloads["Market Insights & Trends"][0])
+        self.assertNotIn("Review Status", payloads["Product Feature Opportunities"][0])
 
     def test_empty_run_still_returns_four_headers(self):
         payloads = build_sheet_payloads([], [])
         self.assertEqual(set(payloads), set(SHEET_HEADERS))
         self.assertTrue(all(len(rows) == 1 for rows in payloads.values()))
 
-    def test_distinct_problem_count_is_not_source_count(self):
+    def test_industry_summary_aggregates_distinct_problems_and_sources(self):
         findings = [
             {"problem_type": "Skilled worker shortage", "description": "Shortage at plant A",
-             "industry": "Automotive", "source_url": "https://example.com/a"},
+             "industry": "Automotive", "source_url": "https://example.com/a", "country": "Germany"},
             {"problem_type": "skilled   worker shortage", "description": "Shortage at plant B",
-             "industry": "Automotive", "source_url": "https://example.com/b"},
+             "industry": "Automotive", "source_url": "https://example.com/b", "country": "Germany"},
+            {"problem_type": "Employee attrition", "description": "High turnover at plant C",
+             "industry": "Automotive", "source_url": "https://example.com/c", "country": "India"},
         ]
         payloads = build_sheet_payloads(findings, [])
         rows = payloads["Market Insights & Trends"]
-        insight = next(row for row in rows[1:] if row[1] == "Consolidated Workforce Challenges")
-        self.assertEqual(insight[4], 1)
-        self.assertEqual(insight[5], 2)
+        self.assertEqual(len(rows), 2)
+        summary = dict(zip(rows[0], rows[1]))
+        self.assertEqual(summary["Distinct Problem Count"], 2)
+        self.assertEqual(summary["Supporting Source Count"], 3)
+        self.assertEqual(summary["Countries"], "Germany, India")
+        self.assertNotIn("Interpretation Status", rows[0])
+
+    def test_opportunity_mapping_varies_and_priority_uses_evidence_breadth(self):
+        findings = [
+            {"problem_type": "Employee attrition", "description": "High turnover",
+             "industry": "Automotive", "source_url": "https://example.com/a"},
+            {"problem_type": "Skills gap", "description": "Missing technical skills",
+             "industry": "Automotive", "source_url": "https://example.com/b"},
+            {"problem_type": "Payroll cost pressure", "description": "Rising payroll costs",
+             "industry": "Automotive", "source_url": "https://example.com/c"},
+        ]
+        payloads = build_sheet_payloads(findings, [])
+        rows = payloads["Product Feature Opportunities"]
+        self.assertEqual(len(rows), 4)
+        self.assertEqual(len({r[4] for r in rows[1:]}), 3)
+        self.assertEqual(len({r[5] for r in rows[1:]}), 3)
+        self.assertEqual({r[7] for r in rows[1:]}, {"Low"})
+        self.assertNotIn("Review Status", rows[0])
 
     def test_historical_findings_are_retained_in_cumulative_payload(self):
         history = [{
