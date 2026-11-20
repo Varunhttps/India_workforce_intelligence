@@ -63,7 +63,9 @@ class PipelineTests(unittest.TestCase):
             self.assertEqual(row["Search result date"], "2026-09-10")
             self.assertEqual(row["Actual geographic scope"], "Germany")
             self.assertEqual(row["Region"], "Bavaria")
-            self.assertEqual(row["Verification status"], "Not verified")
+            self.assertNotIn("Verification status", row)
+            self.assertNotIn("Review Notes", row)
+            self.assertEqual(row["Relevance status"], "Relevant — workforce findings extracted")
             workbook.close()
 
 if __name__ == "__main__":
