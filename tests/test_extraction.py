@@ -5,10 +5,11 @@ from workforce_intelligence.extraction import parse_extraction_response, build_e
 class ExtractionTests(unittest.TestCase):
     def test_source_metadata_overrides_model_attribution(self):
         metadata={"title":"Official report","url":"https://example.org/report"}
-        response=json.dumps({"findings":[{"problem_type":"Skill shortage","description":"Shortage in plants","supporting_quote":"skills shortage in industrial plants","source_url":"https://wrong.example","country":"Germany","evidence":"ignored","confidence":0.9}]})
+        response=json.dumps({"findings":[{"problem_type":"Skill shortage","description":"Shortage in plants","business_impact":"Production delays from unfilled roles.","supporting_quote":"skills shortage in industrial plants","source_url":"https://wrong.example","country":"Germany","evidence":"ignored","confidence":0.9}]})
         row=parse_extraction_response(response,metadata,source_text="The report discusses a skills shortage in industrial plants.")
         self.assertEqual(row[0]["source_url"],metadata["url"])
         self.assertEqual(row[0]["source_name"],metadata["title"])
+        self.assertEqual(row[0]["business_impact"], "Production delays from unfilled roles.")
         self.assertIsNone(row[0]["country"])
         self.assertNotIn("evidence",row[0])
         self.assertNotIn("confidence",row[0])
