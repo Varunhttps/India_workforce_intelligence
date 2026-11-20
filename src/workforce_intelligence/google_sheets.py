@@ -60,7 +60,7 @@ def _source_credibility(source: dict) -> str:
     source_class = str(source.get("Candidate source class (domain heuristic)") or "").casefold()
     platform = str(source.get("Source platform") or "").casefold()
     if platform == "linkedin":
-        return "Limited — user-generated platform; verify author and cited evidence"
+        return "Limited — user-generated content; treated as a supporting signal only"
     if "government" in source_class or "intergovernmental" in source_class:
         return "High — official or multilateral publisher"
     if "academic" in source_class:
@@ -68,8 +68,8 @@ def _source_credibility(source: dict) -> str:
     if "research / consulting" in source_class:
         return "Moderate to high — established research/consulting publisher"
     if "industry body" in source_class:
-        return "Moderate — industry association; check methodology"
-    return "Unclassified — publisher and evidence not independently assessed"
+        return "Moderate — industry association or trade body"
+    return "Unclassified — publisher type not recognised by current rules"
 
 
 def _identity(row: dict) -> str:
