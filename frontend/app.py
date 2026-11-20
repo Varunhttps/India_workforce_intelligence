@@ -69,9 +69,9 @@ with st.sidebar:
     )
     mode = {"Manufacturing": "manufacturing", "Other industries": "other_industries",
             "All industries": "all_industries"}[scope]
-    country = st.text_input("Country (optional)", placeholder="Leave blank for global research")
+    country = st.text_input("Countries (optional)", placeholder="India, Germany, Japan — blank for global research")
     limit = st.number_input("Sources per industry", min_value=1, max_value=20, value=3)
-    st.caption("Searches the web and public, search-indexed LinkedIn sources. Weekly discovery prioritises sources published in the past week.")
+    st.caption("Searches the web and public, search-indexed LinkedIn sources. Enter multiple comma-separated countries to broaden geographic coverage. Country is a search lead; findings are attributed only when the source explicitly supports the geography.")
     if st.button("▶ Start Research", type="primary", use_container_width=True):
         try:
             trigger_research(mode, country, int(limit))
