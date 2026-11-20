@@ -10,6 +10,22 @@ from .reporting import export_workbook
 from .google_sheets import publish_to_google_sheets
 
 
+def _source_credibility_assessment(source_class, platform):
+    source_class = str(source_class or "").casefold()
+    platform = str(platform or "").casefold()
+    if platform == "linkedin":
+        return "Limited — user-generated platform; verify author and cited evidence"
+    if "government" in source_class or "intergovernmental" in source_class:
+        return "High — official or multilateral publisher"
+    if "academic" in source_class:
+        return "High — academic domain"
+    if "research / consulting" in source_class:
+        return "Moderate to high — established research/consulting publisher"
+    if "industry body" in source_class:
+        return "Moderate — industry association; check methodology"
+    return "Unclassified — publisher and evidence not independently assessed"
+
+
 def run_research(mode="manufacturing", country_searched=None, max_sources_per_industry=5,
                  output_dir="research_output", tavily_api_key=None, gemini_api_key=None,
                  extractor=None, session=None, history_path=None,
@@ -32,6 +48,9 @@ def run_research(mode="manufacturing", country_searched=None, max_sources_per_in
             "Actual geographic scope": None, "Region": None, "Publication date": source.get("search_published_date"),
             "Search result date": source.get("search_published_date"), "Collection status": "Not collected",
             "Relevance status": "Pending automated assessment",
+            "Source Credibility Assessment": _source_credibility_assessment(
+                source.get("source_class"), source.get("source_platform", "Web")
+            ),
         }
         try:
             collected = collect_document(source["url"], raw_dir, session=session)
