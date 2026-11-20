@@ -58,10 +58,14 @@ def discover_sources(industries, api_key=None, country=None, max_results=5,
         raise ValueError("time_range must be day, week, month or year.")
     client = session or requests.Session()
     found = {}
+    # Accept one or more comma-separated search geographies. Each geography is
+    # still only a discovery lead; extraction must find explicit source evidence.
+    search_countries = [part.strip() for part in str(country or "").split(",") if part.strip()] or [None]
     for industry in industries:
+      for search_country in search_countries:
         queries = [
-            (make_query(industry, country), "Web"),
-            (f'site:linkedin.com/posts OR site:linkedin.com/pulse "{industry}" {country or "global"} {LINKEDIN_TERMS}', "LinkedIn"),
+            (make_query(industry, search_country), "Web"),
+            (f'site:linkedin.com/posts OR site:linkedin.com/pulse "{industry}" {search_country or "global"} {LINKEDIN_TERMS}', "LinkedIn"),
         ]
         for query, requested_platform in queries:
             payload = {
@@ -81,7 +85,7 @@ def discover_sources(industries, api_key=None, country=None, max_results=5,
                 if requested_platform == "LinkedIn" and platform != "LinkedIn":
                     continue
                 found.setdefault(url, {
-                    "industry": industry, "country_searched": country,
+                    "industry": industry, "country_searched": search_country,
                     "title": item.get("title"), "url": url,
                     "domain": parsed.netloc.lower(), "source_platform": platform,
                     "source_class": classify_source_domain(parsed.netloc),

@@ -10,6 +10,22 @@ from .reporting import export_workbook
 from .google_sheets import publish_to_google_sheets
 
 
+def _source_credibility_assessment(source_class, platform):
+    source_class = str(source_class or "").casefold()
+    platform = str(platform or "").casefold()
+    if platform == "linkedin":
+        return "Limited — user-generated content; treated as a supporting signal only"
+    if "government" in source_class or "intergovernmental" in source_class:
+        return "High — official or multilateral publisher"
+    if "academic" in source_class:
+        return "High — academic domain"
+    if "research / consulting" in source_class:
+        return "Moderate to high — established research/consulting publisher"
+    if "industry body" in source_class:
+        return "Moderate — industry association or trade body"
+    return "Unclassified — publisher type not recognised by current rules"
+
+
 def run_research(mode="manufacturing", country_searched=None, max_sources_per_industry=5,
                  output_dir="research_output", tavily_api_key=None, gemini_api_key=None,
                  extractor=None, session=None, history_path=None,
@@ -31,8 +47,10 @@ def run_research(mode="manufacturing", country_searched=None, max_sources_per_in
             "Industry searched": source.get("industry"), "Country searched": source.get("country_searched"),
             "Actual geographic scope": None, "Region": None, "Publication date": None,
             "Search result date": source.get("search_published_date"), "Collection status": "Not collected",
-            "Relevance status": "Candidate - review required", "Verification status": "Not verified",
-            "Review notes": None,
+            "Relevance status": "Pending automated assessment",
+            "Source Credibility Assessment": _source_credibility_assessment(
+                source.get("source_class"), source.get("source_platform", "Web")
+            ),
         }
         try:
             collected = collect_document(source["url"], raw_dir, session=session)
@@ -47,7 +65,7 @@ def run_research(mode="manufacturing", country_searched=None, max_sources_per_in
                     raise ValueError("LinkedIn finding rejected: original source URL is missing")
                 row["review_status"] = row.get("review_status") or "Needs source verification"
                 findings.append(row)
-            source_row["Relevance status"] = "Findings extracted" if rows else "No qualifying finding extracted"
+            source_row["Relevance status"] = "Relevant — workforce findings extracted" if rows else "Not relevant — no qualifying workforce finding extracted"
             dates = {row.get("publication_date") for row in rows if row.get("publication_date")}
             countries = {row.get("country") for row in rows if row.get("country")}
             regions = {row.get("region") for row in rows if row.get("region")}
@@ -57,14 +75,12 @@ def run_research(mode="manufacturing", country_searched=None, max_sources_per_in
                 source_row["Actual geographic scope"] = next(iter(countries))
             if len(regions) == 1:
                 source_row["Region"] = next(iter(regions))
-            if rows and all(row.get("review_status") == "Quote matched; human review required" for row in rows):
-                source_row["Verification status"] = "Exact quote match passed; interpretation needs review"
         except Exception as exc:
             if source_row["Collection status"] == "Not collected":
                 source_row["Collection status"] = "Failed"
             else:
                 source_row["Relevance status"] = "Extraction failed"
-            source_row["Review notes"] = f"{type(exc).__name__}: {exc}"[:500]
+            source_row["Relevance status"] = "Unable to assess — extraction failed"
         source_rows.append(source_row)
 
     history_file = history_path or str(Path(output_dir) / "findings_history.jsonl")
