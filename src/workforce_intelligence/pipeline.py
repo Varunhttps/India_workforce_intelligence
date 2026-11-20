@@ -45,7 +45,7 @@ def run_research(mode="manufacturing", country_searched=None, max_sources_per_in
             "Source title": source.get("title"), "Source URL": source.get("url"), "Source platform": source.get("source_platform", "Web"),
             "Candidate source class (domain heuristic)": source.get("source_class", "Other / unclassified"),
             "Industry searched": source.get("industry"), "Country searched": source.get("country_searched"),
-            "Actual geographic scope": None, "Region": None, "Publication date": source.get("search_published_date"),
+            "Actual geographic scope": None, "Region": None, "Publication date": None,
             "Search result date": source.get("search_published_date"), "Collection status": "Not collected",
             "Relevance status": "Pending automated assessment",
             "Source Credibility Assessment": _source_credibility_assessment(
