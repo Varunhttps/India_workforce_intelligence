@@ -1,6 +1,6 @@
 """Workbook schema, normalization and duplicate removal."""
 from urllib.parse import urlparse
-FINDING_COLUMNS = ["problem_type", "description", "business_impact", "country", "region", "industry", "sub_industry", "company", "source_name", "source_url", "source_platform", "publication_date", "data_period", "review_status"]
+FINDING_COLUMNS = ["problem_type", "description", "business_impact", "country", "region", "industry", "sub_industry", "company", "source_name", "source_url", "source_platform", "publication_date", "data_period"]
 SOURCE_COLUMNS = ["Source title", "Source URL", "Source platform", "Candidate source class (domain heuristic)", "Industry searched", "Country searched", "Actual geographic scope", "Region", "Publication date", "Search result date", "Collection status", "Relevance status", "Source Credibility Assessment"]
 
 def valid_http_url(value):
