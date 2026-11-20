@@ -16,26 +16,26 @@ SHEET_HEADERS = {
     "Source Register": [
         "Source ID", "Source Title", "Source URL", "Source Type",
         "Publisher / Author", "Industry", "Publication Date", "Access Date",
-        "Source Credibility", "Key Information", "Related Research IDs",
-        "Collection Status", "Relevance Status", "Verification Status", "Review Notes",
+        "Source Credibility Assessment", "Key Information", "Related Research IDs",
+        "Collection Status", "Relevance Status",
     ],
     "Market Research": [
         "Research ID", "Source ID", "Industry", "Sub-industry",
         "Workforce Planning Area", "Identified Problem", "Problem Description",
-        "Business Impact", "Evidence / Supporting Information", "Research Date",
-        "Research Status", "Country", "Region", "Source URL",
+        "Business Impact", "Publication Date", "Research Date",
+        "Country", "Region", "Source URL",
         "First Seen", "Last Seen", "Weeks Seen", "Occurrences", "Weekly Status",
     ],
     "Market Insights & Trends": [
         "Insight ID", "Section", "Industry", "Insight / Challenge",
         "Distinct Problem Count", "Supporting Source Count", "Related Research IDs",
-        "Countries", "Research Date", "Interpretation Status",
+        "Countries", "Research Date",
     ],
     "Product Feature Opportunities": [
         "Opportunity ID", "Industry", "Identified Market Problem", "Market Need",
         "Proposed Product Capability", "Suggested Feature & Description",
         "Expected Business Value", "Priority", "Related Research IDs",
-        "Supporting Source URLs", "Review Status",
+        "Supporting Source URLs",
     ],
 }
 
@@ -55,38 +55,95 @@ def _cell(value: Any) -> Any:
     return str(value)
 
 
+def _source_credibility(source: dict) -> str:
+    """Rule-based publisher/source assessment; not a guarantee of article accuracy."""
+    source_class = str(source.get("Candidate source class (domain heuristic)") or "").casefold()
+    platform = str(source.get("Source platform") or "").casefold()
+    if platform == "linkedin":
+        return "Limited — user-generated platform; verify author and cited evidence"
+    if "government" in source_class or "intergovernmental" in source_class:
+        return "High — official or multilateral publisher"
+    if "academic" in source_class:
+        return "High — academic domain"
+    if "research / consulting" in source_class:
+        return "Moderate to high — established research/consulting publisher"
+    if "industry body" in source_class:
+        return "Moderate — industry association; check methodology"
+    return "Unclassified — publisher and evidence not independently assessed"
+
+
 def _identity(row: dict) -> str:
     return "|".join(str(row.get(k) or "").strip().casefold()
                     for k in ("industry", "problem_type", "description", "country"))
 
 
 def _opportunity(row: dict) -> dict | None:
-    """Conservative rules map reported needs to Nexplan's stated planning capabilities."""
-    text = " ".join(str(row.get(k) or "") for k in ("problem_type", "description")).casefold()
-    mappings = [
-        (("headcount", "workforce allocation", "overstaff", "understaff", "staffing level"),
-         "Workforce planning and allocation", "Workforce capacity and headcount planning",
-         "Plan headcount and allocate workforce capacity across teams and sites."),
-        (("skill", "talent", "retention", "attrition", "vacancy", "recruit", "hiring"),
-         "Talent acquisition and workforce planning", "Skills, hiring and retention planning",
-         "Connect hiring demand, skills gaps and retention assumptions to workforce plans."),
-        (("payroll", "compensation", "benefit", "salary", "wage"),
-         "Compensation and financial planning", "Compensation and payroll forecasting",
-         "Forecast compensation, benefits and payroll costs alongside workforce plans."),
-        (("capacity", "productivity", "resource", "production planning", "utilisation"),
-         "Operational and workforce planning", "Workforce capacity and resource utilisation planning",
-         "Align workforce capacity and resource allocation with operational demand."),
-        (("succession", "critical role", "leadership pipeline"),
-         "Talent and succession planning", "Succession and critical-role planning",
-         "Plan succession coverage and future capability needs for critical roles."),
+    """Map distinct workforce problem types to distinct planning capabilities."""
+    problem = str(row.get("problem_type") or "").casefold()
+    description = str(row.get("description") or "").casefold()
+    text = f"{problem} {description}"
+    severity_terms = ("critical", "severe", "urgent", "crisis", "plant shutdown",
+                      "production halted", "missed orders", "major disruption")
+    high_terms = ("high turnover", "large-scale", "mass", "persistent", "significant shortage",
+                  "unfilled for months", "production disruption", "safety risk")
+    if any(term in text for term in severity_terms + high_terms):
+        priority = "High"
+    elif any(term in text for term in ("limited", "emerging", "small number", "isolated")):
+        priority = "Low"
+    else:
+        priority = "Medium"
+    rules = [
+        (("payroll", "compensation", "benefit cost", "salary", "wage", "labour cost", "labor cost"),
+         "Compensation and payroll cost pressure", "Compensation and financial planning",
+         "Compensation, benefits and payroll forecasting",
+         "Model pay, benefits and payroll scenarios alongside workforce plans.",
+         "Improve labour-cost visibility and support affordability decisions."),
+        (("succession", "retirement risk", "critical role", "leadership pipeline"),
+         "Critical-role continuity and succession risk", "Succession and critical-role planning",
+         "Succession coverage and capability pipeline",
+         "Identify critical roles, successor coverage and future capability gaps.",
+         "Reduce continuity risk in business-critical roles."),
+        (("skill gap", "skills gap", "skills mismatch", "skill mismatch", "reskilling", "upskilling", "skills shortage"),
+         "Workforce skills and capability gap", "Skills and capability planning",
+         "Skills inventory and capability-gap scenarios",
+         "Compare required skills with available workforce capabilities and model reskilling needs.",
+         "Target capability investment and reduce persistent skills mismatches."),
+        (("attrition", "turnover", "retention", "employee disengagement", "employee engagement"),
+         "Employee retention and attrition pressure", "Retention and workforce scenario planning",
+         "Attrition forecasting and retention scenario planning",
+         "Model attrition assumptions by role, location and team and assess replacement demand.",
+         "Anticipate replacement needs and improve workforce continuity."),
+        (("absenteeism", "absence", "burnout", "overtime", "fatigue", "workload"),
+         "Workload, absence and workforce availability pressure", "Workforce capacity and availability planning",
+         "Absence, overtime and workload capacity modelling",
+         "Model available capacity after absence and overtime assumptions across teams and sites.",
+         "Improve capacity planning and reduce unplanned workload pressure."),
+        (("allocation", "understaff", "overstaff", "staffing level", "workforce distribution", "deployment"),
+         "Workforce allocation imbalance", "Workforce allocation and headcount planning",
+         "Headcount allocation by site, team and demand",
+         "Compare planned headcount with operational demand and model reallocations across sites.",
+         "Improve utilisation and align staffing with demand."),
+        (("productivity", "inefficiency", "low output", "low efficiency", "utilisation"),
+         "Workforce productivity and utilisation challenge", "Resource utilisation and productivity planning",
+         "Productivity and resource-utilisation scenarios",
+         "Compare workforce capacity, planned output and resource utilisation to expose gaps.",
+         "Support more effective use of existing workforce capacity."),
+        (("production capacity", "capacity constraint", "production bottleneck", "manufacturing capacity"),
+         "Production capacity and operational bottleneck", "Production and workforce capacity planning",
+         "Demand-linked production capacity scenarios",
+         "Align workforce capacity and production plans with demand and operational constraints.",
+         "Improve production readiness and resource alignment."),
+        (("shortage", "vacancy", "recruit", "hiring", "hard to fill", "unfilled position", "talent acquisition"),
+         "Hiring demand and hard-to-fill roles", "Talent acquisition and workforce demand planning",
+         "Hiring demand, vacancy and time-to-fill forecasting",
+         "Forecast hiring demand by role, skill and location and connect vacancies to workforce plans.",
+         "Improve hiring visibility and anticipate staffing gaps."),
     ]
-    for terms, capability, feature, description in mappings:
+    for terms, need, capability, feature, description_text, value in rules:
         if any(term in text for term in terms):
-            return {
-                "market_need": capability, "capability": capability,
-                "feature": f"{feature}: {description}",
-                "business_value": "Improve planning visibility and support better workforce and cost decisions.",
-            }
+            return {"market_need": need, "capability": capability,
+                    "feature": f"{feature}: {description_text}",
+                    "business_value": value, "priority": priority}
     return None
 
 
@@ -146,10 +203,9 @@ def build_sheet_payloads(findings, sources, research_date=None, history_records=
             source_id, _cell(source.get("Source title")), _cell(url),
             _cell(source.get("Source platform") or "Website"), "",
             _cell(source.get("Industry searched")), _cell(source.get("Publication date")),
-            today, "Pending review",
+            today, _source_credibility(source),
             "; ".join(str(f.get("description") or "") for f in normalized if f.get("source_url") == url),
             "", _cell(source.get("Collection status")), _cell(source.get("Relevance status")),
-            _cell(source.get("Verification status")), _cell(source.get("Review notes")),
         ])
 
     finding_ids = {}
@@ -164,8 +220,8 @@ def build_sheet_payloads(findings, sources, research_date=None, history_records=
         research_rows.append([
             rid, sid, _cell(row.get("industry")), _cell(row.get("sub_industry")),
             _cell(row.get("problem_type") or "Workforce planning"), _cell(row.get("problem_type")),
-            _cell(row.get("description")), "", "", _cell(meta.get("last_seen") or today),
-            _cell(row.get("review_status") or "Needs source verification"),
+            _cell(row.get("description")), _cell(row.get("business_impact")),
+            _cell(row.get("publication_date")), _cell(meta.get("last_seen") or today),
             _cell(row.get("country")), _cell(row.get("region")), _cell(row.get("source_url")),
             _cell(meta.get("first_seen")), _cell(meta.get("last_seen")),
             _cell(meta.get("weeks_seen") or [meta.get("first_seen_week"), meta.get("last_seen_week")]),
@@ -188,8 +244,7 @@ def build_sheet_payloads(findings, sources, research_date=None, history_records=
             opportunity_rows.append([
                 oid, _cell(row.get("industry")), _cell(row.get("problem_type")),
                 mapped["market_need"], mapped["capability"], mapped["feature"],
-                mapped["business_value"], "Medium", rid, _cell(row.get("source_url")),
-                "Suggested - human review required",
+                mapped["business_value"], mapped["priority"], rid, _cell(row.get("source_url")),
             ])
 
     for source in source_rows:
