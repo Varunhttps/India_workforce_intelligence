@@ -1,11 +1,15 @@
 """Streamlit frontend for Global Workforce Intelligence."""
 import os
+import sys
+from pathlib import Path
 from datetime import date, timedelta
 
 import gspread
 import pandas as pd
 import requests
 import streamlit as st
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from workforce_intelligence.dashboard_filters import industry_options, filter_frames_by_industry
 
