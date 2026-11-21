@@ -52,7 +52,7 @@ listed in the app's `SHEET_NAMES`.
 ## 4. Keep access private
 
 - `ALLOWED_EMAILS` must list only intended accounts, in lowercase.
-- Keep authentication enabled; do not set `REQUIRE_AUTH=false* in hosted settings.
+- Keep authentication enabled; do not set `REQUIRE_AUTH=false` in hosted settings.
 - Do not commit `secrets.toml`, service-account keys, OAuth client secrets, or tokens.
 - Prefer no `GITHUB_TOKEN` unless dashboard-triggered research is needed. If enabled,
   use a fine-grained token scoped to this repository with only Actions workflow
@@ -68,8 +68,7 @@ Before sharing the hosted link:
 - Test an unallowlisted account and confirm it is blocked.
 - Confirm the dashboard reads the intended spreadsheet and all six tabs.
 - Confirm empty-sheet and missing-data states are understandable.
-- Confirm the research button is absent/disabled if no restricted token is configured,
-  and if configured, dispatch a controlled manual run and verify the workflow status.
+- If `GITHUB_TOKEN` is omitted, confirm the research-trigger button reports a clear configuration error without exposing secrets. If configured, dispatch a controlled manual run and verify the workflow status.
 - Check HTTPS, app logs, and the visible app URL.
 - Review the final allowlist and rotate any credential that was exposed.
 
