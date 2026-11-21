@@ -129,6 +129,6 @@ def parse_extraction_response(response_text, source_metadata, source_text=""):
         host = (urlparse(str(source_metadata.get("url") or "")).hostname or "").lower().removeprefix("www.")
         platform = source_metadata.get("source_platform") or ("LinkedIn" if host == "linkedin.com" or host.endswith(".linkedin.com") else "Web")
         row.update(source_name=source_metadata.get("title"), source_url=source_metadata.get("url"),
-                   source_platform=platform, review_status="Quote matched; human review required")
+                   source_platform=platform)
         output.append(row)
     return output
