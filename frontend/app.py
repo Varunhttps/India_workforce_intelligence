@@ -12,6 +12,7 @@ import streamlit as st
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from workforce_intelligence.dashboard_filters import industry_options, filter_frames_by_industry
+from workforce_intelligence.opportunity_prioritization import build_opportunity_priorities
 
 st.set_page_config(page_title="Global Workforce Intelligence", page_icon="🌍", layout="wide")
 
@@ -229,6 +230,46 @@ else:
             st.info("Opportunity changes will appear after the history is published.")
     else:
         st.info("Weekly trend signals will appear after the cumulative history is published.")
+
+    st.subheader("Opportunity Priorities")
+    priority_rows = build_opportunity_priorities(
+        findings, data.get("Product Feature Opportunities", pd.DataFrame()), sources
+    )
+    if priority_rows:
+        priority_frame = pd.DataFrame(priority_rows)
+        filter_cols = st.columns(3)
+        track_options = ["All tracks", *sorted(priority_frame["Track"].dropna().unique().tolist())]
+        track_choice = filter_cols[0].selectbox("Opportunity track", track_options, key="opportunity_track_filter")
+        priority_options = ["All priorities", "High priority", "Investigate", "Monitor"]
+        priority_choice = filter_cols[1].selectbox("Priority level", priority_options, key="opportunity_priority_filter")
+        country_options = ["All countries", *sorted({country for row in priority_rows for country in str(row.get("Countries") or "").split(",") if country.strip()})]
+        country_choice = filter_cols[2].selectbox("Evidence country", country_options, key="opportunity_country_filter")
+        filtered_priorities = priority_frame.copy()
+        if track_choice != "All tracks":
+            filtered_priorities = filtered_priorities[filtered_priorities["Track"] == track_choice]
+        if priority_choice != "All priorities":
+            filtered_priorities = filtered_priorities[filtered_priorities["Priority"] == priority_choice]
+        if country_choice != "All countries":
+            filtered_priorities = filtered_priorities[filtered_priorities["Countries"].astype(str).str.contains(country_choice, case=False, regex=False)]
+        score_columns = ["Score", "Priority", "Track", "Industry", "Market Need", "Capability", "Source Count", "Country Count", "Latest Evidence"]
+        st.caption("Scores are transparent heuristics based on evidence breadth, recency, reported impact, source credibility and mapped actionability. They are prioritization aids—not proof of shortage severity.")
+        st.dataframe(filtered_priorities[score_columns], use_container_width=True, hide_index=True)
+        for _, opportunity in filtered_priorities.iterrows():
+            title = f"{opportunity['Priority']} · {opportunity['Industry']} · {opportunity['Market Need']}"
+            with st.expander(title):
+                st.write(opportunity["Suggested Feature"])
+                st.write("**Business value:** " + str(opportunity["Business Value"] or "Not specified in mapping"))
+                st.write("**Countries:** " + str(opportunity["Countries"] or "Not identified"))
+                st.write("**Evidence source URLs:**")
+                for source_url in str(opportunity["Supporting Source URLs"] or "").split(","):
+                    source_url = source_url.strip()
+                    if source_url:
+                        st.markdown(f"- [{source_url}]({source_url})")
+                st.write("**Score breakdown (out of 100):**")
+                st.json(opportunity["Score Breakdown"])
+                st.caption(opportunity["Scoring Note"])
+    else:
+        st.info("Mapped opportunities will appear after research and opportunity mapping are available.")
 
     st.subheader("Cumulative research overview")
     e, f, g = st.columns(3)
