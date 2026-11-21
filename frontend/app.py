@@ -70,10 +70,10 @@ with st.sidebar:
     mode = {"Manufacturing": "manufacturing", "Other industries": "other_industries",
             "All industries": "all_industries"}[scope]
     country = st.text_input("Countries (optional)", placeholder="India, Germany, Japan — blank for global research")
-    st.caption("Searches the maximum discovery results per query across web and public, search-indexed LinkedIn. Multiple comma-separated countries broaden targeted searches. Country attribution is based only on source evidence.")
+    st.caption("Searches up to 8 results per query across web and public, search-indexed LinkedIn, filters weak relevance scores and unrelated titles/snippets, and prioritizes stronger publisher types. Multiple countries broaden coverage.")
     if st.button("▶ Start Research", type="primary", use_container_width=True):
         try:
-            trigger_research(mode, country, 20)
+            trigger_research(mode, country, 8)
             st.success("Research workflow dispatched. Check GitHub Actions for its live status.")
             st.link_button("View workflow runs", "https://github.com/Varunhttps/India_workforce_intelligence/actions")
         except Exception as exc:
