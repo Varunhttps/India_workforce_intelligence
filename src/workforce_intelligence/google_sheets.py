@@ -245,7 +245,7 @@ def build_sheet_payloads(findings, sources, research_date=None, history_records=
             ])
 
     for source in source_rows:
-        source[10] = ", ".join(finding_ids.get(source[2], []))
+        source[9] = ", ".join(finding_ids.get(source[2], []))
 
     # Manager-facing summary: one row per industry, with detailed records retained in Market Research.
     industry_summaries = {}
