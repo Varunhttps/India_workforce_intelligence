@@ -6,6 +6,7 @@ from .discovery import discover_sources
 from .collector import collect_document
 from .gemini_client import GeminiExtractor
 from .history import update_history
+from .trend_analysis import analyze_weekly_trends
 from .reporting import export_workbook
 from .google_sheets import publish_to_google_sheets
 
@@ -80,8 +81,18 @@ def run_research(mode="manufacturing", country_searched=None, max_sources_per_in
 
     history_file = history_path or str(Path(output_dir) / "findings_history.jsonl")
     history = update_history(findings, history_file)
+    cumulative_history = []
+    history_file_path = Path(history_file)
+    if history_file_path.exists():
+        for line in history_file_path.read_text(encoding="utf-8").splitlines():
+            if line.strip():
+                try:
+                    cumulative_history.append(json.loads(line))
+                except json.JSONDecodeError:
+                    continue
+    weekly_trends = analyze_weekly_trends(cumulative_history, current_week=history["week_start"])
     output = Path(output_dir) / "Global_Workforce_Intelligence_Report.xlsx"
-    export_workbook(findings, source_rows, output, history["new"], history["recurring"])
+    export_workbook(findings, source_rows, output, history["new"], history["recurring"], weekly_trends)
 
     google_sheet_url = None
     if publish_google_sheets:
@@ -106,6 +117,7 @@ def run_research(mode="manufacturing", country_searched=None, max_sources_per_in
         "sources_discovered": len(sources), "findings_extracted": len(findings),
         "new_findings": len(history["new"]), "recurring_findings": len(history["recurring"]),
         "history_records": history["history_records"], "history_path": history["history_path"],
+        "weekly_trends": weekly_trends,
         "workbook_path": str(output), "google_sheet_url": google_sheet_url,
         "findings": findings, "sources": source_rows,
     }
