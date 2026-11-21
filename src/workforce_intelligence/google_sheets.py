@@ -16,8 +16,8 @@ SHEET_HEADERS = {
     "Source Register": [
         "Source ID", "Source Title", "Source URL", "Source Type",
         "Publisher / Author", "Industry", "Publication Date", "Access Date",
-        "Source Credibility Assessment", "Key Information", "Related Research IDs",
-        "Collection Status", "Relevance Status",
+        "Source Credibility Assessment", "Related Research IDs",
+        "Relevance Status",
     ],
     "Market Research": [
         "Research ID", "Source ID", "Industry", "Sub-industry",
