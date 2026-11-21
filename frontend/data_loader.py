@@ -4,7 +4,7 @@ import os
 import gspread
 import pandas as pd
 
-TABS = ["Source Register", "Market Research", "Market Insights & Trends", "Product Feature Opportunities"]
+TABS = ["Source Register", "Market Research", "Market Insights & Trends", "Product Feature Opportunities", "Weekly Trends", "Opportunity Changes"]
 
 
 def read_workforce_sheets(spreadsheet_id=None, service_account_json=None):
