@@ -143,6 +143,8 @@ def analyze_weekly_trends(history_records, current_week=None):
             momentum = "New evidence"
         elif worsening:
             momentum = "Potentially worsening — evidence expansion"
+        elif source_delta < 0 or country_delta < 0:
+            momentum = "Evidence receding"
         elif emerging:
             momentum = "Emerging"
         elif source_delta > 0 and country_delta > 0:
@@ -151,8 +153,6 @@ def analyze_weekly_trends(history_records, current_week=None):
             momentum = "Source coverage growing"
         elif country_delta > 0:
             momentum = "Geographic coverage growing"
-        elif source_delta < 0 or country_delta < 0:
-            momentum = "Evidence receding"
         else:
             momentum = "Stable evidence"
         weeks = sorted(group["weeks"])
