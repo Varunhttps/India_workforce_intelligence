@@ -8,7 +8,7 @@ This dashboard module maps reported workforce problems to a transparent keyword 
 - Global cross-sector clusters include supply chain/logistics, cybersecurity, cloud/software engineering, project/change management, leadership, communication, customer/sales/service, healthcare/clinical, finance/accounting and learning/reskilling.
 
 ## Trend labels
-- **Emerging signal**: recent observation, at least two distinct sources, and no more than three observed weeks.
+- **Emerging signal**: recent observation, at least two distinct sources, and no more than two observed weeks.
 - **Persistent signal**: three or more recorded observation weeks.
 - **Cross-industry signal**: evidence from at least two industries without meeting emerging/persistent conditions.
 - **Recent signal / Historical signal**: temporal fallback labels.
