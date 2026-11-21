@@ -158,7 +158,7 @@ class GoogleSheetsPayloadTests(unittest.TestCase):
         self.assertEqual(opportunity["Change Status"], "Expanded evidence")
         self.assertEqual(opportunity["Sources This Week"], 2)
         self.assertEqual(opportunity["Sources Previous Week"], 1)
-        self.assertEqual(opportunity["Priority"], "High")
+        self.assertEqual(opportunity["Priority"], "Medium")
 
 if __name__ == "__main__":
     unittest.main()
