@@ -8,7 +8,11 @@ from workforce_intelligence.trend_analysis import (
 
 
 def _record(problem="Technician shortage", source="https://example.org/a",
-            country="Germany", weeks=None, first="2026-11-09", last="2026-11-16"):
+            country="Germany", weeks=None, first=None, last=None):
+    weeks = list(weeks or [])
+    first = first or (weeks[0] if weeks else "2026-11-09")
+    last = last or (weeks[-1] if weeks else "2026-11-16")
+    weeks = weeks or [monday_week(first), monday_week(last)]
     return {
         "industry": "Manufacturing",
         "problem_type": problem,
@@ -19,7 +23,7 @@ def _record(problem="Technician shortage", source="https://example.org/a",
         "last_seen": last,
         "first_seen_week": monday_week(first),
         "last_seen_week": monday_week(last),
-        "weeks_seen": weeks or [monday_week(first), monday_week(last)],
+        "weeks_seen": weeks,
     }
 
 
