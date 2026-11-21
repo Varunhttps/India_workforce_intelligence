@@ -10,6 +10,7 @@ from typing import Any
 import gspread
 
 from .history import week_start
+from .trend_analysis import analyze_weekly_trends
 from .records import deduplicate_findings
 
 SHEET_HEADERS = {
@@ -30,6 +31,11 @@ SHEET_HEADERS = {
         "Insight ID", "Section", "Industry", "Insight / Challenge",
         "Distinct Problem Count", "Supporting Source Count", "Related Research IDs",
         "Countries", "Research Date",
+    ],
+    "Weekly Trends": [
+        "Trend ID", "Industry", "Workforce Problem", "Signal Status",
+        "Weeks Observed", "Country Count", "Countries", "Supporting Source Count",
+        "Supporting Sources", "First Seen", "Last Seen", "Latest Week", "Current Week",
     ],
     "Product Feature Opportunities": [
         "Opportunity ID", "Industry", "Identified Market Problem", "Market Need",
@@ -271,11 +277,23 @@ def build_sheet_payloads(findings, sources, research_date=None, history_records=
         ])
 
     opportunity_rows = list({row[0]: row for row in opportunity_rows}.values())
+    weekly_trends = analyze_weekly_trends(history_records, current_week=current_week)
+    trend_rows = []
+    for trend in weekly_trends:
+        trend_id = _stable_id("TRD", trend["industry"] + "|" + trend["problem_type"])
+        trend_rows.append([
+            trend_id, trend["industry"], trend["problem_type"], trend["signal_status"],
+            trend["weeks_observed"], trend["country_count"], _cell(trend["countries"]),
+            trend["source_count"], _cell(trend["supporting_sources"]),
+            trend["first_seen"], trend["last_seen"], trend["latest_week"], trend["current_week"],
+        ])
+
     return {
         "Source Register": [SHEET_HEADERS["Source Register"]] + source_rows,
         "Market Research": [SHEET_HEADERS["Market Research"]] + research_rows,
         "Market Insights & Trends": [SHEET_HEADERS["Market Insights & Trends"]] + insight_rows,
         "Product Feature Opportunities": [SHEET_HEADERS["Product Feature Opportunities"]] + opportunity_rows,
+        "Weekly Trends": [SHEET_HEADERS["Weekly Trends"]] + trend_rows,
     }
 
 
