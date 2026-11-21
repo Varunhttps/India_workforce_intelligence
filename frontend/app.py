@@ -36,6 +36,15 @@ def _require_auth():
     if not allowed:
         st.error("Private access is not configured. Add ALLOWED_EMAILS to Streamlit secrets before deploying.")
         st.stop()
+    # Streamlit's st.user auth state raises KeyError when OIDC is not configured.
+    # Check the required auth secrets first and show a safe setup message instead.
+    auth_config = st.secrets.get("auth", {})
+    required_auth_keys = {"client_id", "client_secret", "redirect_uri", "cookie_secret"}
+    missing_auth = sorted(required_auth_keys - set(auth_config.keys()))
+    if missing_auth:
+        st.error("Google sign-in is not configured yet. Add the required [auth] settings to Streamlit secrets using the deployment guide, then reboot the app.")
+        st.caption("Missing authentication settings: " + ", ".join(missing_auth))
+        st.stop()
     if not st.user.is_logged_in:
         st.title("🌍 Global Workforce Intelligence")
         st.write("Private workforce intelligence portal. Sign in with an invited account to continue.")
