@@ -30,7 +30,7 @@ with st.sidebar:
     if chosen != "All industries":
         df = df[df["Industry"] == chosen].copy()
 
-source_count = df["Source URL"].nunique()
+source_count = df["Source URL"].loc[df["Source URL"].astype(str).str.strip() != ""].nunique()
 country_count = df.loc[df["Country"] != "Not specified", "Country"].nunique()
 k1, k2, k3, k4 = st.columns(4)
 k1.metric("Research findings", len(df))
@@ -47,7 +47,7 @@ problem_counts = df["Identified Problem"].value_counts().head(12)
 st.bar_chart(problem_counts, height=300)
 
 st.subheader("Country coverage")
-coverage = pd.DataFrame(summarize_country_coverage(records))
+coverage = pd.DataFrame(summarize_country_coverage(df.to_dict("records")))
 if not coverage.empty:
     coverage = coverage.sort_values("Findings", ascending=False)
     st.dataframe(coverage, use_container_width=True, hide_index=True)
@@ -88,6 +88,8 @@ opportunities = build_opportunity_priorities(df, pd.DataFrame(), pd.DataFrame())
 if opportunities:
     opp_df = pd.DataFrame(opportunities)
     st.dataframe(opp_df, use_container_width=True, hide_index=True)
+else:
+    st.info("No mapped product-capability opportunities are included in this offline snapshot. Use the connected dashboard for workbook-mapped opportunity priorities.")
 
 st.subheader("Raw research snapshot")
 display_cols = ["Industry", "Identified Problem", "Problem Description", "Country", "Source Name", "Source Platform", "First Seen", "Last Seen", "Source URL"]
