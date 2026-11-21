@@ -47,7 +47,7 @@ def canonicalize_url(url):
     host = parsed.hostname.lower().removeprefix("www.")
     port = parsed.port
     netloc = host if not port or (parsed.scheme == "https" and port == 443) or (parsed.scheme == "http" and port == 80) else f"{host}:{port}"
-    path = re.sub(r"/{2,}", "/", parsed.path or "/"
+    path = re.sub(r"/{2,}/", "/", parsed.path or "/")
     if path != "/":
         path = path.rstrip("/")
     kept = [(k, v) for k, v in parse_qsl(parsed.query, keep_blank_values=True)
