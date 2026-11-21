@@ -108,7 +108,7 @@ class GoogleSheetsPayloadTests(unittest.TestCase):
         history_row = dict(zip(payloads["Market Research"][0], payloads["Market Research"][1]))
         self.assertEqual(history_row["Source URL"], "https://example.com/old")
         self.assertNotIn("Weekly Status", history_row)
-        self.assertNotIn("Occurrences", history_row))
+        self.assertNotIn("Occurrences", history_row)
         self.assertEqual(len(payloads["Source Register"]), 2)
 
 
