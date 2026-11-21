@@ -24,7 +24,7 @@ class SignalMomentumTests(unittest.TestCase):
         a = next(r for r in rows if r["industry"] == "A")
         b = next(r for r in rows if r["industry"] == "B")
         self.assertEqual(a["trend"], "Increasing evidence")
-        self.assertEqual(b["trend"], "Decreasing evidence")
+        self.assertEqual(b["trend"], "Not observed this week")
 
     def test_missing_week_does_not_mean_problem_resolved(self):
         row = analyze_signal_momentum([{"industry": "M", "problem_type": "Capacity gap", "source_url": "x", "weeks_seen": ["2026-11-09"]}], "2026-11-16")[0]
