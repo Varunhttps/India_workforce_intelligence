@@ -8,6 +8,14 @@ class FrontendSmokeTests(unittest.TestCase):
         app_path = Path(__file__).resolve().parents[1] / "frontend" / "app.py"
         ast.parse(app_path.read_text(encoding="utf-8"), filename=str(app_path))
 
+    def test_streamlit_minimum_version_supports_auth_api(self):
+        requirements_path = Path(__file__).resolve().parents[1] / "requirements.txt"
+        requirement = next(
+            line for line in requirements_path.read_text(encoding="utf-8").splitlines()
+            if line.lower().startswith("streamlit")
+        )
+        self.assertIn(">=1.42", requirement)
+
     def test_legacy_sheet_loader_lists_all_dashboard_tabs(self):
         loader_path = Path(__file__).resolve().parents[1] / "frontend" / "data_loader.py"
         source = loader_path.read_text(encoding="utf-8")
