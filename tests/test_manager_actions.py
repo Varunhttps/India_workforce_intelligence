@@ -57,7 +57,7 @@ class ManagerActionTests(unittest.TestCase):
                  "Research Date": "2026-11-20", "Source URL": "https://source.example"}]
         result = recommend_manager_actions(rows, today=date(2026, 11, 21))
         self.assertEqual(result[0]["Evidence URLs"], ["https://source.example"])
-        self.assertIn("Critical risk", result[0]["Score Rationale"])
+        self.assertIn("Impact wording (+25/25)", result[0]["Score Rationale"])
 
 
 if __name__ == "__main__":
