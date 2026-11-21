@@ -75,6 +75,12 @@ Available modes: `manufacturing`, `other_industries`, `all_industries`.
 LinkedIn is a discovery channel inside the existing pipeline, not a separate agent. The agent uses search-engine indexing to discover public LinkedIn post/article URLs and only attempts ordinary public-page collection; it does not scrape logged-in content, profiles, contact details or private data. Access restrictions or login walls are recorded as collection failures. Every accepted LinkedIn finding carries `source_platform=LinkedIn` and the original direct LinkedIn `source_url`; the pipeline attaches attribution from source metadata rather than asking the language model to reproduce it. Findings remain candidates requiring human review.
 
 
+## Private dashboard access
+
+The frontend uses Streamlit's Google OIDC sign-in and an explicit email allowlist. Authentication is required by default; set `REQUIRE_AUTH=false` only for local development without OAuth. For hosted deployment, add the `.streamlit/secrets.toml` values from `.streamlit/secrets.toml.example` and replace the placeholder emails with invited users. Never commit real secrets.
+
+The dashboard is private to approved email addresses. Authentication verifies identity; the `ALLOWED_EMAILS` list authorizes access. Remove an email from the allowlist to revoke dashboard access.
+
 ## Streamlit frontend
 
 Run the frontend locally from the repository root:
