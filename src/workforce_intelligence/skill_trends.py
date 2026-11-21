@@ -6,7 +6,6 @@ coverage, not validated labor-market demand or hiring volume.
 from __future__ import annotations
 
 from datetime import date, timedelta
-import re
 
 SKILL_TAXONOMY = {
     "Industrial automation & robotics": {
@@ -193,7 +192,8 @@ def analyze_skill_trends(records, reference_date=None):
             trend = "Historical signal"
         score = min(100, source_count * 12 + industry_count * 10 + country_count * 6 + week_count * 4 + (12 if recent else 0))
         results.append({
-            "skill": bucket["skill"], "trend": trend, "signal_score": score,
+            "skill": bucket["skill"], "manufacturing_focus": SKILL_TAXONOMY[bucket["skill"]]["manufacturing"],
+            "trend": trend, "signal_score": score,
             "source_count": source_count, "industry_count": industry_count,
             "country_count": country_count, "weeks_observed": week_count,
             "industries": sorted(industries), "countries": sorted(countries),
