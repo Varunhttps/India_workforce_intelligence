@@ -255,7 +255,7 @@ else:
         skill_metrics[0].metric("Skill clusters", len(skill_rows))
         skill_metrics[1].metric("Emerging signals", int((skill_frame["trend"] == "Emerging signal").sum()))
         skill_metrics[2].metric("Persistent signals", int((skill_frame["trend"] == "Persistent signal").sum()))
-        skill_metrics[3].metric("Manufacturing-linked", int((skill_frame["manufacturing_records"] > 0).sum()))
+        skill_metrics[3].metric("Manufacturing-linked", int(skill_frame["manufacturing_focus"].sum()))
         st.bar_chart(skill_frame.set_index("skill")["signal_score"].head(12), height=300)
         display_skill_columns = ["skill", "trend", "signal_score", "source_count", "industry_count", "country_count", "weeks_observed", "manufacturing_records", "industries", "countries"]
         st.dataframe(skill_frame[display_skill_columns], use_container_width=True, hide_index=True)
