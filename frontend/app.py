@@ -135,7 +135,7 @@ else:
         st.header("Dashboard filters")
         selected_industry = st.selectbox("Filter by industry", industry_options(data))
         data = filter_frames_by_industry(data, selected_industry)
-        st.caption("The selected industry filter applies across dashboard tables and metrics.")
+        st.caption("The selected industry filter applies to tables and metrics with industry data; source-register rows without an industry remain visible.")
     findings = data["Market Research"].copy()
     sources = data["Source Register"]
     insights = data["Market Insights & Trends"]
