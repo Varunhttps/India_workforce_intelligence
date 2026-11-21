@@ -25,7 +25,7 @@ SHEET_HEADERS = {
         "Workforce Planning Area", "Identified Problem", "Problem Description",
         "Business Impact", "Publication Date", "Research Date",
         "Country", "Region", "Source URL",
-        "First Seen", "Last Seen", "Weeks Seen", "Occurrences", "Weekly Status",
+        "First Seen", "Last Seen", "Weeks Seen",
     ],
     "Market Insights & Trends": [
         "Insight ID", "Section", "Industry", "Insight / Challenge",
@@ -225,6 +225,10 @@ def build_sheet_payloads(findings, sources, research_date=None, history_records=
     research_rows = []
     opportunity_rows = []
     industry_groups = {}
+    problem_source_counts = {}
+    for item in normalized:
+        pkey = (item.get("industry") or "Unclassified", " ".join(str(item.get("problem_type") or "Unclassified").casefold().split()))
+        problem_source_counts.setdefault(pkey, set()).add(item.get("source_url") or "")
     for row in normalized:
         meta = metadata_by_identity.get(_identity(row) + "|" + str(row.get("source_url") or ""), {})
         rid = _stable_id("RES", _identity(row) + "|" + str(row.get("source_url") or ""))
@@ -238,7 +242,6 @@ def build_sheet_payloads(findings, sources, research_date=None, history_records=
             _cell(row.get("country")), _cell(row.get("region")), _cell(row.get("source_url")),
             _cell(meta.get("first_seen")), _cell(meta.get("last_seen")),
             _cell(meta.get("weeks_seen") or [meta.get("first_seen_week"), meta.get("last_seen_week")]),
-            _cell(meta.get("occurrences", 1)), _weekly_status(meta, current_week),
         ])
         problem = " ".join(str(row.get("problem_type") or "Unclassified").casefold().split())
         display_problem = row.get("problem_type") or "Unclassified"
@@ -251,7 +254,7 @@ def build_sheet_payloads(findings, sources, research_date=None, history_records=
             group["urls"].add(row["source_url"])
         if row.get("country"):
             group["countries"].add(row["country"])
-        mapped = _opportunity(row, supporting_source_count=len(group["urls"]))
+        mapped = _opportunity(row, supporting_source_count=len(problem_source_counts.get(key, set())))
         if mapped:
             oid = _stable_id("OPP", rid + "|" + mapped["feature"])
             opportunity_rows.append([
