@@ -14,6 +14,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from workforce_intelligence.dashboard_filters import industry_options, filter_frames_by_industry
 from workforce_intelligence.opportunity_prioritization import build_opportunity_priorities
 from workforce_intelligence.skill_trends import analyze_skill_trends
+from workforce_intelligence.country_coverage import summarize_country_coverage, build_country_industry_matrix
+from workforce_intelligence.manager_actions import recommend_manager_actions
 
 st.set_page_config(page_title="Global Workforce Intelligence", page_icon="🌍", layout="wide")
 
@@ -167,6 +169,45 @@ else:
     if latest_research_date:
         st.caption(f"Latest research date recorded: **{latest_research_date}** · Data refreshes automatically after the weekly research run.")
 
+    st.subheader("Global country coverage")
+    st.caption("Counts are based on explicit country attribution in findings—not the countries targeted during search.")
+    benchmark_text = st.text_input(
+        "Optional coverage benchmark countries",
+        placeholder="e.g. United States, Germany, Japan, India, Brazil",
+        help="Enter countries you want to benchmark. Countries with zero explicitly attributed findings will appear as coverage gaps.",
+        key="country_coverage_benchmarks",
+    )
+    benchmark_countries = [country.strip() for country in benchmark_text.split(",") if country.strip()]
+    coverage_rows = summarize_country_coverage(findings.to_dict("records"), target_countries=benchmark_countries)
+    coverage_frame = pd.DataFrame(coverage_rows)
+    matrix = build_country_industry_matrix(findings.to_dict("records"), target_countries=benchmark_countries)
+    matrix_frame = pd.DataFrame(matrix).T.fillna(0).astype(int) if matrix else pd.DataFrame()
+    if not coverage_frame.empty:
+        total_countries = int((coverage_frame["Findings"] > 0).sum())
+        represented_regions = coverage_frame.loc[coverage_frame["Findings"] > 0, "Region"].nunique()
+        zero_coverage = int((coverage_frame["Findings"] == 0).sum())
+        coverage_metrics = st.columns(3)
+        coverage_metrics[0].metric("Countries with findings", total_countries)
+        coverage_metrics[1].metric("Regions represented", represented_regions)
+        coverage_metrics[2].metric("Benchmark gaps", zero_coverage if benchmark_countries else "—")
+        covered = coverage_frame[coverage_frame["Findings"] > 0].copy()
+        gaps = coverage_frame[coverage_frame["Findings"] == 0].copy()
+        if not covered.empty:
+            chart_frame = covered.set_index("Country")["Findings"].head(10)
+            st.bar_chart(chart_frame, height=280)
+            st.dataframe(covered, use_container_width=True, hide_index=True)
+        if benchmark_countries:
+            st.markdown("**Countries in your benchmark with no findings**")
+            if gaps.empty:
+                st.success("All benchmark countries currently have at least one explicitly attributed finding.")
+            else:
+                st.dataframe(gaps[["Country", "Region"]], use_container_width=True, hide_index=True)
+        if not matrix_frame.empty:
+            st.markdown("**Country × industry coverage matrix**")
+            st.dataframe(matrix_frame, use_container_width=True)
+    else:
+        st.info("Country coverage will appear after findings with explicit country attribution are published.")
+
     st.subheader(f"Weekly research changes · Week of {week_start().isoformat()}")
     st.caption("Weekly status is based on first-seen and last-seen week metadata. Older findings are retained; not seeing them in the latest research does not mean the problem has been resolved.")
     weekly_tabs = st.tabs(["New this week", "Recurring this week", "Last seen before this week"])
@@ -261,6 +302,28 @@ else:
         st.dataframe(skill_frame[display_skill_columns], use_container_width=True, hide_index=True)
     else:
         st.info("Skill signals will appear when published findings match skill-cluster keywords.")
+    st.subheader("Manager Action & Opportunity Intelligence")
+    st.caption("Ranked investigation suggestions from research evidence. Scores measure research coverage and recency—not verified workforce severity.")
+    manager_rows = recommend_manager_actions(findings, trends if "trends" in locals() else pd.DataFrame())
+    if manager_rows:
+        manager_frame = pd.DataFrame(manager_rows)
+        top_count = min(5, len(manager_frame))
+        top_manager = manager_frame.head(top_count)
+        manager_metrics = st.columns(3)
+        manager_metrics[0].metric("Action candidates", len(manager_frame))
+        manager_metrics[1].metric("Validate now", int((manager_frame["Priority"] == "Act / validate now").sum()))
+        manager_metrics[2].metric("Investigate next", int((manager_frame["Priority"] == "Investigate next").sum()))
+        st.bar_chart(top_manager.set_index("Workforce Problem")["Rank Score"], height=300)
+        st.dataframe(manager_frame[["Rank Score", "Priority", "Industry", "Workforce Problem", "Manager Action", "Source Count", "Country Count", "Latest Evidence", "Weekly Momentum"]], use_container_width=True, hide_index=True)
+        for _, manager_action in manager_frame.head(10).iterrows():
+            with st.expander(f"{manager_action['Priority']} · {manager_action['Industry']} · {manager_action['Workforce Problem']"):
+                st.write("**Recommended next step:** " + str(manager_action["Recommended Next Step"]))
+                st.write("**Scoring rationale:** " + str(manager_action["Score Rationale"]))
+                st.write("**Countries:** " + ", ".join(manager_action["Countries"]) if manager_action["Countries"] else "No country attribution")
+                for evidence_url in manager_action["Evidence URLs"]:
+                    st.markdown(f"- [{evidence_url}]({evidence_url})")
+    else:
+        st.info("Manager recommendations will appear once research findings are available.")
 
     st.subheader("Opportunity Priorities")
     priority_rows = build_opportunity_priorities(
