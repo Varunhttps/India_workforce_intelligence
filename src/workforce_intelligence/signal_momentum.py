@@ -53,13 +53,14 @@ def analyze_signal_momentum(history_records, current_week=None):
         key = (industry.casefold(), problem.casefold())
         bucket = buckets.setdefault(key, {
             "industry": industry, "problem_type": problem,
-            "current_sources": set(), "previous_sources": set(),
+            "current_sources": set(), "previous_sources": set(), "current_source_urls": set(),
             "countries": set(), "first_seen": None, "last_seen": None,
         })
         source = record.get("source_url") or record.get("finding_key") or record.get("source_name")
         weeks = _week_list(record)
         if source and current_week in weeks:
             bucket["current_sources"].add(str(source))
+            bucket["current_source_urls"].add(str(source))
         if source and prior_week in weeks:
             bucket["previous_sources"].add(str(source))
         if record.get("country"):
@@ -78,9 +79,11 @@ def analyze_signal_momentum(history_records, current_week=None):
         before = len(bucket["previous_sources"])
         delta = now - before
         if now == before:
-            trend = "Stable"
+            trend = "Stable evidence"
         elif now > before:
             trend = "Increasing evidence"
+        elif now == 0 and before > 0:
+            trend = "Not observed this week"
         else:
             trend = "Decreasing evidence"
         combined_text = bucket["problem_type"].casefold()
@@ -94,6 +97,7 @@ def analyze_signal_momentum(history_records, current_week=None):
             "current_week": current_week,
             "previous_week": prior_week,
             "current_source_count": now,
+            "current_source_urls": sorted(bucket["current_source_urls"]),
             "previous_source_count": before,
             "source_delta": delta,
             "trend": trend,
@@ -114,16 +118,24 @@ def rank_emerging_industries(momentum_rows):
     aggregated = {}
     for row in momentum_rows or []:
         industry = row["industry"]
-        item = aggregated.setdefault(industry, {"industry": industry, "current_sources": 0, "problems": set(), "increasing_problems": 0, "staffing_candidates": 0, "planning_candidates": 0})
-        item["current_sources"] += int(row.get("current_source_count") or 0)
+        item = aggregated.setdefault(industry, {"industry": industry, "current_sources": 0, "source_urls": set(), "source_count_estimated": False, "source_count_fallback": 0, "problems": set(), "increasing_problems": 0, "staffing_candidates": 0, "planning_candidates": 0})
+        source_urls = row.get("current_source_urls") or []
+        if source_urls:
+            item["source_urls"].update(str(url) for url in source_urls if url)
+        else:
+            item["source_count_fallback"] += int(row.get("current_source_count") or 0)
+            item["source_count_estimated"] = True
         item["problems"].add(row["problem_type"])
         item["increasing_problems"] += row.get("trend") == "Increasing evidence"
         item["staffing_candidates"] += row.get("staffing_opportunity_signal") == "Candidate"
         item["planning_candidates"] += row.get("nexplan_planning_signal") == "Candidate"
     ranked = []
     for item in aggregated.values():
+        item["current_sources"] = len(item["source_urls"]) if item["source_urls"] else item["source_count_fallback"]
         ranked.append({**item, "distinct_problem_count": len(item["problems"]), "problems": sorted(item["problems"])})
         del ranked[-1]["problems"]
+        del ranked[-1]["source_urls"]
+        del ranked[-1]["source_count_fallback"]
     ranked.sort(key=lambda item: (-item["current_sources"], -item["distinct_problem_count"], -item["increasing_problems"], item["industry"].casefold()))
     for index, item in enumerate(ranked, 1):
         item["rank"] = index
