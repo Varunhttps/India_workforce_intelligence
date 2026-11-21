@@ -8,13 +8,15 @@ ALL_INDUSTRIES = "All industries"
 
 def industry_options(frames):
     """Return a stable list of industry filter options from available tables."""
-    values = set()
+    values = {}
     for frame in (frames or {}).values():
         if not isinstance(frame, pd.DataFrame) or frame.empty or "Industry" not in frame.columns:
             continue
-        values.update(str(value).strip() for value in frame["Industry"].dropna()
-                     if str(value).strip())
-    return [ALL_INDUSTRIES, *sorted(values, key=str.casefold)]
+        for value in frame["Industry"].dropna():
+            display = str(value).strip()
+            if display:
+                values.setdefault(display.casefold(), display)
+    return [ALL_INDUSTRIES, *sorted(values.values(), key=str.casefold)]
 
 
 def filter_frames_by_industry(frames, selected_industry=ALL_INDUSTRIES):
