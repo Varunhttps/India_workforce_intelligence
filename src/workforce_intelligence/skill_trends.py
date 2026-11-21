@@ -179,7 +179,7 @@ def analyze_skill_trends(records, reference_date=None):
             except ValueError:
                 pass
         recent = recent or current_week in weeks
-        emerging = recent and source_count >= 2 and week_count <= 3
+        emerging = recent and source_count >= 2 and week_count <= 2
         persistent = week_count >= 3
         if emerging:
             trend = "Emerging signal"
