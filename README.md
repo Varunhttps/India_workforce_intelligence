@@ -108,3 +108,7 @@ The dashboard supports a global industry filter across tables and summary metric
 ## Manager Opportunity Priorities
 
 The dashboard includes a **Opportunity Priorities** section that ranks mapped workforce opportunities across Staffing & Recruitment and Nexplan enterprise planning. Scores use transparent heuristics (source breadth, recency, reported impact, source credibility and actionability) and show component breakdowns plus linked evidence sources. Rankings are decision-support indicators, not verified shortage assessments.
+
+## Weekly evidence momentum dashboard
+
+The dashboard includes a current-versus-previous ISO week comparison of unique supporting sources for workforce problem signals, with trend direction, country breadth, and an industry ranking. These are research coverage indicators—not proof of workforce problem severity. See [`docs/signal_momentum.md`](docs/signal_momentum.md) for methodology and caveats.
