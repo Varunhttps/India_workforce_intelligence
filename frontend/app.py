@@ -9,6 +9,35 @@ import streamlit as st
 
 st.set_page_config(page_title="Global Workforce Intelligence", page_icon="🌍", layout="wide")
 
+# Private-access gate: configure Streamlit OIDC (Google) and an email allowlist.
+def _allowed_emails():
+    configured = st.secrets.get("ALLOWED_EMAILS", os.getenv("ALLOWED_EMAILS", ""))
+    if isinstance(configured, str):
+        return {email.strip().lower() for email in configured.split(",") if email.strip()}
+    return {str(email).strip().lower() for email in configured if str(email).strip()}
+
+def _require_auth():
+    require_auth = str(os.getenv("REQUIRE_AUTH", "true")).lower() not in {"0", "false", "no"}
+    if not require_auth:
+        st.warning("Authentication is disabled for this local development session.")
+        return
+    allowed = _allowed_emails()
+    if not allowed:
+        st.error("Private access is not configured. Add ALLOWED_EMAILS to Streamlit secrets before deploying.")
+        st.stop()
+    if not st.user.is_logged_in:
+        st.title("🌍 Global Workforce Intelligence")
+        st.write("Private workforce intelligence portal. Sign in with an invited account to continue.")
+        st.button("Sign in with Google", on_click=st.login, args=("google",), type="primary")
+        st.stop()
+    email = str(st.user.get("email", "")).lower()
+    if email not in allowed:
+        st.error("This account is not on the approved access list.")
+        st.button("Sign out", on_click=st.logout)
+        st.stop()
+
+_require_auth()
+
 st.markdown("""
 <style>
 .block-container {padding-top: 1.8rem; max-width: 1500px;}
