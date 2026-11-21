@@ -3,7 +3,7 @@ from workforce_intelligence.google_sheets import build_sheet_payloads, SHEET_HEA
 
 
 class GoogleSheetsPayloadTests(unittest.TestCase):
-    def test_four_manager_tabs_and_linked_source_register(self):
+    def test_five_manager_tabs_and_linked_source_register(self):
         url = "https://www.linkedin.com/posts/example-company_workforce-activity-123"
         findings = [{
             "problem_type": "Skilled worker shortage",
@@ -22,7 +22,7 @@ class GoogleSheetsPayloadTests(unittest.TestCase):
         }]
         payloads = build_sheet_payloads(findings, sources)
         self.assertEqual(set(payloads), set(SHEET_HEADERS))
-        self.assertEqual(len(payloads), 4)
+        self.assertEqual(len(payloads), 5)
         headers = payloads["Source Register"][0]
         row = dict(zip(headers, payloads["Source Register"][1]))
         self.assertEqual(row["Source URL"], url)
@@ -48,9 +48,10 @@ class GoogleSheetsPayloadTests(unittest.TestCase):
         self.assertNotIn("Interpretation Status", payloads["Market Insights & Trends"][0])
         self.assertNotIn("Review Status", payloads["Product Feature Opportunities"][0])
 
-    def test_empty_run_still_returns_four_headers(self):
+    def test_empty_run_still_returns_five_headers(self):
         payloads = build_sheet_payloads([], [])
         self.assertEqual(set(payloads), set(SHEET_HEADERS))
+        self.assertEqual(len(payloads), 5)
         self.assertTrue(all(len(rows) == 1 for rows in payloads.values()))
 
     def test_industry_summary_aggregates_distinct_problems_and_sources(self):
