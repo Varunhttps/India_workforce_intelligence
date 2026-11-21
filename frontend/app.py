@@ -13,6 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from workforce_intelligence.dashboard_filters import industry_options, filter_frames_by_industry
 from workforce_intelligence.opportunity_prioritization import build_opportunity_priorities
+from workforce_intelligence.skill_trends import analyze_skill_trends
 from workforce_intelligence.country_coverage import summarize_country_coverage, build_country_industry_matrix
 from workforce_intelligence.manager_actions import recommend_manager_actions
 
@@ -272,6 +273,35 @@ else:
     else:
         st.info("Weekly trend signals will appear after the cumulative history is published.")
 
+    st.subheader("Emerging Skills & Workforce Trends")
+    st.caption("Global skill clusters inferred from findings. Signal score reflects research breadth and recency—not measured labor-market demand.")
+    skill_records = []
+    if not findings.empty:
+        for _, finding in findings.iterrows():
+            weeks_raw = str(finding.get("Weeks Seen") or "")
+            skill_records.append({
+                "problem_type": finding.get("Identified Problem"),
+                "description": finding.get("Problem Description"),
+                "industry": finding.get("Industry"),
+                "country": finding.get("Country"),
+                "source_url": finding.get("Source URL"),
+                "first_seen": finding.get("First Seen"),
+                "last_seen": finding.get("Last Seen"),
+                "weeks_seen": [w.strip() for w in weeks_raw.split(",") if w.strip()],
+            })
+    skill_rows = analyze_skill_trends(skill_records)
+    if skill_rows:
+        skill_frame = pd.DataFrame(skill_rows)
+        skill_metrics = st.columns(4)
+        skill_metrics[0].metric("Skill clusters", len(skill_rows))
+        skill_metrics[1].metric("Emerging signals", int((skill_frame["trend"] == "Emerging signal").sum()))
+        skill_metrics[2].metric("Persistent signals", int((skill_frame["trend"] == "Persistent signal").sum()))
+        skill_metrics[3].metric("Manufacturing-linked", int(skill_frame["manufacturing_focus"].sum()))
+        st.bar_chart(skill_frame.set_index("skill")["signal_score"].head(12), height=300)
+        display_skill_columns = ["skill", "trend", "signal_score", "source_count", "industry_count", "country_count", "weeks_observed", "manufacturing_records", "industries", "countries"]
+        st.dataframe(skill_frame[display_skill_columns], use_container_width=True, hide_index=True)
+    else:
+        st.info("Skill signals will appear when published findings match skill-cluster keywords.")
     st.subheader("Manager Action & Opportunity Intelligence")
     st.caption("Ranked investigation suggestions from research evidence. Scores measure research coverage and recency—not verified workforce severity.")
     manager_rows = recommend_manager_actions(findings, trends if "trends" in locals() else pd.DataFrame())
