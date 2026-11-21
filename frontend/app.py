@@ -169,7 +169,14 @@ else:
     tabs = st.tabs(SHEET_NAMES)
     for tab, name in zip(tabs, SHEET_NAMES):
         with tab:
-            st.dataframe(data[name], use_container_width=True, hide_index=True)
+            frame = data[name]
+            if name == "Source Register":
+                hide = ["Collection Status", "Key Information", "Evidence / Supporting Information", "Review Notes"]
+                frame = frame.drop(columns=[col for col in hide if col in frame.columns], errors="ignore")
+            elif name == "Market Research":
+                hide = ["Evidence / Supporting Information", "Supporting Evidence", "Review Notes"]
+                frame = frame.drop(columns=[col for col in hide if col in frame.columns], errors="ignore")
+            st.dataframe(frame, use_container_width=True, hide_index=True)
     st.link_button("Open full Google Spreadsheet", sheet_url)
 
 st.caption("Research findings and product opportunities are AI-assisted candidates and require human review.")
