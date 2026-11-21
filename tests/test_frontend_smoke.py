@@ -10,7 +10,6 @@ class FrontendSmokeTests(unittest.TestCase):
 
     def test_legacy_sheet_loader_lists_all_dashboard_tabs(self):
         loader_path = Path(__file__).resolve().parents[1] / "frontend" / "data_loader.py"
-        namespace = {}
         # Extract and evaluate only the literal TABS assignment to avoid importing
         # frontend service dependencies in this smoke test.
         source = loader_path.read_text(encoding="utf-8")
