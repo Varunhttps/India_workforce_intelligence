@@ -30,7 +30,7 @@ def _require_auth():
         st.write("Private workforce intelligence portal. Sign in with an invited account to continue.")
         st.button("Sign in with Google", on_click=st.login, args=("google",), type="primary")
         st.stop()
-    email = str(st.user.get("email", "")).lower()
+    email = str(st.user.email or "").lower()
     if email not in allowed:
         st.error("This account is not on the approved access list.")
         st.button("Sign out", on_click=st.logout)
