@@ -50,6 +50,9 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
           GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+          RESEARCH_MODE: ${{ inputs.mode }}
+          SOURCE_LIMIT: ${{ inputs.max_sources_per_industry }}
+          COUNTRY_SEARCHED: ${{ inputs.country_searched }}
         run: |
           for SECRET_NAME in TAVILY_API_KEY GEMINI_API_KEY GOOGLE_SHEET_ID GOOGLE_SERVICE_ACCOUNT_JSON; do
             if [ -z "${!SECRET_NAME}" ]; then
@@ -57,9 +60,9 @@ jobs:
               exit 1
             fi
           done
-          MODE="${{ inputs.mode || 'all_industries' }}"
-          LIMIT="${{ inputs.max_sources_per_industry || '8' }}"
-          COUNTRY="${{ inputs.country_searched }}"
+          MODE="${RESEARCH_MODE:-all_industries}"
+          LIMIT="${SOURCE_LIMIT:-8}"
+          COUNTRY="${COUNTRY_SEARCHED:-}"
           COUNTRY_ARGS=()
           if [ -n "$COUNTRY" ]; then COUNTRY_ARGS=(--country-searched "$COUNTRY"); fi
           PYTHONPATH=src python main.py --mode "$MODE" --max-sources-per-industry "$LIMIT" "${COUNTRY_ARGS[@]}" --output-dir research_output --history-path data/findings_history.jsonl --publish-google-sheets
