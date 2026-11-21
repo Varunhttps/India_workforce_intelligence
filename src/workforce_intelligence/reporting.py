@@ -20,7 +20,7 @@ def _style_workbook(writer):
             cell.font = font
             cell.fill = __import__("openpyxl").styles.PatternFill("solid", fgColor="1F4E78")
 
-def export_workbook(findings, sources, output_path, new_findings=None, recurring_findings=None):
+def export_workbook(findings, sources, output_path, new_findings=None, recurring_findings=None, weekly_trends=None):
     path = Path(output_path)
     path.parent.mkdir(parents=True, exist_ok=True)
     f = pd.DataFrame(deduplicate_findings(findings), columns=FINDING_COLUMNS)
@@ -43,6 +43,7 @@ def export_workbook(findings, sources, output_path, new_findings=None, recurring
         f.to_excel(writer, sheet_name="Workforce Findings", index=False)
         new_df.to_excel(writer, sheet_name="New Findings", index=False)
         recurring_df.to_excel(writer, sheet_name="Recurring Findings", index=False)
+        pd.DataFrame(weekly_trends or []).to_excel(writer, sheet_name="Weekly Trends", index=False)
         s.to_excel(writer, sheet_name="Source Register", index=False)
         summary.to_excel(writer, sheet_name="Research Summary", index=False)
         _style_workbook(writer)
