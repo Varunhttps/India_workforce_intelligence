@@ -103,7 +103,7 @@ with st.sidebar:
     mode = {"Manufacturing": "manufacturing", "Other industries": "other_industries",
             "All industries": "all_industries"}[scope]
     country = st.text_input("Countries (optional)", placeholder="India, Germany, Japan — blank for global research")
-    st.caption("Searches up to 8 results per query across web and public, search-indexed LinkedIn, filters weak relevance scores and unrelated titles/snippets, and prioritizes stronger publisher types. Multiple countries broaden coverage.")
+    st.caption("Uses your selected source cap per industry across web and public, search-indexed LinkedIn; filters weak relevance and unrelated results, then prioritizes stronger publisher types. Multiple countries broaden coverage.")
     source_limit = st.slider("Source candidates per industry", min_value=1, max_value=20, value=8)
     if st.button("▶ Start Research", type="primary", use_container_width=True):
         try:
