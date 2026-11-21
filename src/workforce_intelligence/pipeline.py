@@ -63,7 +63,6 @@ def run_research(mode="manufacturing", country_searched=None, max_sources_per_in
                 row["source_platform"] = source.get("source_platform", "Web")
                 if row["source_platform"] == "LinkedIn" and not row["source_url"]:
                     raise ValueError("LinkedIn finding rejected: original source URL is missing")
-                row["review_status"] = row.get("review_status") or "Needs source verification"
                 findings.append(row)
             source_row["Relevance status"] = "Relevant — workforce findings extracted" if rows else "Not relevant — no qualifying workforce finding extracted"
             dates = {row.get("publication_date") for row in rows if row.get("publication_date")}

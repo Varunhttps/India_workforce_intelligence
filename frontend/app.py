@@ -229,7 +229,7 @@ else:
             else:
                 columns = [c for c in [
                     "Industry", "Identified Problem", "Problem Description", "Country",
-                    "Region", "First Seen", "Last Seen", "Occurrences", "Weeks Seen", "Source URL"
+                    "Region", "First Seen", "Last Seen", "Weeks Seen", "Source URL"
                 ] if c in frame.columns]
                 st.dataframe(frame[columns], use_container_width=True, hide_index=True)
 
@@ -454,7 +454,7 @@ else:
                 hide = ["Collection Status", "Key Information", "Evidence / Supporting Information", "Review Notes"]
                 frame = frame.drop(columns=[col for col in hide if col in frame.columns], errors="ignore")
             elif name == "Market Research":
-                hide = ["Evidence / Supporting Information", "Supporting Evidence", "Review Notes"]
+                hide = ["Evidence / Supporting Information", "Supporting Evidence", "Review Notes", "Occurrences", "Weekly Status", "Research Status", "Interpretation Status", "Review Status"]
                 frame = frame.drop(columns=[col for col in hide if col in frame.columns], errors="ignore")
             st.dataframe(frame, use_container_width=True, hide_index=True)
     st.link_button("Open full Google Spreadsheet", sheet_url)
