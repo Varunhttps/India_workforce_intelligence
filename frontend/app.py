@@ -49,7 +49,7 @@ h1 {letter-spacing: -0.035em;}
 </style>
 """, unsafe_allow_html=True)
 
-SHEET_NAMES = ["Source Register", "Market Research", "Market Insights & Trends", "Product Feature Opportunities"]
+SHEET_NAMES = ["Source Register", "Market Research", "Market Insights & Trends", "Product Feature Opportunities", "Weekly Trends"]
 
 
 @st.cache_data(ttl=90)
@@ -166,6 +166,19 @@ else:
                     "Region", "First Seen", "Last Seen", "Occurrences", "Weeks Seen", "Source URL"
                 ] if c in frame.columns]
                 st.dataframe(frame[columns], use_container_width=True, hide_index=True)
+
+    st.subheader("Weekly trend signals")
+    trends = data.get("Weekly Trends", pd.DataFrame()).copy()
+    if not trends.empty and "Signal Status" in trends.columns:
+        x, y, z = st.columns(3)
+        x.metric("New problems", int((trends["Signal Status"] == "New this week").sum()))
+        y.metric("Active this week", int((trends["Signal Status"] == "Active this week").sum()))
+        z.metric("Not observed this week", int((trends["Signal Status"] == "Not observed this week").sum()))
+        st.caption("Signals are aggregated by industry and workforce problem. 'Not observed this week' does not mean resolved.")
+        trend_cols = [c for c in ["Industry", "Workforce Problem", "Signal Status", "Weeks Observed", "Country Count", "Countries", "Supporting Source Count", "First Seen", "Last Seen"] if c in trends.columns]
+        st.dataframe(trends[trend_cols], use_container_width=True, hide_index=True)
+    else:
+        st.info("Weekly trend signals will appear after the cumulative history is published.")
 
     st.subheader("Cumulative research overview")
     e, f, g = st.columns(3)
