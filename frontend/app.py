@@ -16,6 +16,7 @@ from workforce_intelligence.opportunity_prioritization import build_opportunity_
 from workforce_intelligence.skill_trends import analyze_skill_trends
 from workforce_intelligence.country_coverage import summarize_country_coverage, build_country_industry_matrix
 from workforce_intelligence.manager_actions import recommend_manager_actions
+from workforce_intelligence.signal_momentum import analyze_signal_momentum, rank_emerging_industries
 
 st.set_page_config(page_title="Global Workforce Intelligence", page_icon="🌍", layout="wide")
 
@@ -272,6 +273,36 @@ else:
             st.info("Opportunity changes will appear after the history is published.")
     else:
         st.info("Weekly trend signals will appear after the cumulative history is published.")
+
+    st.subheader("Weekly evidence momentum")
+    momentum_records = []
+    if not findings.empty:
+        for _, finding in findings.iterrows():
+            raw_weeks = str(finding.get("Weeks Seen") or "")
+            weeks_seen = [week.strip() for week in raw_weeks.split(",") if week.strip()]
+            momentum_records.append({
+                "industry": finding.get("Industry"),
+                "problem_type": finding.get("Identified Problem"),
+                "source_url": finding.get("Source URL"),
+                "weeks_seen": weeks_seen,
+                "first_seen": finding.get("First Seen"),
+                "last_seen": finding.get("Last Seen"),
+                "country": finding.get("Country"),
+            })
+    momentum_rows = analyze_signal_momentum(momentum_records)
+    if momentum_rows:
+        momentum_frame = pd.DataFrame(momentum_rows)
+        momentum_columns = ["industry", "problem_type", "previous_source_count", "current_source_count", "source_delta", "trend", "country_count", "countries"]
+        st.caption("Changes in supporting source coverage, not confirmed changes in workforce severity. 'Not observed this week' may reflect research coverage.")
+        st.dataframe(momentum_frame[momentum_columns], use_container_width=True, hide_index=True)
+        industry_rank = rank_emerging_industries(momentum_rows)
+        if industry_rank:
+            rank_frame = pd.DataFrame(industry_rank)
+            rank_columns = ["rank", "industry", "current_sources", "distinct_problem_count", "increasing_problems", "staffing_candidates", "planning_candidates"]
+            st.markdown("**Emerging industries by evidence volume and problem diversity**")
+            st.dataframe(rank_frame[rank_columns], use_container_width=True, hide_index=True)
+    else:
+        st.info("Weekly momentum will populate once historical findings with week metadata are available.")
 
     st.subheader("Emerging Skills & Workforce Trends")
     st.caption("Global skill clusters inferred from findings. Signal score reflects research breadth and recency—not measured labor-market demand.")
