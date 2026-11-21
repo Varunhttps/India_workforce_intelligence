@@ -246,7 +246,7 @@ else:
         st.bar_chart(top_manager.set_index("Workforce Problem")["Rank Score"], height=300)
         st.dataframe(manager_frame[["Rank Score", "Priority", "Industry", "Workforce Problem", "Manager Action", "Source Count", "Country Count", "Latest Evidence", "Weekly Momentum"]], use_container_width=True, hide_index=True)
         for _, manager_action in manager_frame.head(10).iterrows():
-            with st.expander(f"{manager_action['Priority']} · {manager_action['Industry']} · {manager_action['Workforce Problem}"):
+            with st.expander(f"{manager_action['Priority']} · {manager_action['Industry']} · {manager_action['Workforce Problem']"):
                 st.write("**Recommended next step:** " + str(manager_action["Recommended Next Step"]))
                 st.write("**Scoring rationale:** " + str(manager_action["Score Rationale"]))
                 st.write("**Countries:** " + ", ".join(manager_action["Countries"]) if manager_action["Countries"] else "No country attribution")
