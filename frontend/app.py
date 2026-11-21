@@ -1,11 +1,16 @@
 """Streamlit frontend for Global Workforce Intelligence."""
 import os
+import sys
+from pathlib import Path
 from datetime import date, timedelta
 
 import gspread
 import pandas as pd
 import requests
 import streamlit as st
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+from workforce_intelligence.signal_momentum import analyze_signal_momentum, rank_emerging_industries
 
 st.set_page_config(page_title="Global Workforce Intelligence", page_icon="🌍", layout="wide")
 
@@ -179,6 +184,39 @@ else:
         st.dataframe(trends[trend_cols], use_container_width=True, hide_index=True)
     else:
         st.info("Weekly trend signals will appear after the cumulative history is published.")
+
+    else:
+        st.info("Weekly trend signals will appear after the cumulative history is published.")
+
+    st.subheader("Weekly evidence momentum")
+    momentum_records = []
+    if not findings.empty:
+        for _, finding in findings.iterrows():
+            raw_weeks = str(finding.get("Weeks Seen") or "")
+            weeks_seen = [week.strip() for week in raw_weeks.split(",") if week.strip()]
+            momentum_records.append({
+                "industry": finding.get("Industry"),
+                "problem_type": finding.get("Identified Problem"),
+                "source_url": finding.get("Source URL"),
+                "weeks_seen": weeks_seen,
+                "first_seen": finding.get("First Seen"),
+                "last_seen": finding.get("Last Seen"),
+                "country": finding.get("Country"),
+            })
+    momentum_rows = analyze_signal_momentum(momentum_records)
+    if momentum_rows:
+        momentum_frame = pd.DataFrame(momentum_rows)
+        momentum_columns = ["industry", "problem_type", "previous_source_count", "current_source_count", "source_delta", "trend", "country_count", "countries"]
+        st.caption("Changes in supporting source coverage, not confirmed changes in workforce severity. 'Not observed this week' may reflect research coverage.")
+        st.dataframe(momentum_frame[momentum_columns], use_container_width=True, hide_index=True)
+        industry_rank = rank_emerging_industries(momentum_rows)
+        if industry_rank:
+            rank_frame = pd.DataFrame(industry_rank)
+            rank_columns = ["rank", "industry", "current_sources", "distinct_problem_count", "increasing_problems", "staffing_candidates", "planning_candidates"]
+            st.markdown("**Emerging industries by evidence volume and problem diversity**")
+            st.dataframe(rank_frame[rank_columns], use_container_width=True, hide_index=True)
+    else:
+        st.info("Weekly momentum will populate once historical findings with week metadata are available.")
 
     st.subheader("Cumulative research overview")
     e, f, g = st.columns(3)
