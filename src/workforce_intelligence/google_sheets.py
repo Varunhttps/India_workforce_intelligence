@@ -187,9 +187,7 @@ def build_sheet_payloads(findings, sources, research_date=None, history_records=
                 "Source title": old.get("source_name") or "Previously collected source",
                 "Source URL": url, "Source platform": old.get("source_platform") or "Web",
                 "Industry searched": old.get("industry"), "Publication date": "",
-                "Collection status": "Previously collected", "Relevance status": "Historical finding",
-                "Verification status": "Not verified",
-                "Review notes": "Retained from append-only research history",
+                "Relevance status": "Historical finding",
             })
             known_urls.add(url)
 
@@ -204,8 +202,7 @@ def build_sheet_payloads(findings, sources, research_date=None, history_records=
             _cell(source.get("Source platform") or "Website"), "",
             _cell(source.get("Industry searched")), _cell(source.get("Publication date")),
             today, _source_credibility(source),
-            "; ".join(str(f.get("description") or "") for f in normalized if f.get("source_url") == url),
-            "", _cell(source.get("Collection status")), _cell(source.get("Relevance status")),
+            "", _cell(source.get("Relevance status")),
         ])
 
     finding_ids = {}
