@@ -17,8 +17,7 @@ SHEET_HEADERS = {
     "Source Register": [
         "Source ID", "Source Title", "Source URL", "Source Type",
         "Publisher / Author", "Industry", "Publication Date", "Access Date",
-        "Source Credibility Assessment", "Related Research IDs",
-        "Relevance Status",
+        "Related Research IDs",
     ],
     "Market Research": [
         "Research ID", "Source ID", "Industry", "Sub-industry",
@@ -232,8 +231,7 @@ def build_sheet_payloads(findings, sources, research_date=None, history_records=
             source_id, _cell(source.get("Source title")), _cell(url),
             _cell(source.get("Source platform") or "Website"), "",
             _cell(source.get("Industry searched")), _cell(source.get("Publication date")),
-            today, _source_credibility(source),
-            "", _cell(source.get("Relevance status")),
+            today, "",
         ])
 
     finding_ids = {}
