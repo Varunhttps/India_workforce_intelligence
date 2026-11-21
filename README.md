@@ -57,7 +57,7 @@ GitHub Actions runs every Monday at 06:00 UTC (11:30 India Standard Time). Manua
 
 ## Local setup and tests
 
-Python 3.10+ recommended.
+Python 3.11+ recommended. Streamlit 1.42+ is required for the authentication APIs used by the dashboard.
 
 ```bash
 pip install -r requirements.txt
@@ -115,4 +115,4 @@ The dashboard includes a current-versus-previous ISO week comparison of unique s
 
 ## Deployment readiness
 
-Use the [deployment readiness checklist](docs/deployment_checklist.md) before hosting or inviting users.
+Use the [deployment readiness checklist](docs/deployment_checklist.md) and [demo walkthrough](docs/demo_walkthrough.md) before hosting or inviting users.
