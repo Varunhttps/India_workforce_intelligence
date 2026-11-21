@@ -185,9 +185,6 @@ else:
     else:
         st.info("Weekly trend signals will appear after the cumulative history is published.")
 
-    else:
-        st.info("Weekly trend signals will appear after the cumulative history is published.")
-
     st.subheader("Weekly evidence momentum")
     momentum_records = []
     if not findings.empty:
