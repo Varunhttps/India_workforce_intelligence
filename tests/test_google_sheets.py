@@ -27,7 +27,8 @@ class GoogleSheetsPayloadTests(unittest.TestCase):
         row = dict(zip(headers, payloads["Source Register"][1]))
         self.assertEqual(row["Source URL"], url)
         self.assertEqual(row["Source Type"], "LinkedIn")
-        self.assertEqual(row["Source Credibility Assessment"], "Limited — user-generated content; treated as a supporting signal only")
+        self.assertNotIn("Source Credibility Assessment", row)
+        self.assertNotIn("Relevance Status", row)
         self.assertTrue(row["Source ID"].startswith("SRC-"))
         self.assertTrue(row["Related Research IDs"].startswith("RES-"))
         research = payloads["Market Research"]
