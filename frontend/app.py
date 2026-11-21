@@ -1,11 +1,17 @@
 """Streamlit frontend for Global Workforce Intelligence."""
 import os
+import sys
+from pathlib import Path
 from datetime import date, timedelta
 
 import gspread
 import pandas as pd
 import requests
 import streamlit as st
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+
+from workforce_intelligence.dashboard_filters import industry_options, filter_frames_by_industry
 
 st.set_page_config(page_title="Global Workforce Intelligence", page_icon="🌍", layout="wide")
 
@@ -124,6 +130,12 @@ if not loaded:
     st.info("Connect the Google Sheet using GOOGLE_SHEET_ID and GOOGLE_SERVICE_ACCOUNT_JSON in Streamlit secrets.")
 else:
     data, sheet_url = loaded
+    with st.sidebar:
+        st.divider()
+        st.header("Dashboard filters")
+        selected_industry = st.selectbox("Filter by industry", industry_options(data))
+        data = filter_frames_by_industry(data, selected_industry)
+        st.caption("The selected industry filter applies to tables and metrics with industry data; source-register rows without an industry remain visible.")
     findings = data["Market Research"].copy()
     sources = data["Source Register"]
     insights = data["Market Insights & Trends"]
