@@ -66,6 +66,17 @@ class WeeklyTrendAnalysisTests(unittest.TestCase):
         self.assertTrue(result["worsening_signal"])
         self.assertIn("Potentially worsening", result["signal_momentum"])
 
+    def test_evidence_receding_is_labeled_without_claiming_resolution(self):
+        rows = [
+            _record(source="https://example.org/a", country="Germany",
+                    weeks=["2026-11-09", "2026-11-16"]),
+            _record(source="https://example.org/b", country="France",
+                    weeks=["2026-11-09"]),
+        ]
+        result = analyze_weekly_trends(rows, current_week=self.CURRENT)[0]
+        self.assertEqual(result["signal_momentum"], "Evidence receding")
+        self.assertFalse(result["worsening_signal"])
+
     def test_stable_evidence_has_no_growth_flags(self):
         rows = [
             _record(source="https://example.org/a", country="Germany",
