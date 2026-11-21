@@ -20,7 +20,7 @@ def _style_workbook(writer):
             cell.font = font
             cell.fill = __import__("openpyxl").styles.PatternFill("solid", fgColor="1F4E78")
 
-def export_workbook(findings, sources, output_path, new_findings=None, recurring_findings=None, weekly_trends=None):
+def export_workbook(findings, sources, output_path, new_findings=None, recurring_findings=None, weekly_trends=None, opportunity_changes=None):
     path = Path(output_path)
     path.parent.mkdir(parents=True, exist_ok=True)
     f = pd.DataFrame(deduplicate_findings(findings), columns=FINDING_COLUMNS)
@@ -38,12 +38,21 @@ def export_workbook(findings, sources, output_path, new_findings=None, recurring
         {"metric": "Sources collected", "value": int((s["Collection status"] == "Collected").sum()) if not s.empty else 0},
         {"metric": "Sources with extraction failures", "value": int((s["Relevance status"] == "Extraction failed").sum()) if not s.empty else 0},
     ])
+    trend_df = pd.DataFrame(weekly_trends or [])
+    opportunity_df = pd.DataFrame(opportunity_changes or [])
+    run_summary = pd.concat([run_summary, pd.DataFrame([
+        {"metric": "Emerging signals", "value": sum(bool(row.get("emerging_signal")) for row in weekly_trends or [])},
+        {"metric": "Potentially worsening signals (evidence-based)", "value": sum(bool(row.get("worsening_signal")) for row in weekly_trends or [])},
+        {"metric": "New planning opportunities this week", "value": sum(bool(row.get("new_this_week")) for row in opportunity_changes or [])},
+        {"metric": "Opportunities with expanded evidence", "value": sum(bool(row.get("expanded_evidence")) for row in opportunity_changes or [])},
+    ])], ignore_index=True)
     with pd.ExcelWriter(path, engine="openpyxl") as writer:
         run_summary.to_excel(writer, sheet_name="Run Overview", index=False)
         f.to_excel(writer, sheet_name="Workforce Findings", index=False)
         new_df.to_excel(writer, sheet_name="New Findings", index=False)
         recurring_df.to_excel(writer, sheet_name="Recurring Findings", index=False)
-        pd.DataFrame(weekly_trends or []).to_excel(writer, sheet_name="Weekly Trends", index=False)
+        trend_df.to_excel(writer, sheet_name="Weekly Trends", index=False)
+        opportunity_df.to_excel(writer, sheet_name="Opportunity Changes", index=False)
         s.to_excel(writer, sheet_name="Source Register", index=False)
         summary.to_excel(writer, sheet_name="Research Summary", index=False)
         _style_workbook(writer)
