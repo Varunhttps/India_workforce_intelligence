@@ -70,11 +70,10 @@ with st.sidebar:
     mode = {"Manufacturing": "manufacturing", "Other industries": "other_industries",
             "All industries": "all_industries"}[scope]
     country = st.text_input("Countries (optional)", placeholder="India, Germany, Japan — blank for global research")
-    limit = st.number_input("Sources per industry", min_value=1, max_value=20, value=3)
-    st.caption("Searches the web and public, search-indexed LinkedIn sources. Enter multiple comma-separated countries to broaden geographic coverage. Country is a search lead; findings are attributed only when the source explicitly supports the geography.")
+    st.caption("Searches the maximum discovery results per query across web and public, search-indexed LinkedIn. Multiple comma-separated countries broaden targeted searches. Country attribution is based only on source evidence.")
     if st.button("▶ Start Research", type="primary", use_container_width=True):
         try:
-            trigger_research(mode, country, int(limit))
+            trigger_research(mode, country, 20)
             st.success("Research workflow dispatched. Check GitHub Actions for its live status.")
             st.link_button("View workflow runs", "https://github.com/Varunhttps/India_workforce_intelligence/actions")
         except Exception as exc:
@@ -161,7 +160,7 @@ else:
                 else:
                     display_columns = [c for c in [
                         "Identified Problem", "Problem Description", "Business Impact",
-                        "Country", "Region", "Research Date", "Weekly Status", "Research Status", "Source URL"
+                        "Country", "Region", "Research Date", "Weekly Status", "Source URL"
                     ] if c in report.columns]
                     st.dataframe(report[display_columns], use_container_width=True, hide_index=True)
     else:
