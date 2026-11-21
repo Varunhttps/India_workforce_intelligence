@@ -11,7 +11,7 @@ import streamlit as st
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from workforce_intelligence.dashboard_filters import industry_options, filter_frames_by_industry
+from workforce_intelligence.dashboard_filters import industry_options, filter_frames_by_industry, weekly_statuses
 from workforce_intelligence.opportunity_prioritization import build_opportunity_priorities
 from workforce_intelligence.skill_trends import analyze_skill_trends
 from workforce_intelligence.country_coverage import summarize_country_coverage, build_country_industry_matrix
@@ -154,10 +154,7 @@ else:
     sources = data["Source Register"]
     insights = data["Market Insights & Trends"]
 
-    if not findings.empty and "Weekly Status" in findings.columns:
-        weekly_status = findings["Weekly Status"].fillna("").astype(str)
-    else:
-        weekly_status = pd.Series([""] * len(findings), index=findings.index)
+    weekly_status = weekly_statuses(findings, current_week=week_start().isoformat())
 
     new_week = findings[weekly_status == "New this week"].copy() if not findings.empty else findings.copy()
     recurring_week = findings[weekly_status == "Recurring this week"].copy() if not findings.empty else findings.copy()
@@ -229,7 +226,7 @@ else:
             else:
                 columns = [c for c in [
                     "Industry", "Identified Problem", "Problem Description", "Country",
-                    "Region", "First Seen", "Last Seen", "Occurrences", "Weeks Seen", "Source URL"
+                    "Region", "First Seen", "Last Seen", "Weeks Seen", "Source URL"
                 ] if c in frame.columns]
                 st.dataframe(frame[columns], use_container_width=True, hide_index=True)
 
@@ -454,7 +451,7 @@ else:
                 hide = ["Collection Status", "Key Information", "Evidence / Supporting Information", "Review Notes"]
                 frame = frame.drop(columns=[col for col in hide if col in frame.columns], errors="ignore")
             elif name == "Market Research":
-                hide = ["Evidence / Supporting Information", "Supporting Evidence", "Review Notes"]
+                hide = ["Evidence / Supporting Information", "Supporting Evidence", "Review Notes", "Occurrences", "Weekly Status", "Research Status", "Interpretation Status", "Review Status"]
                 frame = frame.drop(columns=[col for col in hide if col in frame.columns], errors="ignore")
             st.dataframe(frame, use_container_width=True, hide_index=True)
     st.link_button("Open full Google Spreadsheet", sheet_url)

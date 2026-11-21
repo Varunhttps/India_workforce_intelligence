@@ -1,7 +1,7 @@
 import unittest
 import pandas as pd
 
-from workforce_intelligence.dashboard_filters import industry_options, filter_frames_by_industry, ALL_INDUSTRIES
+from workforce_intelligence.dashboard_filters import industry_options, filter_frames_by_industry, weekly_statuses, ALL_INDUSTRIES
 
 
 class DashboardIndustryFilterTests(unittest.TestCase):
@@ -42,6 +42,26 @@ class DashboardIndustryFilterTests(unittest.TestCase):
         filtered = filter_frames_by_industry(self.frames, "Healthcare")
         self.assertEqual(filtered["Source Register"].iloc[0]["Source"], "no industry column")
 
+
+    def test_weekly_statuses_derive_from_first_and_last_seen_without_status_column(self):
+        frame = pd.DataFrame([
+            {"First Seen": "2026-11-17", "Last Seen": "2026-11-17"},
+            {"First Seen": "2026-11-02", "Last Seen": "2026-11-20"},
+            {"First Seen": "2026-10-05", "Last Seen": "2026-10-19"},
+            {"First Seen": "", "Last Seen": ""},
+        ])
+        statuses = weekly_statuses(frame, current_week="2026-11-16")
+        self.assertEqual(statuses.tolist(), [
+            "New this week", "Recurring this week", "Last seen before this week", "Unknown"
+        ])
+
+    def test_legacy_weekly_status_values_override_date_fallback(self):
+        frame = pd.DataFrame([
+            {"First Seen": "2026-11-17", "Last Seen": "2026-11-17", "Weekly Status": "Legacy label"},
+            {"First Seen": "2026-11-02", "Last Seen": "2026-11-20", "Weekly Status": ""},
+        ])
+        statuses = weekly_statuses(frame, current_week="2026-11-16")
+        self.assertEqual(statuses.tolist(), ["Legacy label", "Recurring this week"])
 
 if __name__ == "__main__":
     unittest.main()

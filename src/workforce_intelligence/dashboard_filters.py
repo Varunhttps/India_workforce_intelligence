@@ -32,3 +32,42 @@ def filter_frames_by_industry(frames, selected_industry=ALL_INDUSTRIES):
             mask = frame["Industry"].fillna("").astype(str).str.strip().str.casefold() == selected.casefold()
             filtered[name] = frame.loc[mask].copy()
     return filtered
+
+
+
+def weekly_statuses(frame, current_week=None):
+    """Derive weekly categories from first/last dates, preferring legacy status when present."""
+    from datetime import date, timedelta
+
+    if frame is None:
+        return pd.Series(dtype=object)
+    current = pd.to_datetime(current_week or date.today().isoformat(), errors="coerce")
+    if pd.isna(current):
+        current = pd.Timestamp(date.today())
+    current_date = current.date()
+    current_monday = (current_date - timedelta(days=current_date.weekday())).isoformat()
+
+    def week_key(value):
+        parsed = pd.to_datetime(value, errors="coerce")
+        if pd.isna(parsed):
+            return ""
+        day = parsed.date()
+        return (day - timedelta(days=day.weekday())).isoformat()
+
+    first = frame.get("First Seen", pd.Series("", index=frame.index)).map(week_key)
+    last = frame.get("Last Seen", pd.Series("", index=frame.index)).map(week_key)
+    derived = []
+    for first_week, last_week in zip(first, last):
+        if first_week == current_monday:
+            derived.append("New this week")
+        elif last_week == current_monday:
+            derived.append("Recurring this week")
+        elif first_week and last_week:
+            derived.append("Last seen before this week")
+        else:
+            derived.append("Unknown")
+    statuses = pd.Series(derived, index=frame.index, dtype=object)
+    if "Weekly Status" in frame.columns:
+        explicit = frame["Weekly Status"].fillna("").astype(str).str.strip()
+        statuses = statuses.where(explicit.eq(""), explicit)
+    return statuses

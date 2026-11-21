@@ -17,15 +17,14 @@ SHEET_HEADERS = {
     "Source Register": [
         "Source ID", "Source Title", "Source URL", "Source Type",
         "Publisher / Author", "Industry", "Publication Date", "Access Date",
-        "Source Credibility Assessment", "Related Research IDs",
-        "Relevance Status",
+        "Related Research IDs",
     ],
     "Market Research": [
         "Research ID", "Source ID", "Industry", "Sub-industry",
         "Workforce Planning Area", "Identified Problem", "Problem Description",
         "Business Impact", "Publication Date", "Research Date",
         "Country", "Region", "Source URL",
-        "First Seen", "Last Seen", "Weeks Seen", "Occurrences", "Weekly Status",
+        "First Seen", "Last Seen", "Weeks Seen",
     ],
     "Market Insights & Trends": [
         "Insight ID", "Section", "Industry", "Insight / Challenge",
@@ -102,7 +101,7 @@ def _opportunity(row: dict, supporting_source_count: int = 1) -> dict | None:
                       "production halted", "missed orders", "major disruption")
     high_terms = ("high turnover", "large-scale", "mass", "persistent", "significant shortage",
                   "unfilled for months", "production disruption", "safety risk")
-    if any(term in text for term in severity_terms + high_terms) or supporting_source_count >= 4:
+    if any(term in text for term in severity_terms + high_terms) or supporting_source_count >= 3:
         priority = "High"
     elif supporting_source_count >= 2:
         priority = "Medium"
@@ -157,9 +156,24 @@ def _opportunity(row: dict, supporting_source_count: int = 1) -> dict | None:
     ]
     for terms, need, capability, feature, description_text, value in rules:
         if any(term in text for term in terms):
+            industry = str(row.get("industry") or "").casefold()
+            context = {
+                "manufactur": "production continuity, line uptime and quality consistency",
+                "health": "patient-care coverage and safe staffing",
+                "logistic": "delivery reliability and throughput",
+                "construct": "project schedule adherence and site safety",
+                "retail": "store coverage and customer-service continuity",
+                "hospital": "guest-service coverage and seasonal operations",
+                "agricultur": "seasonal labor availability and harvest timing",
+                "energy": "asset reliability and field safety",
+                "information technology": "project delivery and critical technical capability",
+                "financial": "service continuity and cost control",
+            }
+            industry_value = next((v for k, v in context.items() if k in industry), "operational continuity and workforce productivity")
             return {"market_need": need, "capability": capability,
                     "feature": f"{feature}: {description_text}",
-                    "business_value": value, "priority": priority}
+                    "business_value": f"{value} Industry-specific value: improve {industry_value}.",
+                    "priority": priority}
     return None
 
 
@@ -217,14 +231,17 @@ def build_sheet_payloads(findings, sources, research_date=None, history_records=
             source_id, _cell(source.get("Source title")), _cell(url),
             _cell(source.get("Source platform") or "Website"), "",
             _cell(source.get("Industry searched")), _cell(source.get("Publication date")),
-            today, _source_credibility(source),
-            "", _cell(source.get("Relevance status")),
+            today, "",
         ])
 
     finding_ids = {}
     research_rows = []
     opportunity_rows = []
     industry_groups = {}
+    problem_source_counts = {}
+    for item in normalized:
+        pkey = (item.get("industry") or "Unclassified", " ".join(str(item.get("problem_type") or "Unclassified").casefold().split()))
+        problem_source_counts.setdefault(pkey, set()).add(item.get("source_url") or "")
     for row in normalized:
         meta = metadata_by_identity.get(_identity(row) + "|" + str(row.get("source_url") or ""), {})
         rid = _stable_id("RES", _identity(row) + "|" + str(row.get("source_url") or ""))
@@ -238,7 +255,6 @@ def build_sheet_payloads(findings, sources, research_date=None, history_records=
             _cell(row.get("country")), _cell(row.get("region")), _cell(row.get("source_url")),
             _cell(meta.get("first_seen")), _cell(meta.get("last_seen")),
             _cell(meta.get("weeks_seen") or [meta.get("first_seen_week"), meta.get("last_seen_week")]),
-            _cell(meta.get("occurrences", 1)), _weekly_status(meta, current_week),
         ])
         problem = " ".join(str(row.get("problem_type") or "Unclassified").casefold().split())
         display_problem = row.get("problem_type") or "Unclassified"
@@ -251,7 +267,7 @@ def build_sheet_payloads(findings, sources, research_date=None, history_records=
             group["urls"].add(row["source_url"])
         if row.get("country"):
             group["countries"].add(row["country"])
-        mapped = _opportunity(row, supporting_source_count=len(group["urls"]))
+        mapped = _opportunity(row, supporting_source_count=len(problem_source_counts.get(key, set())))
         if mapped:
             oid = _stable_id("OPP", rid + "|" + mapped["feature"])
             opportunity_rows.append([
@@ -261,7 +277,7 @@ def build_sheet_payloads(findings, sources, research_date=None, history_records=
             ])
 
     for source in source_rows:
-        source[9] = ", ".join(finding_ids.get(source[2], []))
+        source[8] = ", ".join(finding_ids.get(source[2], []))
 
     # Manager-facing summary: one row per industry, with detailed records retained in Market Research.
     industry_summaries = {}

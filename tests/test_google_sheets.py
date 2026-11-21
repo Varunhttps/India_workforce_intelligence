@@ -27,14 +27,15 @@ class GoogleSheetsPayloadTests(unittest.TestCase):
         row = dict(zip(headers, payloads["Source Register"][1]))
         self.assertEqual(row["Source URL"], url)
         self.assertEqual(row["Source Type"], "LinkedIn")
-        self.assertEqual(row["Source Credibility Assessment"], "Limited — user-generated content; treated as a supporting signal only")
+        self.assertNotIn("Source Credibility Assessment", row)
+        self.assertNotIn("Relevance Status", row)
         self.assertTrue(row["Source ID"].startswith("SRC-"))
         self.assertTrue(row["Related Research IDs"].startswith("RES-"))
         research = payloads["Market Research"]
         self.assertEqual(research[1][1], row["Source ID"])
         research_row = dict(zip(research[0], research[1]))
         self.assertEqual(research_row["Source URL"], url)
-        self.assertEqual(research_row["Weekly Status"], "New this week")
+        self.assertNotIn("Weekly Status", research_row)
         self.assertTrue(research_row["First Seen"])
         self.assertIn("Business Impact", research_row)
         self.assertIn("Publication Date", research_row)
@@ -106,8 +107,8 @@ class GoogleSheetsPayloadTests(unittest.TestCase):
         self.assertEqual(len(payloads["Market Research"]), 2)
         history_row = dict(zip(payloads["Market Research"][0], payloads["Market Research"][1]))
         self.assertEqual(history_row["Source URL"], "https://example.com/old")
-        self.assertEqual(history_row["Weekly Status"], "Last seen before this week")
-        self.assertEqual(history_row["Occurrences"], 2)
+        self.assertNotIn("Weekly Status", history_row)
+        self.assertNotIn("Occurrences", history_row)
         self.assertEqual(len(payloads["Source Register"]), 2)
 
 
