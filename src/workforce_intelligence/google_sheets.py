@@ -102,7 +102,7 @@ def _opportunity(row: dict, supporting_source_count: int = 1) -> dict | None:
                       "production halted", "missed orders", "major disruption")
     high_terms = ("high turnover", "large-scale", "mass", "persistent", "significant shortage",
                   "unfilled for months", "production disruption", "safety risk")
-    if any(term in text for term in severity_terms + high_terms) or supporting_source_count >= 4:
+    if any(term in text for term in severity_terms + high_terms) or supporting_source_count >= 3:
         priority = "High"
     elif supporting_source_count >= 2:
         priority = "Medium"
@@ -157,9 +157,24 @@ def _opportunity(row: dict, supporting_source_count: int = 1) -> dict | None:
     ]
     for terms, need, capability, feature, description_text, value in rules:
         if any(term in text for term in terms):
+            industry = str(row.get("industry") or "").casefold()
+            context = {
+                "manufactur": "production continuity, line uptime and quality consistency",
+                "health": "patient-care coverage and safe staffing",
+                "logistic": "delivery reliability and throughput",
+                "construct": "project schedule adherence and site safety",
+                "retail": "store coverage and customer-service continuity",
+                "hospital": "guest-service coverage and seasonal operations",
+                "agricultur": "seasonal labor availability and harvest timing",
+                "energy": "asset reliability and field safety",
+                "information technology": "project delivery and critical technical capability",
+                "financial": "service continuity and cost control",
+            }
+            industry_value = next((v for k, v in context.items() if k in industry), "operational continuity and workforce productivity")
             return {"market_need": need, "capability": capability,
                     "feature": f"{feature}: {description_text}",
-                    "business_value": value, "priority": priority}
+                    "business_value": f"{value} Industry-specific value: improve {industry_value}.",
+                    "priority": priority}
     return None
 
 
