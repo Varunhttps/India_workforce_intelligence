@@ -47,8 +47,8 @@ def _post_search(client, payload, timeout, retries=3):
     raise RuntimeError("Tavily search failed after retries.")
 
 
-def discover_sources(industries, api_key=None, country=None, max_results=5,
-                     timeout=45, session=None, time_range="week"):
+def discover_sources(industries, api_key=None, country=None, max_results=8,
+                     timeout=45, session=None, time_range="week", min_search_score=0.30):
     key = api_key or os.getenv("TAVILY_API_KEY")
     if not key:
         raise ValueError("Set TAVILY_API_KEY or pass api_key.")
@@ -83,6 +83,13 @@ def discover_sources(industries, api_key=None, country=None, max_results=5,
                 host = (parsed.hostname or "").lower().removeprefix("www.")
                 platform = "LinkedIn" if host == "linkedin.com" or host.endswith(".linkedin.com") else "Web"
                 if requested_platform == "LinkedIn" and platform != "LinkedIn":
+                    continue
+                score = item.get("score")
+                if score is not None and score < min_search_score:
+                    continue
+                title_snippet = f"{item.get('title') or ''} {item.get('content') or ''}".casefold()
+                relevance_terms = ("workforce", "worker", "employee", "labor", "labour", "talent", "hiring", "recruit", "skill", "staff", "vacanc", "attrition", "retention", "production", "manufactur")
+                if not any(term in title_snippet for term in relevance_terms):
                     continue
                 found.setdefault(url, {
                     "industry": industry, "country_searched": search_country,

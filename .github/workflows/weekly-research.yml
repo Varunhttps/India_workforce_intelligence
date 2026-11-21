@@ -19,10 +19,10 @@ on:
         required: false
         type: string
       max_sources_per_industry:
-        description: Candidate sources per industry
+        description: Recommended discovery results per query (8)
         required: true
         type: number
-        default: 3
+        default: 8
 
 permissions:
   contents: write
@@ -58,7 +58,7 @@ jobs:
             fi
           done
           MODE="${{ inputs.mode || 'all_industries' }}"
-          LIMIT="${{ inputs.max_sources_per_industry || '3' }}"
+          LIMIT="${{ inputs.max_sources_per_industry || '8' }}"
           COUNTRY="${{ inputs.country_searched }}"
           COUNTRY_ARGS=()
           if [ -n "$COUNTRY" ]; then COUNTRY_ARGS=(--country-searched "$COUNTRY"); fi

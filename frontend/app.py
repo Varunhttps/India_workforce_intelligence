@@ -9,10 +9,43 @@ import streamlit as st
 
 st.set_page_config(page_title="Global Workforce Intelligence", page_icon="🌍", layout="wide")
 
+# Private-access gate: configure Streamlit OIDC (Google) and an email allowlist.
+def _allowed_emails():
+    configured = st.secrets.get("ALLOWED_EMAILS", os.getenv("ALLOWED_EMAILS", ""))
+    if isinstance(configured, str):
+        return {email.strip().lower() for email in configured.split(",") if email.strip()}
+    return {str(email).strip().lower() for email in configured if str(email).strip()}
+
+def _require_auth():
+    require_auth = str(os.getenv("REQUIRE_AUTH", "true")).lower() not in {"0", "false", "no"}
+    if not require_auth:
+        st.warning("Authentication is disabled for this local development session.")
+        return
+    allowed = _allowed_emails()
+    if not allowed:
+        st.error("Private access is not configured. Add ALLOWED_EMAILS to Streamlit secrets before deploying.")
+        st.stop()
+    if not st.user.is_logged_in:
+        st.title("🌍 Global Workforce Intelligence")
+        st.write("Private workforce intelligence portal. Sign in with an invited account to continue.")
+        st.button("Sign in with Google", on_click=st.login, args=("google",), type="primary")
+        st.stop()
+    email = str(st.user.email or "").lower()
+    if email not in allowed:
+        st.error("This account is not on the approved access list.")
+        st.button("Sign out", on_click=st.logout)
+        st.stop()
+
+_require_auth()
+
 st.markdown("""
 <style>
-.block-container {padding-top: 1.8rem; max-width: 1500px;}
-[data-testid="stMetric"] {background: #f4f7fb; padding: 16px; border-radius: 12px;}
+.block-container {padding-top: 1.35rem; max-width: 1540px;}
+[data-testid="stMetric"] {background: #f4f7fb; padding: 16px; border: 1px solid #e3e9f2; border-radius: 14px;}
+[data-testid="stMetricLabel"] {font-weight: 600;}
+[data-testid="stSidebar"] {border-right: 1px solid #e6eaf0;}
+h1 {letter-spacing: -0.035em;}
+[data-testid="stTabs"] button {font-weight: 600;}
 </style>
 """, unsafe_allow_html=True)
 
@@ -60,7 +93,7 @@ def week_start(today=None):
 
 
 st.title("🌍 Global Workforce Intelligence")
-st.caption("Research • Workforce challenges • Market trends • Nexplan opportunities")
+st.caption("Global workforce signals · Weekly trend intelligence · Staffing & enterprise planning opportunities")
 
 with st.sidebar:
     st.header("Research controls")
@@ -70,11 +103,10 @@ with st.sidebar:
     mode = {"Manufacturing": "manufacturing", "Other industries": "other_industries",
             "All industries": "all_industries"}[scope]
     country = st.text_input("Countries (optional)", placeholder="India, Germany, Japan — blank for global research")
-    limit = st.number_input("Sources per industry", min_value=1, max_value=20, value=3)
-    st.caption("Searches the web and public, search-indexed LinkedIn sources. Enter multiple comma-separated countries to broaden geographic coverage. Country is a search lead; findings are attributed only when the source explicitly supports the geography.")
+    st.caption("Searches up to 8 results per query across web and public, search-indexed LinkedIn, filters weak relevance scores and unrelated titles/snippets, and prioritizes stronger publisher types. Multiple countries broaden coverage.")
     if st.button("▶ Start Research", type="primary", use_container_width=True):
         try:
-            trigger_research(mode, country, int(limit))
+            trigger_research(mode, country, 8)
             st.success("Research workflow dispatched. Check GitHub Actions for its live status.")
             st.link_button("View workflow runs", "https://github.com/Varunhttps/India_workforce_intelligence/actions")
         except Exception as exc:
@@ -106,11 +138,19 @@ else:
 
     industries = findings["Industry"].dropna().nunique() if "Industry" in findings else 0
     countries = findings["Country"].dropna().nunique() if "Country" in findings else 0
-    a, b, c, d = st.columns(4)
+    latest_research_date = ""
+    if "Research Date" in findings.columns and not findings.empty:
+        parsed_dates = pd.to_datetime(findings["Research Date"], errors="coerce")
+        if parsed_dates.notna().any():
+            latest_research_date = parsed_dates.max().date().isoformat()
+    a, b, c, d, e = st.columns(5)
     a.metric("Historical findings", len(findings))
     b.metric("New this week", len(new_week))
     c.metric("Recurring this week", len(recurring_week))
     d.metric("Industries", industries)
+    e.metric("Countries", countries)
+    if latest_research_date:
+        st.caption(f"Latest research date recorded: **{latest_research_date}** · Data refreshes automatically after the weekly research run.")
 
     st.subheader(f"Weekly research changes · Week of {week_start().isoformat()}")
     st.caption("Weekly status is based on first-seen and last-seen week metadata. Older findings are retained; not seeing them in the latest research does not mean the problem has been resolved.")
@@ -161,7 +201,7 @@ else:
                 else:
                     display_columns = [c for c in [
                         "Identified Problem", "Problem Description", "Business Impact",
-                        "Country", "Region", "Research Date", "Weekly Status", "Research Status", "Source URL"
+                        "Country", "Region", "Research Date", "Weekly Status", "Source URL"
                     ] if c in report.columns]
                     st.dataframe(report[display_columns], use_container_width=True, hide_index=True)
     else:
@@ -170,7 +210,14 @@ else:
     tabs = st.tabs(SHEET_NAMES)
     for tab, name in zip(tabs, SHEET_NAMES):
         with tab:
-            st.dataframe(data[name], use_container_width=True, hide_index=True)
+            frame = data[name]
+            if name == "Source Register":
+                hide = ["Collection Status", "Key Information", "Evidence / Supporting Information", "Review Notes"]
+                frame = frame.drop(columns=[col for col in hide if col in frame.columns], errors="ignore")
+            elif name == "Market Research":
+                hide = ["Evidence / Supporting Information", "Supporting Evidence", "Review Notes"]
+                frame = frame.drop(columns=[col for col in hide if col in frame.columns], errors="ignore")
+            st.dataframe(frame, use_container_width=True, hide_index=True)
     st.link_button("Open full Google Spreadsheet", sheet_url)
 
 st.caption("Research findings and product opportunities are AI-assisted candidates and require human review.")
