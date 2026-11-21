@@ -115,4 +115,4 @@ The dashboard includes a current-versus-previous ISO week comparison of unique s
 
 ## Deployment readiness
 
-Use the [deployment readiness checklist](docs/deployment_checklist.md) before hosting or inviting users.
+Use the [deployment readiness checklist](docs/deployment_checklist.md) and [demo walkthrough](docs/demo_walkthrough.md) before hosting or inviting users.
