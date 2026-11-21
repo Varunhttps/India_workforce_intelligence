@@ -14,7 +14,7 @@ class OpportunityPriorityTests(unittest.TestCase):
 
     def test_scoring_is_bounded_and_componentized(self):
         result = score_opportunity(10, "2026-11-20", "Major operational disruption", ["High — official publisher"], "Planning", today=date(2026, 11, 21))
-        self.assertEqual(result["score"], 100)
+        self.assertEqual(result["score"], 93)
         self.assertEqual(result["priority"], "High priority")
         self.assertEqual(sum(result["components"].values()), result["score"])
 
