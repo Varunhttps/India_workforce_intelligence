@@ -40,8 +40,12 @@ _require_auth()
 
 st.markdown("""
 <style>
-.block-container {padding-top: 1.8rem; max-width: 1500px;}
-[data-testid="stMetric"] {background: #f4f7fb; padding: 16px; border-radius: 12px;}
+.block-container {padding-top: 1.35rem; max-width: 1540px;}
+[data-testid="stMetric"] {background: #f4f7fb; padding: 16px; border: 1px solid #e3e9f2; border-radius: 14px;}
+[data-testid="stMetricLabel"] {font-weight: 600;}
+[data-testid="stSidebar"] {border-right: 1px solid #e6eaf0;}
+h1 {letter-spacing: -0.035em;}
+[data-testid="stTabs"] button {font-weight: 600;}
 </style>
 """, unsafe_allow_html=True)
 
@@ -89,7 +93,7 @@ def week_start(today=None):
 
 
 st.title("🌍 Global Workforce Intelligence")
-st.caption("Research • Workforce challenges • Market trends • Nexplan opportunities")
+st.caption("Global workforce signals · Weekly trend intelligence · Staffing & enterprise planning opportunities")
 
 with st.sidebar:
     st.header("Research controls")
@@ -134,11 +138,19 @@ else:
 
     industries = findings["Industry"].dropna().nunique() if "Industry" in findings else 0
     countries = findings["Country"].dropna().nunique() if "Country" in findings else 0
-    a, b, c, d = st.columns(4)
+    latest_research_date = ""
+    if "Research Date" in findings.columns and not findings.empty:
+        parsed_dates = pd.to_datetime(findings["Research Date"], errors="coerce")
+        if parsed_dates.notna().any():
+            latest_research_date = parsed_dates.max().date().isoformat()
+    a, b, c, d, e = st.columns(5)
     a.metric("Historical findings", len(findings))
     b.metric("New this week", len(new_week))
     c.metric("Recurring this week", len(recurring_week))
     d.metric("Industries", industries)
+    e.metric("Countries", countries)
+    if latest_research_date:
+        st.caption(f"Latest research date recorded: **{latest_research_date}** · Data refreshes automatically after the weekly research run.")
 
     st.subheader(f"Weekly research changes · Week of {week_start().isoformat()}")
     st.caption("Weekly status is based on first-seen and last-seen week metadata. Older findings are retained; not seeing them in the latest research does not mean the problem has been resolved.")
