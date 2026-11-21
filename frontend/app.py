@@ -7,6 +7,8 @@ import pandas as pd
 import requests
 import streamlit as st
 
+from dashboard_filters import industry_options, filter_frames_by_industry
+
 st.set_page_config(page_title="Global Workforce Intelligence", page_icon="🌍", layout="wide")
 
 # Private-access gate: configure Streamlit OIDC (Google) and an email allowlist.
@@ -124,6 +126,12 @@ if not loaded:
     st.info("Connect the Google Sheet using GOOGLE_SHEET_ID and GOOGLE_SERVICE_ACCOUNT_JSON in Streamlit secrets.")
 else:
     data, sheet_url = loaded
+    with st.sidebar:
+        st.divider()
+        st.header("Dashboard filters")
+        selected_industry = st.selectbox("Filter by industry", industry_options(data))
+        data = filter_frames_by_industry(data, selected_industry)
+        st.caption("The selected industry filter applies across dashboard tables and metrics.")
     findings = data["Market Research"].copy()
     sources = data["Source Register"]
     insights = data["Market Insights & Trends"]
