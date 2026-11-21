@@ -50,3 +50,19 @@ class SignalMomentumTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+    def test_zero_current_sources_is_not_labeled_decreasing(self):
+        records = [{"industry":"M", "problem_type":"Hiring shortage", "source_url":"x", "weeks_seen":["2026-11-09"]}]
+        row = analyze_signal_momentum(records, "2026-11-16")[0]
+        self.assertEqual(row["trend"], "Not observed this week")
+
+    def test_industry_ranking_uses_unique_sources_when_urls_are_available(self):
+        rows = [
+            {"industry":"A", "problem_type":"p1", "current_source_count":2, "current_source_urls":["a","b"], "trend":"Increasing evidence", "staffing_opportunity_signal":"Candidate", "nexplan_planning_signal":"Review"},
+            {"industry":"A", "problem_type":"p2", "current_source_count":2, "current_source_urls":["b","c"], "trend":"Stable evidence", "staffing_opportunity_signal":"Review", "nexplan_planning_signal":"Candidate"},
+            {"industry":"B", "problem_type":"p3", "current_source_count":3, "current_source_urls":["d","e","f"], "trend":"Stable evidence", "staffing_opportunity_signal":"Review", "nexplan_planning_signal":"Review"},
+        ]
+        ranked = rank_emerging_industries(rows)
+        a = next(row for row in ranked if row["industry"] == "A")
+        self.assertEqual(a["current_sources"], 3)
+        self.assertFalse(a["source_count_estimated")
