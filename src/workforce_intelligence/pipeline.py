@@ -6,9 +6,9 @@ from .discovery import discover_sources
 from .collector import collect_document
 from .gemini_client import GeminiExtractor
 from .history import update_history
-from .trend_analysis import analyze_weekly_trends
+from .trend_analysis import analyze_weekly_trends, analyze_opportunity_changes
 from .reporting import export_workbook
-from .google_sheets import publish_to_google_sheets
+from .google_sheets import _opportunity, publish_to_google_sheets
 
 
 def _source_credibility_assessment(source_class, platform):
@@ -91,8 +91,11 @@ def run_research(mode="manufacturing", country_searched=None, max_sources_per_in
                 except json.JSONDecodeError:
                     continue
     weekly_trends = analyze_weekly_trends(cumulative_history, current_week=history["week_start"])
+    opportunity_changes = analyze_opportunity_changes(
+        cumulative_history, current_week=history["week_start"], classifier=_opportunity
+    )
     output = Path(output_dir) / "Global_Workforce_Intelligence_Report.xlsx"
-    export_workbook(findings, source_rows, output, history["new"], history["recurring"], weekly_trends)
+    export_workbook(findings, source_rows, output, history["new"], history["recurring"], weekly_trends, opportunity_changes)
 
     google_sheet_url = None
     if publish_google_sheets:
@@ -117,7 +120,7 @@ def run_research(mode="manufacturing", country_searched=None, max_sources_per_in
         "sources_discovered": len(sources), "findings_extracted": len(findings),
         "new_findings": len(history["new"]), "recurring_findings": len(history["recurring"]),
         "history_records": history["history_records"], "history_path": history["history_path"],
-        "weekly_trends": weekly_trends,
+        "weekly_trends": weekly_trends, "opportunity_changes": opportunity_changes,
         "workbook_path": str(output), "google_sheet_url": google_sheet_url,
         "findings": findings, "sources": source_rows,
     }

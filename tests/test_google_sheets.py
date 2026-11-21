@@ -3,7 +3,7 @@ from workforce_intelligence.google_sheets import build_sheet_payloads, SHEET_HEA
 
 
 class GoogleSheetsPayloadTests(unittest.TestCase):
-    def test_four_manager_tabs_and_linked_source_register(self):
+    def test_six_manager_tabs_and_linked_source_register(self):
         url = "https://www.linkedin.com/posts/example-company_workforce-activity-123"
         findings = [{
             "problem_type": "Skilled worker shortage",
@@ -22,7 +22,7 @@ class GoogleSheetsPayloadTests(unittest.TestCase):
         }]
         payloads = build_sheet_payloads(findings, sources)
         self.assertEqual(set(payloads), set(SHEET_HEADERS))
-        self.assertEqual(len(payloads), 4)
+        self.assertEqual(len(payloads), 6)
         headers = payloads["Source Register"][0]
         row = dict(zip(headers, payloads["Source Register"][1]))
         self.assertEqual(row["Source URL"], url)
@@ -48,7 +48,7 @@ class GoogleSheetsPayloadTests(unittest.TestCase):
         self.assertNotIn("Interpretation Status", payloads["Market Insights & Trends"][0])
         self.assertNotIn("Review Status", payloads["Product Feature Opportunities"][0])
 
-    def test_empty_run_still_returns_four_headers(self):
+    def test_empty_run_still_returns_six_headers(self):
         payloads = build_sheet_payloads([], [])
         self.assertEqual(set(payloads), set(SHEET_HEADERS))
         self.assertTrue(all(len(rows) == 1 for rows in payloads.values()))
@@ -110,6 +110,55 @@ class GoogleSheetsPayloadTests(unittest.TestCase):
         self.assertEqual(history_row["Occurrences"], 2)
         self.assertEqual(len(payloads["Source Register"]), 2)
 
+
+    def test_weekly_trends_and_opportunity_changes_tabs(self):
+        history = [
+            {
+                "problem_type": "Skills gap",
+                "description": "Missing technical skills at factory",
+                "industry": "Manufacturing",
+                "source_name": "Report A",
+                "source_url": "https://example.org/a",
+                "source_platform": "Web",
+                "country": "Germany",
+                "first_seen": "2026-11-10",
+                "last_seen": "2026-11-17",
+                "first_seen_week": "2026-11-09",
+                "last_seen_week": "2026-11-16",
+                "weeks_seen": ["2026-11-09", "2026-11-16"],
+                "occurrences": 2,
+            },
+            {
+                "problem_type": "Skills gap",
+                "description": "Missing technical skills at another factory",
+                "industry": "Manufacturing",
+                "source_name": "Report B",
+                "source_url": "https://example.org/b",
+                "source_platform": "Web",
+                "country": "France",
+                "first_seen": "2026-11-17",
+                "last_seen": "2026-11-17",
+                "first_seen_week": "2026-11-16",
+                "last_seen_week": "2026-11-16",
+                "weeks_seen": ["2026-11-16"],
+                "occurrences": 1,
+            },
+        ]
+        payloads = build_sheet_payloads([], [], research_date="2026-11-21", history_records=history)
+        trend = dict(zip(payloads["Weekly Trends"][0], payloads["Weekly Trends"][1]))
+        self.assertEqual(trend["Signal Status"], "Active this week")
+        self.assertEqual(trend["Sources This Week"], 2)
+        self.assertEqual(trend["Sources Previous Week"], 1)
+        self.assertTrue(trend["Potentially Worsening"])
+        self.assertIn("Potentially worsening", trend["Signal Momentum"])
+
+        changes = payloads["Opportunity Changes"]
+        self.assertEqual(len(changes), 2)
+        opportunity = dict(zip(changes[0], changes[1]))
+        self.assertEqual(opportunity["Change Status"], "Expanded evidence")
+        self.assertEqual(opportunity["Sources This Week"], 2)
+        self.assertEqual(opportunity["Sources Previous Week"], 1)
+        self.assertEqual(opportunity["Priority"], "Medium")
 
 if __name__ == "__main__":
     unittest.main()

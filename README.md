@@ -31,15 +31,25 @@ The weekly workflow writes into the same Google spreadsheet on every run; it cle
    - `GOOGLE_SERVICE_ACCOUNT_JSON`: complete JSON key contents (keep it secret; never commit it).
    - Existing `TAVILY_API_KEY` and `GEMINI_API_KEY` remain required.
 
-The workflow refreshes these tabs in the same spreadsheet:
-- **Run Overview**
-- **Workforce Findings**
-- **New Findings**
-- **Recurring Findings**
+The persistent Google spreadsheet refreshes these six tabs:
 - **Source Register**
-- **Research Summary**
+- **Market Research**
+- **Market Insights & Trends**
+- **Product Feature Opportunities**
+- **Weekly Trends**
+- **Opportunity Changes**
 
-The Source Register includes the requested source-tracking fields: Source ID, Source Title, Source URL, Source Type, Publisher / Author, Industry, Publication Date, Access Date, Source Credibility, Key Information and Related Research IDs, plus collection and verification status. Publisher / Author is left blank unless the source data explicitly identifies it; credibility starts as Pending review rather than being invented. Source URLs are stored as direct URLs.
+The Source Register contains source ID, title, direct URL, platform/type, industry, publication/access dates, source-credibility assessment, related research IDs and relevance status. Publisher / Author is left blank unless source metadata explicitly identifies it. Credibility labels are heuristic prioritization—not guarantees of article accuracy.
+
+The Excel workbook additionally contains Run Overview, Workforce Findings, New Findings, Recurring Findings, Source Register, Research Summary, Weekly Trends and Opportunity Changes.
+
+## Weekly comparison signals
+
+**Weekly Trends** aggregates findings by industry and workforce-problem category and compares unique supporting source and country counts with the previous week. It tracks new, active and not-observed statuses; emerging flags; potential-worsening flags; evidence momentum; and week/source/country deltas.
+
+**Opportunity Changes** groups mapped planning capabilities and tracks new opportunities, expanded or receding evidence, source/country breadth and heuristic priority.
+
+Source/country growth is only a signal of research coverage expansion, not proof that a workforce problem worsened. A finding not observed in the latest scan is not marked resolved. Opportunity mappings are suggestions for review, not approved product commitments.
 
 ## Weekly automation
 

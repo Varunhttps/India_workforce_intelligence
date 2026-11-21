@@ -10,7 +10,7 @@ from typing import Any
 import gspread
 
 from .history import week_start
-from .trend_analysis import analyze_weekly_trends
+from .trend_analysis import analyze_weekly_trends, analyze_opportunity_changes
 from .records import deduplicate_findings
 
 SHEET_HEADERS = {
@@ -33,9 +33,19 @@ SHEET_HEADERS = {
         "Countries", "Research Date",
     ],
     "Weekly Trends": [
-        "Trend ID", "Industry", "Workforce Problem", "Signal Status",
-        "Weeks Observed", "Country Count", "Countries", "Supporting Source Count",
+        "Trend ID", "Industry", "Workforce Problem", "Signal Status", "Signal Momentum",
+        "Emerging Signal", "Potentially Worsening", "Weeks Observed", "Total Countries",
+        "Countries This Week", "Countries Previous Week", "Country Count Delta",
+        "Total Sources", "Sources This Week", "Sources Previous Week", "Source Count Delta",
         "Supporting Sources", "First Seen", "Last Seen", "Latest Week", "Current Week",
+    ],
+    "Opportunity Changes": [
+        "Opportunity ID", "Industry", "Market Need", "Capability", "Suggested Feature",
+        "Business Value", "Priority", "Change Status", "New This Week", "Expanded Evidence",
+        "Weeks Observed", "Total Countries", "Countries This Week", "Countries Previous Week",
+        "Country Count Delta", "Total Sources", "Sources This Week", "Sources Previous Week",
+        "Source Count Delta", "Supporting Sources", "First Seen", "Last Seen", "Latest Week",
+        "Current Week",
     ],
     "Product Feature Opportunities": [
         "Opportunity ID", "Industry", "Identified Market Problem", "Market Need",
@@ -277,15 +287,55 @@ def build_sheet_payloads(findings, sources, research_date=None, history_records=
         ])
 
     opportunity_rows = list({row[0]: row for row in opportunity_rows}.values())
-    weekly_trends = analyze_weekly_trends(history_records, current_week=current_week)
+    analysis_records = list(history_records)
+    seen_records = {_identity(row) + "|" + str(row.get("source_url") or "") for row in analysis_records}
+    for row in normalized:
+        key = _identity(row) + "|" + str(row.get("source_url") or "")
+        if key in seen_records:
+            continue
+        meta = metadata_by_identity.get(key, {})
+        analysis_records.append({
+            **row,
+            "first_seen": meta.get("first_seen", today),
+            "last_seen": meta.get("last_seen", today),
+            "first_seen_week": meta.get("first_seen_week", current_week),
+            "last_seen_week": meta.get("last_seen_week", current_week),
+            "weeks_seen": meta.get("weeks_seen", [current_week]),
+            "occurrences": meta.get("occurrences", 1),
+        })
+        seen_records.add(key)
+
+    weekly_trends = analyze_weekly_trends(analysis_records, current_week=current_week)
+    opportunity_changes = analyze_opportunity_changes(
+        analysis_records, current_week=current_week, classifier=_opportunity
+    )
     trend_rows = []
     for trend in weekly_trends:
         trend_id = _stable_id("TRD", trend["industry"] + "|" + trend["problem_type"])
         trend_rows.append([
             trend_id, trend["industry"], trend["problem_type"], trend["signal_status"],
-            trend["weeks_observed"], trend["country_count"], _cell(trend["countries"]),
-            trend["source_count"], _cell(trend["supporting_sources"]),
-            trend["first_seen"], trend["last_seen"], trend["latest_week"], trend["current_week"],
+            trend["signal_momentum"], trend["emerging_signal"], trend["worsening_signal"],
+            trend["weeks_observed"], trend["country_count"], trend["current_week_country_count"],
+            trend["previous_week_country_count"], trend["country_count_delta"],
+            trend["source_count"], trend["current_week_source_count"],
+            trend["previous_week_source_count"], trend["source_count_delta"],
+            _cell(trend["supporting_sources"]), trend["first_seen"], trend["last_seen"],
+            trend["latest_week"], trend["current_week"],
+        ])
+    opportunity_change_rows = []
+    for opportunity in opportunity_changes:
+        opportunity_id = _stable_id("OCH", opportunity["industry"] + "|" + opportunity["capability"])
+        opportunity_change_rows.append([
+            opportunity_id, opportunity["industry"], opportunity["market_need"],
+            opportunity["capability"], opportunity["feature"], opportunity["business_value"],
+            opportunity["priority"], opportunity["change_status"], opportunity["new_this_week"],
+            opportunity["expanded_evidence"], opportunity["weeks_observed"],
+            opportunity["country_count"], opportunity["current_week_country_count"],
+            opportunity["previous_week_country_count"], opportunity["country_count_delta"],
+            opportunity["source_count"], opportunity["current_week_source_count"],
+            opportunity["previous_week_source_count"], opportunity["source_count_delta"],
+            _cell(opportunity["supporting_sources"]), opportunity["first_seen"],
+            opportunity["last_seen"], opportunity["latest_week"], opportunity["current_week"],
         ])
 
     return {
@@ -294,6 +344,7 @@ def build_sheet_payloads(findings, sources, research_date=None, history_records=
         "Market Insights & Trends": [SHEET_HEADERS["Market Insights & Trends"]] + insight_rows,
         "Product Feature Opportunities": [SHEET_HEADERS["Product Feature Opportunities"]] + opportunity_rows,
         "Weekly Trends": [SHEET_HEADERS["Weekly Trends"]] + trend_rows,
+        "Opportunity Changes": [SHEET_HEADERS["Opportunity Changes"]] + opportunity_change_rows,
     }
 
 

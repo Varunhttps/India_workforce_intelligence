@@ -37,6 +37,8 @@ class PipelineTests(unittest.TestCase):
             self.assertEqual(kwargs["history_records"][0]["problem_type"], "Payroll forecasting gap")
             self.assertIn("new_findings", kwargs)
             self.assertIn("recurring_findings", kwargs)
+            self.assertIn("opportunity_changes", result)
+            self.assertTrue(result["opportunity_changes"])
 
     @patch("workforce_intelligence.pipeline.discover_sources", return_value=[])
     def test_empty_discovery_does_not_require_gemini_key(self, discover):
@@ -55,7 +57,10 @@ class PipelineTests(unittest.TestCase):
             collect.return_value = {"local_path": str(document)}
             result = run_research(output_dir=tmp, extractor=FakeExtractor())
             self.assertEqual(result["findings_extracted"], 1)
+            self.assertIn("opportunity_changes", result)
             workbook = load_workbook(result["workbook_path"], read_only=True)
+            self.assertIn("Weekly Trends", workbook.sheetnames)
+            self.assertIn("Opportunity Changes", workbook.sheetnames)
             sheet = workbook["Source Register"]
             headers = [cell.value for cell in sheet[1]]
             row = dict(zip(headers, [cell.value for cell in sheet[2]]))

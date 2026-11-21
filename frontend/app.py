@@ -49,7 +49,7 @@ h1 {letter-spacing: -0.035em;}
 </style>
 """, unsafe_allow_html=True)
 
-SHEET_NAMES = ["Source Register", "Market Research", "Market Insights & Trends", "Product Feature Opportunities", "Weekly Trends"]
+SHEET_NAMES = ["Source Register", "Market Research", "Market Insights & Trends", "Product Feature Opportunities", "Weekly Trends", "Opportunity Changes"]
 
 
 @st.cache_data(ttl=90)
@@ -103,10 +103,11 @@ with st.sidebar:
     mode = {"Manufacturing": "manufacturing", "Other industries": "other_industries",
             "All industries": "all_industries"}[scope]
     country = st.text_input("Countries (optional)", placeholder="India, Germany, Japan — blank for global research")
-    st.caption("Searches up to 8 results per query across web and public, search-indexed LinkedIn, filters weak relevance scores and unrelated titles/snippets, and prioritizes stronger publisher types. Multiple countries broaden coverage.")
+    st.caption("Uses your selected source cap per industry across web and public, search-indexed LinkedIn; filters weak relevance and unrelated results, then prioritizes stronger publisher types. Multiple countries broaden coverage.")
+    source_limit = st.slider("Source candidates per industry", min_value=1, max_value=20, value=8)
     if st.button("▶ Start Research", type="primary", use_container_width=True):
         try:
-            trigger_research(mode, country, 8)
+            trigger_research(mode, country, source_limit)
             st.success("Research workflow dispatched. Check GitHub Actions for its live status.")
             st.link_button("View workflow runs", "https://github.com/Varunhttps/India_workforce_intelligence/actions")
         except Exception as exc:
@@ -167,16 +168,53 @@ else:
                 ] if c in frame.columns]
                 st.dataframe(frame[columns], use_container_width=True, hide_index=True)
 
-    st.subheader("Weekly trend signals")
+    st.subheader("Weekly trend momentum")
     trends = data.get("Weekly Trends", pd.DataFrame()).copy()
+    opportunities = data.get("Opportunity Changes", pd.DataFrame()).copy()
     if not trends.empty and "Signal Status" in trends.columns:
-        x, y, z = st.columns(3)
-        x.metric("New problems", int((trends["Signal Status"] == "New this week").sum()))
-        y.metric("Active this week", int((trends["Signal Status"] == "Active this week").sum()))
-        z.metric("Not observed this week", int((trends["Signal Status"] == "Not observed this week").sum()))
-        st.caption("Signals are aggregated by industry and workforce problem. 'Not observed this week' does not mean resolved.")
-        trend_cols = [c for c in ["Industry", "Workforce Problem", "Signal Status", "Weeks Observed", "Country Count", "Countries", "Supporting Source Count", "First Seen", "Last Seen"] if c in trends.columns]
+        emerging_count = int(trends.get("Emerging Signal", pd.Series(dtype=object)).astype(str).str.lower().isin(["true", "1", "yes"]).sum())
+        worsening_count = int(trends.get("Potentially Worsening", pd.Series(dtype=object)).astype(str).str.lower().isin(["true", "1", "yes"]).sum())
+        receding_count = int((trends.get("Signal Momentum", pd.Series(dtype=object)) == "Evidence receding").sum())
+        a, b, c, d, e = st.columns(5)
+        a.metric("New problems", int((trends["Signal Status"] == "New this week").sum()))
+        b.metric("Active problems", int((trends["Signal Status"] == "Active this week").sum()))
+        c.metric("Emerging signals", emerging_count)
+        d.metric("Potentially worsening", worsening_count)
+        e.metric("Evidence receding", receding_count)
+        st.caption("Source/country growth is a research signal—not proof that the underlying workforce problem worsened. Missing weekly coverage does not mean resolution.")
+        trend_cols = [col for col in [
+            "Industry", "Workforce Problem", "Signal Status", "Signal Momentum",
+            "Emerging Signal", "Potentially Worsening", "Weeks Observed",
+            "Sources This Week", "Sources Previous Week", "Source Count Delta",
+            "Total Countries", "Countries This Week", "Countries Previous Week",
+            "Country Count Delta", "First Seen", "Last Seen"
+        ] if col in trends.columns]
+        if "Source Count Delta" in trends.columns:
+            trends["Source Count Delta"] = pd.to_numeric(trends["Source Count Delta"], errors="coerce").fillna(0)
+            trends = trends.sort_values("Source Count Delta", ascending=False)
         st.dataframe(trends[trend_cols], use_container_width=True, hide_index=True)
+
+        st.subheader("Opportunity changes")
+        if not opportunities.empty:
+            new_opportunities = int(opportunities.get("New This Week", pd.Series(dtype=object)).astype(str).str.lower().isin(["true", "1", "yes"]).sum())
+            expanded_opportunities = int(opportunities.get("Expanded Evidence", pd.Series(dtype=object)).astype(str).str.lower().isin(["true", "1", "yes"]).sum())
+            opportunity_receding = int((opportunities.get("Change Status", pd.Series(dtype=object)) == "Evidence receded").sum())
+            x, y, z = st.columns(3)
+            x.metric("New opportunities", new_opportunities)
+            y.metric("Expanded evidence", expanded_opportunities)
+            z.metric("Evidence receded", opportunity_receding)
+            opportunity_cols = [col for col in [
+                "Industry", "Market Need", "Capability", "Suggested Feature", "Business Value",
+                "Priority", "Change Status", "Weeks Observed", "Sources This Week",
+                "Sources Previous Week", "Source Count Delta", "Total Countries",
+                "Countries This Week", "Country Count Delta"
+            ] if col in opportunities.columns]
+            if "Source Count Delta" in opportunities.columns:
+                opportunities["Source Count Delta"] = pd.to_numeric(opportunities["Source Count Delta"], errors="coerce").fillna(0)
+                opportunities = opportunities.sort_values("Source Count Delta", ascending=False)
+            st.dataframe(opportunities[opportunity_cols], use_container_width=True, hide_index=True)
+        else:
+            st.info("Opportunity changes will appear after the history is published.")
     else:
         st.info("Weekly trend signals will appear after the cumulative history is published.")
 
