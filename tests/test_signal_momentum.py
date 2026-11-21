@@ -47,10 +47,6 @@ class SignalMomentumTests(unittest.TestCase):
         self.assertEqual(ranked[0]["distinct_problem_count"], 2)
         self.assertEqual(ranked[1]["industry"], "B")
 
-
-if __name__ == "__main__":
-    unittest.main()
-
     def test_zero_current_sources_is_not_labeled_decreasing(self):
         records = [{"industry":"M", "problem_type":"Hiring shortage", "source_url":"x", "weeks_seen":["2026-11-09"]}]
         row = analyze_signal_momentum(records, "2026-11-16")[0]
@@ -65,4 +61,8 @@ if __name__ == "__main__":
         ranked = rank_emerging_industries(rows)
         a = next(row for row in ranked if row["industry"] == "A")
         self.assertEqual(a["current_sources"], 3)
-        self.assertFalse(a["source_count_estimated")
+        self.assertFalse(a["source_count_estimated"])
+
+
+if __name__ == "__main__":
+    unittest.main()
