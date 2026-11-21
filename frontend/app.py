@@ -48,7 +48,7 @@ def _require_auth():
     if not st.user.is_logged_in:
         st.title("🌍 Global Workforce Intelligence")
         st.write("Private workforce intelligence portal. Sign in with an invited account to continue.")
-        st.button("Sign in with Google", on_click=st.login, args=("google",), type="primary")
+        st.button("Sign in with Google", on_click=st.login, type="primary")
         st.stop()
     email = str(st.user.email or "").lower()
     if email not in allowed:
