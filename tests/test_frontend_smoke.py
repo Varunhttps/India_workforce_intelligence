@@ -20,6 +20,14 @@ class FrontendSmokeTests(unittest.TestCase):
         self.assertIn("Weekly Trends", tabs)
         self.assertIn("Opportunity Changes", tabs)
 
+    def test_dashboard_has_independent_opportunity_changes_section(self):
+        app_path = Path(__file__).resolve().parents[1] / "frontend" / "app.py"
+        source = app_path.read_text(encoding="utf-8")
+        opportunity_section = source.index('    st.subheader("Opportunity changes")')
+        trends_section = source.index('    st.subheader("Weekly trend momentum")
+        self.assertGreater(opportunity_section, trends_section)
+        self.assertIn("# Opportunity Changes is independent of Weekly Trends", source)
+
 
 if __name__ == "__main__":
     unittest.main()
