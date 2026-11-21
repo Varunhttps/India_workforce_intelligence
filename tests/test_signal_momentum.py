@@ -36,15 +36,16 @@ class SignalMomentumTests(unittest.TestCase):
         self.assertEqual(row["staffing_opportunity_signal"], "Candidate")
         self.assertEqual(row["nexplan_planning_signal"], "Review")
 
-    def test_industry_ranking(self):
+    def test_industry_ranking_prioritizes_source_count_then_diversity(self):
         rows = [
             {"industry": "A", "problem_type": "p1", "current_source_count": 2, "trend": "Increasing evidence", "staffing_opportunity_signal": "Candidate", "nexplan_planning_signal": "Review"},
             {"industry": "A", "problem_type": "p2", "current_source_count": 1, "trend": "Stable", "staffing_opportunity_signal": "Review", "nexplan_planning_signal": "Candidate"},
             {"industry": "B", "problem_type": "p3", "current_source_count": 3, "trend": "Stable", "staffing_opportunity_signal": "Review", "nexplan_planning_signal": "Review"},
         ]
         ranked = rank_emerging_industries(rows)
-        self.assertEqual(ranked[0]["industry"], "B")
-        self.assertEqual(ranked[1]["distinct_problem_count"], 2)
+        self.assertEqual(ranked[0]["industry"], "A")
+        self.assertEqual(ranked[0]["distinct_problem_count"], 2)
+        self.assertEqual(ranked[1]["industry"], "B")
 
 
 if __name__ == "__main__":
