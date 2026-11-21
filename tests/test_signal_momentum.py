@@ -12,7 +12,7 @@ class SignalMomentumTests(unittest.TestCase):
         row = analyze_signal_momentum(records, "2026-11-16")[0]
         self.assertEqual(row["previous_source_count"], 2)
         self.assertEqual(row["current_source_count"], 2)
-        self.assertEqual(row["trend"], "Stable")
+        self.assertEqual(row["trend"], "Stable evidence")
 
     def test_increasing_and_decreasing_evidence(self):
         records = [
