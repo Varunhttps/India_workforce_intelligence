@@ -23,13 +23,25 @@
 
 ## Release smoke test
 - [ ] CI tests pass on the release commit.
-- [ ] Dashboard imports/AST smoke test passes.
+- [ ] Dashboard imports/AST smoke test passes, including Streamlit authentication API version compatibility.
 - [ ] Sign-in and allowlist behavior tested with an approved and an unapproved account.
 - [ ] Empty/unconfigured data states render safely.
 - [ ] Research dispatch reports failure clearly and links to GitHub Actions.
-- [ ] No PR is merged without explicit owner approval.
+- [ ] No PR is merged unless CI is green and the change is safe.
+- [ ] Verify the actual hosted URL, HTTPS, access gate and allowlist before sharing it.
+- [ ] Verify app can read the configured Google Sheet without exposing service-account credentials.
+- [ ] Verify the research-dispatch token has only required repository/Actions permissions and can be revoked.
 
 ## Known limitations
 - Workforce signal rankings are heuristic screening aids, not validated labor-market estimates.
 - Country attribution is included only when supported by source text.
 - Weekly evidence volume reflects research coverage, not necessarily changes in workforce severity.
+
+
+## Demo readiness
+- [ ] Prepare a small, representative dataset with clearly attributed public sources; do not use fabricated findings as if they were real.
+- [ ] Test the dashboard with a full dataset, empty sheets, missing optional columns, and a stale-data scenario.
+- [ ] Confirm all charts and tables have understandable labels and that heuristics are visibly described as signals, not verified severity.
+- [ ] Create a short demo walkthrough: research scope selection → source register → findings → weekly changes → country/skill coverage → manager actions → caveats.
+- [ ] Keep a demo account and spreadsheet separate from personal or production data.
+- [ ] Record the date/time of the latest successful research run and refresh before presenting.
