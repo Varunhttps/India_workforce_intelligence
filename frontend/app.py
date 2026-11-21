@@ -7,7 +7,7 @@ import pandas as pd
 import requests
 import streamlit as st
 
-from dashboard_filters import industry_options, filter_frames_by_industry
+from workforce_intelligence.dashboard_filters import industry_options, filter_frames_by_industry
 
 st.set_page_config(page_title="Global Workforce Intelligence", page_icon="🌍", layout="wide")
 
