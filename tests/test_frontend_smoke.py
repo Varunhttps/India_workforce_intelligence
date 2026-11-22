@@ -33,6 +33,13 @@ class FrontendSmokeTests(unittest.TestCase):
         self.assertIn('pd.to_numeric(trends["Weeks Seen"]', source)
         self.assertIn('"Industry", "Workforce Problem", "Supporting Sources", "Weeks Seen"', source)
 
+    def test_dashboard_momentum_and_skill_signals_use_observation_week_dates(self):
+        app_path = Path(__file__).resolve().parents[1] / "frontend" / "app.py"
+        source = app_path.read_text(encoding="utf-8")
+        self.assertIn('finding.get("Observation Weeks")', source)
+        self.assertIn('finding.get("Latest Week") or finding.get("Last Seen")', source)
+        self.assertNotIn('finding.get("Weeks Seen") or ""', source)
+
     def test_dashboard_has_independent_opportunity_changes_section(self):
         app_path = Path(__file__).resolve().parents[1] / "frontend" / "app.py"
         source = app_path.read_text(encoding="utf-8")
