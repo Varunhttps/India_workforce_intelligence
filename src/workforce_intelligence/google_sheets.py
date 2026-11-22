@@ -31,7 +31,7 @@ SHEET_HEADERS = {
         "Countries", "Research Date",
     ],
     "Weekly Trends": [
-        "Trend ID", "Industry", "Workforce Problem", "Supporting Sources", "Weeks Seen", "First Seen", "Latest Week",
+        "Trend ID", "Industry", "Workforce Problem", "Supporting Sources", "Weeks Seen",
     ],
     "Opportunity Changes": [
         "Opportunity ID", "Industry", "Market Need", "Capability", "Suggested Feature",
@@ -338,7 +338,7 @@ def build_sheet_payloads(findings, sources, research_date=None, history_records=
         trend_id = _stable_id("TRD", trend["industry"] + "|" + trend["problem_type"])
         trend_rows.append([
             trend_id, trend["industry"], trend["problem_type"],
-            _cell(trend["supporting_sources"]), trend["weeks_observed"], trend["first_seen"], trend["latest_week"],
+            _cell(trend["supporting_sources"]), trend["weeks_observed"],
         ])
     opportunity_change_rows = []
     for opportunity in opportunity_changes:
