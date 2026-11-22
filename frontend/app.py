@@ -128,8 +128,7 @@ with st.sidebar:
     if st.button("▶ Start Research", type="primary", use_container_width=True):
         try:
             trigger_research(mode, country, source_limit)
-            st.success("Research workflow dispatched. Check GitHub Actions for its live status.")
-            st.link_button("View workflow runs", "https://github.com/Varunhttps/India_workforce_intelligence/actions")
+            st.success("Research workflow dispatched successfully.")
         except Exception as exc:
             st.error(str(exc))
 
