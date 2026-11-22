@@ -30,12 +30,9 @@ SHEET_HEADERS = {
         "Distinct Problem Count", "Supporting Source Count", "Related Research IDs",
         "Countries", "Research Date",
     ],
-    "Weekly Trends": [
-        "Trend ID", "Industry", "Workforce Problem", "Supporting Sources", "Weeks Seen",
-    ],
     "Opportunity Changes": [
         "Opportunity ID", "Industry", "Market Need", "Capability", "Suggested Feature",
-        "Business Value", "Priority", "Supporting Sources", "First Seen", "Latest Week",
+        "Business Value", "Priority", "Supporting Sources",
     ],
     "Product Feature Opportunities": [
         "Opportunity ID", "Industry", "Identified Market Problem", "Market Need",
@@ -333,13 +330,7 @@ def build_sheet_payloads(findings, sources, research_date=None, history_records=
     opportunity_changes = analyze_opportunity_changes(
         analysis_records, current_week=current_week, classifier=_opportunity
     )
-    trend_rows = []
-    for trend in weekly_trends:
-        trend_id = _stable_id("TRD", trend["industry"] + "|" + trend["problem_type"])
-        trend_rows.append([
-            trend_id, trend["industry"], trend["problem_type"],
-            _cell(trend["supporting_sources"]), int(trend["weeks_observed"]),
-        ])
+    # Weekly Trends tab removed from the reporting workbook.
     opportunity_change_rows = []
     for opportunity in opportunity_changes:
         opportunity_id = _stable_id("OCH", opportunity["industry"] + "|" + opportunity["capability"])
@@ -347,7 +338,6 @@ def build_sheet_payloads(findings, sources, research_date=None, history_records=
             opportunity_id, opportunity["industry"], opportunity["market_need"],
             opportunity["capability"], opportunity["feature"], opportunity["business_value"],
             opportunity["priority"], _cell(opportunity["supporting_sources"]),
-            opportunity["first_seen"], opportunity["latest_week"],
         ])
 
     return {
@@ -355,7 +345,6 @@ def build_sheet_payloads(findings, sources, research_date=None, history_records=
         "Market Research": [SHEET_HEADERS["Market Research"]] + research_rows,
         "Market Insights & Trends": [SHEET_HEADERS["Market Insights & Trends"]] + insight_rows,
         "Product Feature Opportunities": [SHEET_HEADERS["Product Feature Opportunities"]] + opportunity_rows,
-        "Weekly Trends": [SHEET_HEADERS["Weekly Trends"]] + trend_rows,
         "Opportunity Changes": [SHEET_HEADERS["Opportunity Changes"]] + opportunity_change_rows,
     }
 
@@ -370,6 +359,11 @@ def publish_to_google_sheets(findings, sources, spreadsheet_id=None, service_acc
     client = gspread.service_account_from_dict(json.loads(service_account_json))
     spreadsheet = client.open_by_key(spreadsheet_id)
     payloads = build_sheet_payloads(findings, sources, history_records=history_records)
+    # Remove obsolete Weekly Trends tab entirely if it exists.
+    try:
+        spreadsheet.del_worksheet(spreadsheet.worksheet("Weekly Trends"))
+    except gspread.WorksheetNotFound:
+        pass
     for title, values in payloads.items():
         try:
             worksheet = spreadsheet.worksheet(title)
@@ -380,8 +374,5 @@ def publish_to_google_sheets(findings, sources, spreadsheet_id=None, service_acc
         worksheet.clear()
         worksheet.resize(rows=max(len(values), 1), cols=max(len(values[0]), 1))
         worksheet.update(range_name="A1", values=values)
-        if title == "Weekly Trends":
-            # Explicitly reset the numeric count column's format so legacy date formatting is cleared.
-            worksheet.format("E:E", {"numberFormat": {"type": "NUMBER", "pattern": "0"}})
         worksheet.freeze(rows=1)
     return spreadsheet.url
