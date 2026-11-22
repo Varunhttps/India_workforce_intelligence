@@ -87,7 +87,7 @@ LinkedIn is a discovery channel inside the existing pipeline, not a separate age
 
 ## Private dashboard access
 
-The frontend uses Streamlit's Google OIDC sign-in and an explicit email allowlist. Authentication is required by default; set `REQUIRE_AUTH=false` only for local development without OAuth. For hosted deployment, add the `.streamlit/secrets.toml` values from `.streamlit/secrets.toml.example` and replace the placeholder emails with invited users. Never commit real secrets.
+The connected dashboard always requires Streamlit Google OIDC sign-in and an explicit email allowlist; there is no environment-variable authentication bypass. For local presentations without OAuth or Google Sheets credentials, use the separate read-only offline demo: `streamlit run frontend/demo.py`. For hosted deployment, configure the `.streamlit/secrets.toml` values from `.streamlit/secrets.toml.example` and replace the empty/placeholder allowlist with invited users. Never commit real secrets.
 
 The dashboard is private to approved email addresses. Authentication verifies identity; the `ALLOWED_EMAILS` list authorizes access. Remove an email from the allowlist to revoke dashboard access.
 
