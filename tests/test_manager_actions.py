@@ -32,6 +32,25 @@ class ManagerActionTests(unittest.TestCase):
         }], today=date(2026, 11, 21))
         self.assertEqual(result[0]["Manager Action"], "Run a skills-gap assessment")
 
+    def test_numeric_weeks_seen_and_internal_observation_weeks_are_supported(self):
+        rows = [{
+            "Industry": "Manufacturing", "Identified Problem": "Skills shortage",
+            "Source URL": "https://a.example", "Research Date": "2026-11-20",
+            "Weeks Seen": 4,
+            "Observation Weeks": "2026-11-02, 2026-11-09, 2026-11-16, 2026-11-23",
+        }]
+        result = recommend_manager_actions(rows, today=date(2026, 11, 24))[0]
+        self.assertIn("4 repeat observation(s) (+15/15)", result["Score Rationale"])
+
+    def test_numeric_weeks_seen_without_internal_dates_is_supported(self):
+        rows = [{
+            "Industry": "Retail", "Identified Problem": "Hiring challenge",
+            "Source URL": "https://a.example", "Research Date": "2026-11-20",
+            "Weeks Seen": 3,
+        }]
+        result = recommend_manager_actions(rows, today=date(2026, 11, 24))[0]
+        self.assertIn("3 repeat observation(s) (+15/15)", result["Score Rationale"])
+
     def test_weekly_momentum_adds_explainable_bonus(self):
         row = {"Industry": "Technology", "Identified Problem": "Automation system adoption",
                 "Business Impact": "Productivity", "Source URL": "https://a.example",
