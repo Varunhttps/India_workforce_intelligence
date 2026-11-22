@@ -3,7 +3,7 @@ from workforce_intelligence.google_sheets import build_sheet_payloads, SHEET_HEA
 
 
 class GoogleSheetsPayloadTests(unittest.TestCase):
-    def test_six_manager_tabs_and_linked_source_register(self):
+    def test_five_manager_tabs_and_linked_source_register(self):
         url = "https://www.linkedin.com/posts/example-company_workforce-activity-123"
         findings = [{
             "problem_type": "Skilled worker shortage",
@@ -22,7 +22,8 @@ class GoogleSheetsPayloadTests(unittest.TestCase):
         }]
         payloads = build_sheet_payloads(findings, sources)
         self.assertEqual(set(payloads), set(SHEET_HEADERS))
-        self.assertEqual(len(payloads), 6)
+        self.assertNotIn("Weekly Trends", payloads)
+        self.assertEqual(len(payloads), 5)
         headers = payloads["Source Register"][0]
         row = dict(zip(headers, payloads["Source Register"][1]))
         self.assertEqual(row["Source URL"], url)
@@ -53,9 +54,11 @@ class GoogleSheetsPayloadTests(unittest.TestCase):
         self.assertNotIn("Interpretation Status", payloads["Market Insights & Trends"][0])
         self.assertNotIn("Review Status", payloads["Product Feature Opportunities"][0])
 
-    def test_empty_run_still_returns_six_headers(self):
+    def test_empty_run_returns_five_headers_and_no_weekly_trends(self):
         payloads = build_sheet_payloads([], [])
         self.assertEqual(set(payloads), set(SHEET_HEADERS))
+        self.assertNotIn("Weekly Trends", payloads)
+        self.assertEqual(len(payloads), 5)
         self.assertTrue(all(len(rows) == 1 for rows in payloads.values()))
 
     def test_industry_summary_aggregates_distinct_problems_and_sources(self):
@@ -116,7 +119,7 @@ class GoogleSheetsPayloadTests(unittest.TestCase):
         self.assertEqual(len(payloads["Source Register"]), 2)
 
 
-    def test_weekly_trends_and_opportunity_changes_tabs(self):
+    def test_opportunity_changes_has_no_seen_date_columns(self):
         history = [
             {
                 "problem_type": "Skills gap",
@@ -150,20 +153,7 @@ class GoogleSheetsPayloadTests(unittest.TestCase):
             },
         ]
         payloads = build_sheet_payloads([], [], research_date="2026-11-21", history_records=history)
-        trend = dict(zip(payloads["Weekly Trends"][0], payloads["Weekly Trends"][1]))
-        self.assertEqual(trend["Industry"], "Manufacturing")
-        self.assertEqual(trend["Workforce Problem"], "Skills gap")
-        self.assertEqual(trend["Weeks Seen"], 2)
-        self.assertIsInstance(trend["Weeks Seen"], int)
-        self.assertEqual(payloads["Weekly Trends"][0], [
-            "Trend ID", "Industry", "Workforce Problem", "Supporting Sources", "Weeks Seen"
-        ])
-        self.assertNotIn("First Seen", trend)
-        self.assertNotIn("Latest Week", trend)
-        self.assertIn("Supporting Sources", trend)
-        self.assertNotIn("Signal Status", trend)
-        self.assertNotIn("Signal Momentum", trend)
-        self.assertNotIn("Weeks Observed", trend)
+        self.assertNotIn("Weekly Trends", payloads)
 
         changes = payloads["Opportunity Changes"]
         self.assertEqual(len(changes), 2)
@@ -174,8 +164,8 @@ class GoogleSheetsPayloadTests(unittest.TestCase):
         self.assertEqual(opportunity["Priority"], "Medium")
         self.assertNotIn("Change Status", opportunity)
         self.assertNotIn("Weeks Observed", opportunity)
-        self.assertIn("First Seen", opportunity)
-        self.assertIn("Latest Week", opportunity)
+        self.assertNotIn("First Seen", opportunity)
+        self.assertNotIn("Latest Week", opportunity)
 
 if __name__ == "__main__":
     unittest.main()
