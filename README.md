@@ -45,7 +45,7 @@ The Excel workbook additionally contains Run Overview, Workforce Findings, New F
 
 ## Weekly comparison signals
 
-**Weekly Trends** aggregates findings by industry and workforce-problem category and compares unique supporting source and country counts with the previous week. It tracks new, active and not-observed statuses; emerging flags; potential-worsening flags; evidence momentum; and week/source/country deltas.
+**Weekly Trends** aggregates findings by industry and workforce-problem category. Its **Weeks Seen** column is a numeric count of distinct ISO weeks observed in the cumulative research history; the tab intentionally excludes First Seen and Latest Week date columns. The dashboard's separate weekly evidence-momentum view compares supporting source and country coverage with the previous week.
 
 **Opportunity Changes** groups mapped planning capabilities and tracks new opportunities, expanded or receding evidence, source/country breadth and heuristic priority.
 
