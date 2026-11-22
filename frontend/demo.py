@@ -59,7 +59,7 @@ skill_inputs = [{
     "problem_type": row["Identified Problem"], "description": row["Problem Description"],
     "industry": row["Industry"], "country": row["Country"], "source_url": row["Source URL"],
     "first_seen": row["First Seen"], "last_seen": row["Last Seen"],
-    "weeks_seen": [w.strip() for w in str(row["Weeks Seen"]).split(",") if w.strip()],
+    "weeks_seen": [w.strip() for w in str(row["Observation Weeks"]).split(",") if w.strip()],
 } for _, row in df.iterrows()]
 skills = analyze_skill_trends(skill_inputs)
 if skills:
@@ -92,5 +92,5 @@ else:
     st.info("No mapped product-capability opportunities are included in this offline snapshot. Use the connected dashboard for workbook-mapped opportunity priorities.")
 
 st.subheader("Raw research snapshot")
-display_cols = ["Industry", "Identified Problem", "Problem Description", "Country", "Source Name", "Source Platform", "First Seen", "Last Seen", "Source URL"]
+display_cols = ["Industry", "Identified Problem", "Problem Description", "Country", "Source Name", "Source Platform", "Weeks Seen", "Source URL"]
 st.dataframe(df[display_cols], use_container_width=True, hide_index=True)
