@@ -3,7 +3,7 @@ from workforce_intelligence.google_sheets import build_sheet_payloads, SHEET_HEA
 
 
 class GoogleSheetsPayloadTests(unittest.TestCase):
-    def test_five_manager_tabs_and_linked_source_register(self):
+    def test_six_manager_tabs_and_linked_source_register(self):
         url = "https://www.linkedin.com/posts/example-company_workforce-activity-123"
         findings = [{
             "problem_type": "Skilled worker shortage",
@@ -22,8 +22,15 @@ class GoogleSheetsPayloadTests(unittest.TestCase):
         }]
         payloads = build_sheet_payloads(findings, sources)
         self.assertEqual(set(payloads), set(SHEET_HEADERS))
-        self.assertNotIn("Weekly Trends", payloads)
-        self.assertEqual(len(payloads), 5)
+        self.assertIn("Weekly Trends", payloads)
+        self.assertEqual(len(payloads), 6)
+        trend_headers = payloads["Weekly Trends"][0]
+        self.assertEqual(trend_headers, ["Trend ID", "Industry", "Workforce Problem", "Supporting Sources", "Weeks Seen"])
+        trend = dict(zip(trend_headers, payloads["Weekly Trends"][1]))
+        self.assertEqual(trend["Weeks Seen"], 1)
+        self.assertIsInstance(trend["Weeks Seen"], int)
+        self.assertNotIn("First Seen", trend)
+        self.assertNotIn("Latest Week", trend)
         headers = payloads["Source Register"][0]
         row = dict(zip(headers, payloads["Source Register"][1]))
         self.assertEqual(row["Source URL"], url)
@@ -54,11 +61,12 @@ class GoogleSheetsPayloadTests(unittest.TestCase):
         self.assertNotIn("Interpretation Status", payloads["Market Insights & Trends"][0])
         self.assertNotIn("Review Status", payloads["Product Feature Opportunities"][0])
 
-    def test_empty_run_returns_five_headers_and_no_weekly_trends(self):
+    def test_empty_run_returns_six_headers_including_weekly_trends(self):
         payloads = build_sheet_payloads([], [])
         self.assertEqual(set(payloads), set(SHEET_HEADERS))
-        self.assertNotIn("Weekly Trends", payloads)
-        self.assertEqual(len(payloads), 5)
+        self.assertIn("Weekly Trends", payloads)
+        self.assertEqual(len(payloads), 6)
+        self.assertEqual(payloads["Weekly Trends"], [["Trend ID", "Industry", "Workforce Problem", "Supporting Sources", "Weeks Seen"]])
         self.assertTrue(all(len(rows) == 1 for rows in payloads.values()))
 
     def test_industry_summary_aggregates_distinct_problems_and_sources(self):
@@ -153,7 +161,14 @@ class GoogleSheetsPayloadTests(unittest.TestCase):
             },
         ]
         payloads = build_sheet_payloads([], [], research_date="2026-11-21", history_records=history)
-        self.assertNotIn("Weekly Trends", payloads)
+        trends = payloads["Weekly Trends"]
+        trend = dict(zip(trends[0], trends[1]))
+        self.assertEqual(trends[0], ["Trend ID", "Industry", "Workforce Problem", "Supporting Sources", "Weeks Seen"])
+        self.assertEqual(trend["Industry"], "Manufacturing")
+        self.assertEqual(trend["Weeks Seen"], 2)
+        self.assertIsInstance(trend["Weeks Seen"], int)
+        self.assertNotIn("First Seen", trend)
+        self.assertNotIn("Latest Week", trend)
 
         changes = payloads["Opportunity Changes"]
         self.assertEqual(len(changes), 2)
