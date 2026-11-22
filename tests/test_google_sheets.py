@@ -51,6 +51,7 @@ class GoogleSheetsPayloadTests(unittest.TestCase):
         self.assertIn("Latest Week", research_row)
         self.assertNotIn("Last Seen", research_row)
         self.assertNotIn("Weeks Seen", research_row)
+        self.assertIn("Observation Weeks", research_row)
         self.assertNotIn("Evidence / Supporting Information", research_row)
         self.assertNotIn("Research Status", research_row)
         self.assertNotIn("Verification Status", row)
@@ -60,6 +61,26 @@ class GoogleSheetsPayloadTests(unittest.TestCase):
                             for r in payloads["Market Insights & Trends"][1:]))
         self.assertNotIn("Interpretation Status", payloads["Market Insights & Trends"][0])
         self.assertNotIn("Review Status", payloads["Product Feature Opportunities"][0])
+
+    def test_market_research_exports_exact_observation_weeks_for_dashboard(self):
+        history = [{
+            "problem_type": "Skilled worker shortage",
+            "description": "Difficulty hiring production workers.",
+            "industry": "Automotive manufacturing",
+            "source_name": "Historical report",
+            "source_url": "https://example.com/historical",
+            "source_platform": "Web",
+            "country": "India",
+            "first_seen": "2026-11-02", "last_seen": "2026-11-23",
+            "first_seen_week": "2026-11-02", "last_seen_week": "2026-11-23",
+            "weeks_seen": ["2026-11-02", "2026-11-09", "2026-11-23"],
+            "occurrences": 3,
+        }]
+        payloads = build_sheet_payloads([], [], research_date="2026-11-23", history_records=history)
+        headers, values = payloads["Market Research"][0], payloads["Market Research"][1]
+        row = dict(zip(headers, values))
+        self.assertEqual(row["Observation Weeks"], "2026-11-02, 2026-11-09, 2026-11-23")
+
 
     def test_empty_run_returns_six_headers_including_weekly_trends(self):
         payloads = build_sheet_payloads([], [])
