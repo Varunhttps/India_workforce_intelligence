@@ -16,7 +16,7 @@
 
 ## Security
 
-- [ ] Review the public-source collector's URL validation before public deployment. It rejects private/local IPs and revalidates redirects, but DNS is checked separately from the HTTP connection; DNS rebinding is a residual risk and is not fully mitigated by the current implementation. Until this is addressed, keep the research-triggering app behind the configured allowlist and do not deploy it as an unrestricted public service.
+- [ ] Review the public-source collector's URL validation before public deployment. The security PR adds IP-pinned HTTP(S) connections after validating all DNS answers, disables environment proxies, rejects explicit proxies, and revalidates every redirect. This mitigates DNS-rebinding SSRF, but external integration behavior still requires CI and security review; keep the research-triggering app behind the configured allowlist and do not expose it as an unrestricted public service.
 - [ ] Keep real secrets out of repository files and commit history.
 - [ ] Leave authentication enabled for hosted deployment (`REQUIRE_AUTH=true`).
 - [ ] Review the allowlist before inviting users.
@@ -38,7 +38,6 @@
 - Workforce signal rankings are heuristic screening aids, not validated labor-market estimates.
 - Country attribution is included only when supported by source text.
 - Weekly evidence volume reflects research coverage, not necessarily changes in workforce severity.
-
 
 ## Demo readiness
 - [ ] Prepare a small, representative dataset with clearly attributed public sources; do not use fabricated findings as if they were real.
