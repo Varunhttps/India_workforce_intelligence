@@ -55,7 +55,8 @@ def weekly_statuses(frame, current_week=None):
         return (day - timedelta(days=day.weekday())).isoformat()
 
     first = frame.get("First Seen", pd.Series("", index=frame.index)).map(week_key)
-    last = frame.get("Last Seen", pd.Series("", index=frame.index)).map(week_key)
+    last_values = frame.get("Last Seen", frame.get("Latest Week", pd.Series("", index=frame.index)))
+    last = last_values.map(week_key)
     derived = []
     for first_week, last_week in zip(first, last):
         if first_week == current_monday:

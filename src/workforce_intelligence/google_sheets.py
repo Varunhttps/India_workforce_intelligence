@@ -22,9 +22,8 @@ SHEET_HEADERS = {
     "Market Research": [
         "Research ID", "Source ID", "Industry", "Sub-industry",
         "Workforce Planning Area", "Identified Problem", "Problem Description",
-        "Business Impact", "Publication Date", "Research Date",
-        "Country", "Region", "Source URL",
-        "First Seen", "Last Seen", "Weeks Seen",
+        "Research Date", "Country", "Region", "Source URL",
+        "First Seen", "Latest Week",
     ],
     "Market Insights & Trends": [
         "Insight ID", "Section", "Industry", "Insight / Challenge",
@@ -32,19 +31,11 @@ SHEET_HEADERS = {
         "Countries", "Research Date",
     ],
     "Weekly Trends": [
-        "Trend ID", "Industry", "Workforce Problem", "Signal Status", "Signal Momentum",
-        "Emerging Signal", "Potentially Worsening", "Weeks Observed", "Total Countries",
-        "Countries This Week", "Countries Previous Week", "Country Count Delta",
-        "Total Sources", "Sources This Week", "Sources Previous Week", "Source Count Delta",
-        "Supporting Sources", "First Seen", "Last Seen", "Latest Week", "Current Week",
+        "Trend ID", "Industry", "Workforce Problem", "Supporting Sources", "First Seen", "Latest Week",
     ],
     "Opportunity Changes": [
         "Opportunity ID", "Industry", "Market Need", "Capability", "Suggested Feature",
-        "Business Value", "Priority", "Change Status", "New This Week", "Expanded Evidence",
-        "Weeks Observed", "Total Countries", "Countries This Week", "Countries Previous Week",
-        "Country Count Delta", "Total Sources", "Sources This Week", "Sources Previous Week",
-        "Source Count Delta", "Supporting Sources", "First Seen", "Last Seen", "Latest Week",
-        "Current Week",
+        "Business Value", "Priority", "Supporting Sources", "First Seen", "Latest Week",
     ],
     "Product Feature Opportunities": [
         "Opportunity ID", "Industry", "Identified Market Problem", "Market Need",
@@ -250,11 +241,10 @@ def build_sheet_payloads(findings, sources, research_date=None, history_records=
         research_rows.append([
             rid, sid, _cell(row.get("industry")), _cell(row.get("sub_industry")),
             _cell(row.get("problem_type") or "Workforce planning"), _cell(row.get("problem_type")),
-            _cell(row.get("description")), _cell(row.get("business_impact")),
-            _cell(row.get("publication_date")), _cell(meta.get("last_seen") or today),
+            _cell(row.get("description")), _cell(meta.get("last_seen") or today),
             _cell(row.get("country")), _cell(row.get("region")), _cell(row.get("source_url")),
-            _cell(meta.get("first_seen")), _cell(meta.get("last_seen")),
-            _cell(meta.get("weeks_seen") or [meta.get("first_seen_week"), meta.get("last_seen_week")]),
+            _cell(meta.get("first_seen")),
+            _cell(meta.get("last_seen_week") or week_start(meta.get("last_seen") or today)),
         ])
         problem = " ".join(str(row.get("problem_type") or "Unclassified").casefold().split())
         display_problem = row.get("problem_type") or "Unclassified"
@@ -329,14 +319,8 @@ def build_sheet_payloads(findings, sources, research_date=None, history_records=
     for trend in weekly_trends:
         trend_id = _stable_id("TRD", trend["industry"] + "|" + trend["problem_type"])
         trend_rows.append([
-            trend_id, trend["industry"], trend["problem_type"], trend["signal_status"],
-            trend["signal_momentum"], trend["emerging_signal"], trend["worsening_signal"],
-            trend["weeks_observed"], trend["country_count"], trend["current_week_country_count"],
-            trend["previous_week_country_count"], trend["country_count_delta"],
-            trend["source_count"], trend["current_week_source_count"],
-            trend["previous_week_source_count"], trend["source_count_delta"],
-            _cell(trend["supporting_sources"]), trend["first_seen"], trend["last_seen"],
-            trend["latest_week"], trend["current_week"],
+            trend_id, trend["industry"], trend["problem_type"],
+            _cell(trend["supporting_sources"]), trend["first_seen"], trend["latest_week"],
         ])
     opportunity_change_rows = []
     for opportunity in opportunity_changes:
@@ -344,14 +328,8 @@ def build_sheet_payloads(findings, sources, research_date=None, history_records=
         opportunity_change_rows.append([
             opportunity_id, opportunity["industry"], opportunity["market_need"],
             opportunity["capability"], opportunity["feature"], opportunity["business_value"],
-            opportunity["priority"], opportunity["change_status"], opportunity["new_this_week"],
-            opportunity["expanded_evidence"], opportunity["weeks_observed"],
-            opportunity["country_count"], opportunity["current_week_country_count"],
-            opportunity["previous_week_country_count"], opportunity["country_count_delta"],
-            opportunity["source_count"], opportunity["current_week_source_count"],
-            opportunity["previous_week_source_count"], opportunity["source_count_delta"],
-            _cell(opportunity["supporting_sources"]), opportunity["first_seen"],
-            opportunity["last_seen"], opportunity["latest_week"], opportunity["current_week"],
+            opportunity["priority"], _cell(opportunity["supporting_sources"]),
+            opportunity["first_seen"], opportunity["latest_week"],
         ])
 
     return {
