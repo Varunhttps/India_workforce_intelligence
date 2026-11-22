@@ -18,7 +18,7 @@
 
 - [ ] Review the public-source collector's URL validation before public deployment. The security PR adds IP-pinned HTTP(S) connections after validating all DNS answers, disables environment proxies, rejects explicit proxies, and revalidates every redirect. This mitigates DNS-rebinding SSRF, but external integration behavior still requires CI and security review; keep the research-triggering app behind the configured allowlist and do not expose it as an unrestricted public service.
 - [ ] Keep real secrets out of repository files and commit history.
-- [ ] Leave authentication enabled for hosted deployment (`REQUIRE_AUTH=true`).
+- [ ] Confirm the hosted dashboard always enforces Google OIDC plus a non-empty allowlist; no `REQUIRE_AUTH` bypass is supported. Use `frontend/demo.py` for offline no-login presentations.
 - [ ] Review the allowlist before inviting users.
 - [ ] Do not expose the research dispatch token to client-side code or logs.
 - [ ] Rotate credentials if they are ever committed or exposed.
