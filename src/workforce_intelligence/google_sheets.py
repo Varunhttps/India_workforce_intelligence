@@ -84,64 +84,106 @@ def _identity(row: dict) -> str:
 
 
 def _opportunity(row: dict, supporting_source_count: int = 1) -> dict | None:
-    """Turn workforce problems into concrete, buildable industry product concepts."""
+    """Map workforce problems to specific, buildable industry product concepts."""
     problem = str(row.get("problem_type") or "").casefold()
     description = str(row.get("description") or "").casefold()
     text = f"{problem} {description}"
     industry = str(row.get("industry") or "").casefold()
-    severity_terms = ("critical", "severe", "urgent", "crisis", "plant shutdown", "production halted", "missed orders", "major disruption", "safety risk")
-    high_terms = ("high turnover", "large-scale", "mass", "persistent", "significant shortage", "unfilled for months", "production disruption")
-    if any(term in text for term in severity_terms + high_terms) or supporting_source_count >= 3:
+
+    high_terms = ("critical", "severe", "urgent", "crisis", "plant shutdown",
+                  "production halted", "missed orders", "major disruption",
+                  "safety risk", "high turnover", "large-scale", "mass",
+                  "persistent", "significant shortage", "unfilled for months",
+                  "production disruption")
+    if any(term in text for term in high_terms) or supporting_source_count >= 3:
         priority = "High"
     elif supporting_source_count >= 2:
         priority = "Medium"
     else:
         priority = "Low"
-    industry_context = {
+
+    industry_outcomes = {
         "manufactur": "line uptime, throughput, quality, scrap and shift coverage",
         "health": "patient coverage, credential compliance, safe staffing and care continuity",
-        "hospital": "guest-service coverage, seasonal staffing and service continuity",
-        "logistic": "route coverage, warehouse throughput, delivery reliability and peak demand",
-        "construct": "project milestones, crew availability, site safety and subcontractor coordination",
-        "agricultur": "planting/harvest windows, seasonal crew availability and field productivity",
-        "energy": "asset uptime, outage response, field crew readiness and safety coverage",
+        "hospital": "patient coverage, credential compliance, safe staffing and care continuity",
+        "logistic": "warehouse throughput, delivery reliability and peak-demand coverage",
+        "construct": "project milestones, crew availability and site safety",
+        "agricultur": "seasonal crew availability, harvest windows and field productivity",
+        "energy": "asset uptime, outage response, field crew readiness and safety",
         "retail": "store coverage, peak-hour service and customer experience",
-        "information technology": "delivery capacity, critical technical skills and project execution",
+        "information technology": "delivery capacity, critical skills and project execution",
         "financial": "service coverage, operational resilience and cost control",
     }
-    industry_value = next((v for k, v in industry_context.items() if k in industry), "operational capacity, service levels, cost and workforce continuity")
+    outcome = next((v for key, v in industry_outcomes.items() if key in industry),
+                  "operational capacity, service levels, workforce continuity and cost")
+
     rules = [
-        (("payroll", "compensation", "benefit cost", "salary", "wage", "labour cost", "labor cost), "Compensation and payroll cost pressure", "Workforce cost planning module", "Compensation Scenario Simulator", "Compare wage bands, benefits, overtime, shift premiums and headcount by site/role; include budget variance and cost-per-output views.", "Improve labour-cost visibility and support budget decisions."),
-        (("succession", "retirement risk", "critical role", "leadership pipeline), "Critical-role continuity and succession risk", "Critical-role continuity platform", "Critical Role Coverage Map", "Show retirement exposure, single-incumbent roles, successor readiness, time-to-proficiency and coverage gaps; generate succession action plans.", "Reduce single-person dependency and protect business-critical roles."),
-        (("skill gap", "skills gap", "skills mismatch", "skill mismatch", "reskilling", "upskilling", "skills shortage), "Workforce skills and capability gap", "Skills intelligence and development platform", "Skills-to-Work Demand Mapper", "Compare employee skills with target-role requirements; rank skill gaps and generate learning pathways and internal-mobility matches.", "Direct training spend to measurable gaps and improve redeployment."),
-        (("attrition", "turnover", "retention", "employee disengagement", "employee engagement), "Employee retention and attrition pressure", "Retention analytics and intervention service", "Attrition Risk & Root-Cause Dashboard", "Track attrition by role, site, tenure and cohort; link trends to exit reasons and engagement data and provide intervention tracking.", "Identify retention hotspots earlier and focus on costly replacement risks."),
-        (("absenteeism", "absence", "burnout", "overtime", "fatigue", "workload), "Workload, absence and workforce availability pressure", "Workforce availability planning tool", "Shift Coverage & Fatigue Planner", "Forecast shift staffing using absence, overtime, qualifications and workload; flag uncovered shifts and fatigue conflicts and suggest coverage options.", "Reduce coverage gaps and excessive overtime."),
-        (("allocation", "understaff", "overstaff", "staffing level", "workforce distribution", "deployment), "Workforce allocation imbalance", "Demand-led staffing optimisation", "Site and Team Staffing Optimiser", "Compare demand forecasts with headcount by location, skill and shift; recommend transfers, schedule changes or hiring.", "Align staffing with workload and improve utilisation."),
-        (("productivity", "inefficiency", "low output", "low efficiency", "utilisation), "Workforce productivity and utilisation challenge", "Operational productivity analytics", "Labour Productivity Variance Monitor", "Combine labour hours, output, quality and rework by team/site; show productivity variance and compare interventions over time.", "Expose productivity losses and support process improvement."),
-        (("production capacity", "capacity constraint", "production bottleneck", "manufacturing capacity), "Production capacity and operational bottleneck", "Production and workforce capacity planning", "Line Capacity & Skill Coverage Simulator", "Model line output against staffing, skill mix, downtime and demand; identify bottleneck roles and test shift/training plans.", "Improve production readiness and reduce workforce-driven throughput constraints."),
-        (("shortage", "vacancy", "recruit", "hiring", "hard to fill", "unfilled position", "talent acquisition), "Hiring demand and hard-to-fill roles", "Targeted hiring intelligence product", "Hard-to-Fill Role Demand Forecast", "Forecast vacancies by role, location and skill using demand, attrition and time-to-fill; prioritise critical roles and recruiter workload.", "Focus recruitment resources on roles most likely to disrupt operations."),
+        (("payroll", "compensation", "benefit cost", "salary", "wage", "labour cost", "labor cost"),
+         "Compensation and payroll cost pressure", "Workforce cost planning module",
+         "Compensation Scenario Simulator",
+         "Compare wage bands, benefits, overtime, shift premiums and headcount by site and role; show budget variance and cost per output.",
+         "Improve labour-cost visibility and support budget decisions."),
+        (("succession", "retirement risk", "critical role", "leadership pipeline"),
+         "Critical-role continuity and succession risk", "Critical-role continuity platform",
+         "Critical Role Coverage Map",
+         "Show retirement exposure, single-incumbent roles, successor readiness, time-to-proficiency and coverage gaps; create succession action plans.",
+         "Reduce single-person dependency and protect business-critical roles."),
+        (("skill gap", "skills gap", "skills mismatch", "skill mismatch", "reskilling", "upskilling", "skills shortage"),
+         "Workforce skills and capability gap", "Skills intelligence and development platform",
+         "Skills-to-Work Demand Mapper",
+         "Compare employee skills with target-role requirements, rank gaps, map cross-training opportunities and generate learning pathways.",
+         "Direct training spend to measurable gaps and improve redeployment."),
+        (("attrition", "turnover", "retention", "employee disengagement", "employee engagement"),
+         "Employee retention and attrition pressure", "Retention analytics and intervention service",
+         "Attrition Risk & Root-Cause Dashboard",
+         "Track attrition by role, site, tenure and cohort; connect trends to exit reasons and engagement data and track retention interventions.",
+         "Identify retention hotspots earlier and focus on costly replacement risks."),
+        (("absenteeism", "absence", "burnout", "overtime", "fatigue", "workload"),
+         "Workload, absence and workforce availability pressure", "Workforce availability planning tool",
+         "Shift Coverage & Fatigue Planner",
+         "Forecast shift staffing from absence, overtime, qualifications and workload; flag uncovered shifts and fatigue conflicts and suggest coverage options.",
+         "Reduce coverage gaps and excessive overtime."),
+        (("allocation", "understaff", "overstaff", "staffing level", "workforce distribution", "deployment"),
+         "Workforce allocation imbalance", "Demand-led staffing optimisation",
+         "Site and Team Staffing Optimiser",
+         "Compare demand forecasts with headcount by location, skill and shift; recommend transfers, schedule changes or targeted hiring.",
+         "Align staffing with workload and improve utilisation."),
+        (("productivity", "inefficiency", "low output", "low efficiency", "utilisation"),
+         "Workforce productivity and utilisation challenge", "Operational productivity analytics",
+         "Labour Productivity Variance Monitor",
+         "Combine labour hours, output, quality and rework by team and site; show productivity variance and compare improvement interventions.",
+         "Expose productivity losses and support process improvement."),
+        (("production capacity", "capacity constraint", "production bottleneck", "manufacturing capacity"),
+         "Production capacity and operational bottleneck", "Production and workforce capacity planning",
+         "Line Capacity & Skill Coverage Simulator",
+         "Model output against staffing, skill mix, downtime and demand; identify bottleneck roles and test shift and training plans.",
+         "Improve production readiness and reduce workforce-driven throughput constraints."),
+        (("shortage", "vacancy", "recruit", "hiring", "hard to fill", "unfilled position", "talent acquisition"),
+         "Hiring demand and hard-to-fill roles", "Targeted hiring intelligence product",
+         "Hard-to-Fill Role Demand Forecast",
+         "Forecast vacancies by role, location and skill using demand, attrition and time-to-fill; prioritise critical roles and recruiter workload.",
+         "Focus recruitment resources on roles most likely to disrupt operations."),
     ]
-    overlays = {
-        "manufactur": {"skill": "Add machine/line skill matrices, certification expiry, cross-training and shift-level coverage.", "attrition": "Add plant/line turnover heatmaps and critical-role replacement lead times.", "absenteeism": "Add shift absence, overtime limits, operator qualification checks and line coverage simulation.", "allocation": "Add line-, machine- and shift-level staffing requirements with cross-site redeployment.", "productivity": "Add output per labour hour, quality/rework adjustment and shift comparisons.", "production": "Add takt/capacity, downtime, operator mix and bottleneck-role scenario tests.", "hiring": "Add critical vacancies, qualification requirements, time-to-qualification and production-impact estimates."},
-        "health": {"skill": "Add credential tracking and unit-specific competency coverage by shift.", "absenteeism": "Add unit staffing coverage against patient demand, skill mix and overtime.", "allocation": "Add ward/unit demand and credential-aware redeployment."},
-        "logistic": {"allocation": "Add warehouse, route and shift demand profiles with staffing recommendations.", "absenteeism": "Add dispatch/warehouse coverage, peak-load forecasts and overtime risk flags.", "productivity": "Add picks per labor hour, dock throughput and shift-level service metrics."},
-        "construct": {"allocation": "Add crew-by-project, trade, site and milestone requirements with availability alerts.", "skill": "Add trade certification, safety qualification and project skill-gap tracking."},
-        "agricultur": {"hiring": "Add seasonal worker demand by crop, field, task and harvest window.", "allocation": "Add crew allocation by field/task and seasonal peak forecasting."},
-    }
-    for terms, need, capability, feature, feature_description, base_value in rules:
+    for terms, need, capability, feature, feature_detail, value in rules:
         if any(term in text for term in terms):
-            overlay_group = next((g for g in overlays if g in industry), None)
-            overlay = ""
-            if overlay_group:
-                problem_key = next((k for k in overlays[overlay_group] if k in text), None)
-                if problem_key:
-                    overlay = overlays[overlay_group][problem_key]
-            if not overlay:
-                overlay = f"Configure metrics and scenarios around {industry_value}."
-            return {"market_need": need, "capability": capability,
-                    "feature": f"{feature}: {feature_description} Industry implementation: {overlay}",
-                    "business_value": f"{base_value} Expected industry outcome: improve {industry_value}.",
-                    "priority": priority}
+            industry_detail = {
+                "manufactur": "Include machine/line skill matrices, operator certifications, cross-training and shift-level coverage.",
+                "health": "Include unit-level staffing demand, credentials, competency coverage and safe-staffing constraints.",
+                "logistic": "Include warehouse zones, routes, throughput targets, shift demand and peak periods.",
+                "construct": "Include site, trade, crew availability, project milestones and required safety qualifications.",
+                "agricultur": "Include crop, field, task, seasonal crew demand and harvest-window forecasts.",
+                "energy": "Include asset/site, outage schedules, field crew qualifications and safety coverage.",
+                "retail": "Include store, role, peak-hour demand and service coverage.",
+            }
+            detail = next((v for k, v in industry_detail.items() if k in industry),
+                         f"Configure metrics and scenarios around {outcome}.")
+            return {
+                "market_need": need,
+                "capability": capability,
+                "feature": f"{feature}: {feature_detail} Industry implementation: {detail}",
+                "business_value": f"{value} Expected industry outcome: improve {outcome}.",
+                "priority": priority,
+            }
     return None
 
 def _weekly_status(metadata: dict, current_week: str) -> str:
