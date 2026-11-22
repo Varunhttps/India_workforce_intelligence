@@ -42,7 +42,7 @@ def recommend_manager_actions(research, weekly_trends=None, today=None):
         key = (industry.casefold(), problem.casefold())
         group = groups.setdefault(key, {
             "industry": industry, "problem": problem, "sources": set(), "countries": set(),
-            "impacts": [], "dates": [], "statuses": set(), "weeks": set(), "records": 0,
+            "impacts": [], "dates": [], "statuses": set(), "weeks": set(), "weeks_count": 0, "records": 0,
         })
         group["records"] += 1
         source = _text(row.get("Source URL"))
@@ -61,11 +61,13 @@ def recommend_manager_actions(research, weekly_trends=None, today=None):
         status = _text(row.get("Weekly Status"))
         if status:
             group["statuses"].add(status)
-        weeks = row.get("Weeks Seen")
+        weeks = row.get("Observation Weeks") or row.get("Weeks Seen")
         if isinstance(weeks, str):
             group["weeks"].update(v.strip() for v in weeks.split(",") if v.strip())
-        elif weeks:
+        elif isinstance(weeks, (list, tuple, set)):
             group["weeks"].update(str(v) for v in weeks)
+        elif isinstance(weeks, (int, float)) and weeks > 0:
+            group["weeks_count"] = max(group["weeks_count"], int(weeks))
 
     output = []
     for group in groups.values():
@@ -75,7 +77,8 @@ def recommend_manager_actions(research, weekly_trends=None, today=None):
         recency_points = 20 if age is not None and age <= 30 else 12 if age is not None and age <= 90 else 5 if age is not None else 0
         source_points = min(25, len(sources) * 5)
         country_points = min(15, len(countries) * 3)
-        repeat_points = min(15, len(group["weeks"]) * 5) if group["weeks"] else min(10, max(0, group["records"] - 1) * 3)
+        observed_week_count = len(group["weeks"]) or group["weeks_count"]
+        repeat_points = min(15, observed_week_count * 5) if observed_week_count else min(10, max(0, group["records"] - 1) * 3)
         impact_points = 25 if _terms(impacts, ("shutdown", "production halted", "safety risk", "critical", "severe", "major disruption")) else 18 if _terms(impacts, ("delay", "cost", "productivity", "capacity", "revenue", "turnover", "efficiency", "output")) else 8 if impacts else 0
         total = min(100, source_points + country_points + repeat_points + recency_points + impact_points)
         trend = trends.get((group["industry"].casefold(), group["problem"].casefold()), {})
@@ -115,7 +118,7 @@ def recommend_manager_actions(research, weekly_trends=None, today=None):
         explanation = [
             f"{len(sources)} distinct source(s) (+{source_points}/25)",
             f"{len(countries)} country/countries (+{country_points}/15)",
-            f"{len(group['weeks']) or max(0, group['records'] - 1)} repeat observation(s) (+{repeat_points}/15)",
+            f"{len(group['weeks']) or group['weeks_count'] or max(0, group['records'] - 1)} repeat observation(s) (+{repeat_points}/15)",
             f"Recency (+{recency_points}/20)",
             f"Impact wording (+{impact_points}/25)",
         ]

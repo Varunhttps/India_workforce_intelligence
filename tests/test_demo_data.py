@@ -25,7 +25,9 @@ class OfflineDemoTests(unittest.TestCase):
         self.assertEqual(result[0]["Identified Problem"], "Skills shortage")
         self.assertEqual(result[0]["Country"], "Germany")
         self.assertEqual(result[0]["Source URL"], "https://example.org/article")
-        self.assertEqual(result[0]["Weeks Seen"], "2026-11-16, 2026-11-09")
+        self.assertEqual(result[0]["Weeks Seen"], 2)
+        self.assertIsInstance(result[0]["Weeks Seen"], int)
+        self.assertEqual(result[0]["Observation Weeks"], "2026-11-09, 2026-11-16")
 
     def test_accepts_string_weeks_and_skips_bad_json_non_object_records(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -35,7 +37,9 @@ class OfflineDemoTests(unittest.TestCase):
             result = load_demo_findings(path)
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0]["Industry"], "Construction")
-        self.assertEqual(result[0]["Weeks Seen"], "2026-11-16, 2026-11-09")
+        self.assertEqual(result[0]["Weeks Seen"], 2)
+        self.assertIsInstance(result[0]["Weeks Seen"], int)
+        self.assertEqual(result[0]["Observation Weeks"], "2026-11-09, 2026-11-16")
 
     def test_missing_file_returns_empty(self):
         result = load_demo_findings(Path("/nonexistent/demo-history.jsonl"))
