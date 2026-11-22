@@ -6,7 +6,7 @@
 2. **Research overview (30 sec):** Show cumulative findings, new/recurring counts, industries and countries. Explain the selected industry filter.
 3. **Source Register (45 sec):** Open a source link and show source platform, collection status and heuristic credibility. Explain that an accepted finding has a source excerpt checked against collected text, but this is not a human fact-check.
 4. **Country coverage (30 sec):** Show explicit country attribution, regions and the optional benchmark gap list. Explain that search target does not equal finding geography.
-5. **Weekly trends (45 sec):** Show new/active/not-observed and source/country momentum. Emphasize that evidence growth is a research-coverage signal—not proof of worsening conditions.
+5. **Weekly trends (45 sec):** Show the numeric **Weeks Seen** count and supporting sources, then the dashboard's weekly evidence-momentum comparison. Explain that observation counts and source/country growth measure research coverage, not proof of worsening conditions.
 6. **Emerging skills (30 sec):** Show keyword-mapped clusters and explain scores as breadth/recency heuristics.
 7. **Manager action intelligence (45 sec):** Open one ranked item, its score rationale, recommended next step and source links. Show that the score is explainable and not a validated severity score.
 8. **Opportunity priorities (30 sec):** Show the opportunity track and priority filters; explain mappings are candidates for investigation rather than approved business decisions.
