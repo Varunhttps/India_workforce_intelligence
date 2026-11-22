@@ -22,7 +22,8 @@ class GoogleSheetsPayloadTests(unittest.TestCase):
         }]
         payloads = build_sheet_payloads(findings, sources)
         self.assertEqual(set(payloads), set(SHEET_HEADERS))
-        self.assertEqual(len(payloads), 6)
+        self.assertNotIn("Weekly Trends", payloads)
+        self.assertEqual(len(payloads), 5)
         headers = payloads["Source Register"][0]
         row = dict(zip(headers, payloads["Source Register"][1]))
         self.assertEqual(row["Source URL"], url)
@@ -116,7 +117,7 @@ class GoogleSheetsPayloadTests(unittest.TestCase):
         self.assertEqual(len(payloads["Source Register"]), 2)
 
 
-    def test_weekly_trends_and_opportunity_changes_tabs(self):
+    def test_opportunity_changes_has_no_seen_date_columns(self):
         history = [
             {
                 "problem_type": "Skills gap",
@@ -174,8 +175,8 @@ class GoogleSheetsPayloadTests(unittest.TestCase):
         self.assertEqual(opportunity["Priority"], "Medium")
         self.assertNotIn("Change Status", opportunity)
         self.assertNotIn("Weeks Observed", opportunity)
-        self.assertIn("First Seen", opportunity)
-        self.assertIn("Latest Week", opportunity)
+        self.assertNotIn("First Seen", opportunity)
+        self.assertNotIn("Latest Week", opportunity)
 
 if __name__ == "__main__":
     unittest.main()
