@@ -52,7 +52,7 @@ listed in the app's `SHEET_NAMES`.
 ## 4. Keep access private
 
 - `ALLOWED_EMAILS` must list only intended accounts, in lowercase.
-- Keep authentication enabled; do not set `REQUIRE_AUTH=false` in hosted settings.
+- The app always enforces Google OIDC and exact allowlist matching; no `REQUIRE_AUTH` bypass is supported. Use `frontend/demo.py` for offline no-login demonstrations.
 - Do not commit `secrets.toml`, service-account keys, OAuth client secrets, or tokens.
 - Prefer no `GITHUB_TOKEN` unless dashboard-triggered research is needed. If enabled,
   use a fine-grained token scoped to this repository with only Actions workflow
