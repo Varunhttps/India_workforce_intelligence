@@ -229,29 +229,19 @@ else:
                 ] if c in frame.columns]
                 st.dataframe(frame[columns], use_container_width=True, hide_index=True)
 
-    st.subheader("Weekly trend momentum")
+    st.subheader("Weekly Trends · Weeks Seen")
     trends = data.get("Weekly Trends", pd.DataFrame()).copy()
     opportunities = data.get("Opportunity Changes", pd.DataFrame()).copy()
-    if not trends.empty and "Signal Status" in trends.columns:
-        emerging_count = int(trends.get("Emerging Signal", pd.Series(dtype=object)).astype(str).str.lower().isin(["true", "1", "yes"]).sum())
-        worsening_count = int(trends.get("Potentially Worsening", pd.Series(dtype=object)).astype(str).str.lower().isin(["true", "1", "yes"]).sum())
-        receding_count = int((trends.get("Signal Momentum", pd.Series(dtype=object)) == "Evidence receding").sum())
-        a, b, c, d, e = st.columns(5)
-        a.metric("New problems", int((trends["Signal Status"] == "New this week").sum()))
-        b.metric("Active problems", int((trends["Signal Status"] == "Active this week").sum()))
-        c.metric("Emerging signals", emerging_count)
-        d.metric("Potentially worsening", worsening_count)
-        e.metric("Evidence receding", receding_count)
-        st.caption("Source/country growth is a research signal—not proof that the underlying workforce problem worsened. Missing weekly coverage does not mean resolution.")
+    if not trends.empty and "Weeks Seen" in trends.columns:
+        trends["Weeks Seen"] = pd.to_numeric(trends["Weeks Seen"], errors="coerce").fillna(0).astype(int)
+        trends = trends.sort_values("Weeks Seen", ascending=False)
         trend_cols = [col for col in [
-            "Industry", "Workforce Problem", "Supporting Sources", "First Seen", "Latest Week"
+            "Industry", "Workforce Problem", "Supporting Sources", "Weeks Seen"
         ] if col in trends.columns]
-        if "Source Count Delta" in trends.columns:
-            trends["Source Count Delta"] = pd.to_numeric(trends["Source Count Delta"], errors="coerce").fillna(0)
-            trends = trends.sort_values("Source Count Delta", ascending=False)
+        st.caption("Weeks Seen is the numeric count of distinct weeks this workforce problem appears in the research history. It indicates observation persistence, not problem severity.")
         st.dataframe(trends[trend_cols], use_container_width=True, hide_index=True)
     else:
-        st.info("Weekly trend signals will appear after the cumulative history is published.")
+        st.info("Weekly trend counts will appear after the cumulative history is published.")
 
     # Opportunity Changes is independent of Weekly Trends: one tab may be populated before the other.
     st.subheader("Opportunity changes")
