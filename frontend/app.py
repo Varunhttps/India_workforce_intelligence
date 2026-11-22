@@ -226,7 +226,7 @@ else:
             else:
                 columns = [c for c in [
                     "Industry", "Identified Problem", "Problem Description", "Country",
-                    "Region", "First Seen", "Last Seen", "Weeks Seen", "Source URL"
+                    "Region", "First Seen", "Latest Week", "Source URL"
                 ] if c in frame.columns]
                 st.dataframe(frame[columns], use_container_width=True, hide_index=True)
 
@@ -245,11 +245,7 @@ else:
         e.metric("Evidence receding", receding_count)
         st.caption("Source/country growth is a research signal—not proof that the underlying workforce problem worsened. Missing weekly coverage does not mean resolution.")
         trend_cols = [col for col in [
-            "Industry", "Workforce Problem", "Signal Status", "Signal Momentum",
-            "Emerging Signal", "Potentially Worsening", "Weeks Observed",
-            "Sources This Week", "Sources Previous Week", "Source Count Delta",
-            "Total Countries", "Countries This Week", "Countries Previous Week",
-            "Country Count Delta", "First Seen", "Last Seen"
+            "Industry", "Workforce Problem", "Supporting Sources", "First Seen", "Latest Week"
         ] if col in trends.columns]
         if "Source Count Delta" in trends.columns:
             trends["Source Count Delta"] = pd.to_numeric(trends["Source Count Delta"], errors="coerce").fillna(0)
@@ -270,9 +266,7 @@ else:
         z.metric("Evidence receded", opportunity_receding)
         opportunity_cols = [col for col in [
             "Industry", "Market Need", "Capability", "Suggested Feature", "Business Value",
-            "Priority", "Change Status", "Weeks Observed", "Sources This Week",
-            "Sources Previous Week", "Source Count Delta", "Total Countries",
-            "Countries This Week", "Country Count Delta"
+            "Priority", "Supporting Sources", "First Seen", "Latest Week"
         ] if col in opportunities.columns]
         if "Source Count Delta" in opportunities.columns:
             opportunities["Source Count Delta"] = pd.to_numeric(opportunities["Source Count Delta"], errors="coerce").fillna(0)
