@@ -23,7 +23,7 @@ SHEET_HEADERS = {
         "Research ID", "Source ID", "Industry", "Sub-industry",
         "Workforce Planning Area", "Identified Problem", "Problem Description",
         "Research Date", "Country", "Region", "Source URL",
-        "First Seen", "Latest Week",
+        "First Seen", "Latest Week", "Observation Weeks",
     ],
     "Market Insights & Trends": [
         "Insight ID", "Section", "Industry", "Insight / Challenge",
@@ -59,6 +59,27 @@ def _cell(value: Any) -> Any:
     if isinstance(value, (list, tuple, set)):
         return ", ".join(str(v) for v in value)
     return str(value)
+
+
+def _observation_weeks(metadata: dict) -> str:
+    """Return exact distinct ISO observation weeks for dashboard signal calculations."""
+    values = metadata.get("weeks_seen") or []
+    if isinstance(values, str):
+        values = [part.strip() for part in values.split(",") if part.strip()]
+    if not values:
+        values = [
+            metadata.get("first_seen_week"), metadata.get("last_seen_week"),
+            metadata.get("first_seen"), metadata.get("last_seen"),
+        ]
+    normalized = set()
+    for value in values:
+        if not value:
+            continue
+        try:
+            normalized.add(week_start(value))
+        except (TypeError, ValueError):
+            continue
+    return ", ".join(sorted(normalized))
 
 
 def _source_credibility(source: dict) -> str:
@@ -263,6 +284,7 @@ def build_sheet_payloads(findings, sources, research_date=None, history_records=
             _cell(row.get("country")), _cell(row.get("region")), _cell(row.get("source_url")),
             _cell(meta.get("first_seen")),
             _cell(meta.get("last_seen_week") or week_start(meta.get("last_seen") or today)),
+            _observation_weeks(meta),
         ])
         problem = " ".join(str(row.get("problem_type") or "Unclassified").casefold().split())
         display_problem = row.get("problem_type") or "Unclassified"
