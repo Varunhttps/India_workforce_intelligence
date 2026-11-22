@@ -153,20 +153,7 @@ class GoogleSheetsPayloadTests(unittest.TestCase):
             },
         ]
         payloads = build_sheet_payloads([], [], research_date="2026-11-21", history_records=history)
-        trend = dict(zip(payloads["Weekly Trends"][0], payloads["Weekly Trends"][1]))
-        self.assertEqual(trend["Industry"], "Manufacturing")
-        self.assertEqual(trend["Workforce Problem"], "Skills gap")
-        self.assertEqual(trend["Weeks Seen"], 2)
-        self.assertIsInstance(trend["Weeks Seen"], int)
-        self.assertEqual(payloads["Weekly Trends"][0], [
-            "Trend ID", "Industry", "Workforce Problem", "Supporting Sources", "Weeks Seen"
-        ])
-        self.assertNotIn("First Seen", trend)
-        self.assertNotIn("Latest Week", trend)
-        self.assertIn("Supporting Sources", trend)
-        self.assertNotIn("Signal Status", trend)
-        self.assertNotIn("Signal Momentum", trend)
-        self.assertNotIn("Weeks Observed", trend)
+        self.assertNotIn("Weekly Trends", payloads)
 
         changes = payloads["Opportunity Changes"]
         self.assertEqual(len(changes), 2)
