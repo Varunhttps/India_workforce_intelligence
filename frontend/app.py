@@ -268,7 +268,7 @@ else:
     momentum_records = []
     if not findings.empty:
         for _, finding in findings.iterrows():
-            raw_weeks = str(finding.get("Weeks Seen") or "")
+            raw_weeks = str(finding.get("Observation Weeks") or "")
             weeks_seen = [week.strip() for week in raw_weeks.split(",") if week.strip()]
             momentum_records.append({
                 "industry": finding.get("Industry"),
@@ -276,7 +276,7 @@ else:
                 "source_url": finding.get("Source URL"),
                 "weeks_seen": weeks_seen,
                 "first_seen": finding.get("First Seen"),
-                "last_seen": finding.get("Last Seen"),
+                "last_seen": finding.get("Latest Week") or finding.get("Last Seen"),
                 "country": finding.get("Country"),
             })
     momentum_rows = analyze_signal_momentum(momentum_records)
@@ -299,7 +299,7 @@ else:
     skill_records = []
     if not findings.empty:
         for _, finding in findings.iterrows():
-            weeks_raw = str(finding.get("Weeks Seen") or "")
+            weeks_raw = str(finding.get("Observation Weeks") or "")
             skill_records.append({
                 "problem_type": finding.get("Identified Problem"),
                 "description": finding.get("Problem Description"),
@@ -307,7 +307,7 @@ else:
                 "country": finding.get("Country"),
                 "source_url": finding.get("Source URL"),
                 "first_seen": finding.get("First Seen"),
-                "last_seen": finding.get("Last Seen"),
+                "last_seen": finding.get("Latest Week") or finding.get("Last Seen"),
                 "weeks_seen": [w.strip() for w in weeks_raw.split(",") if w.strip()],
             })
     skill_rows = analyze_skill_trends(skill_records)
