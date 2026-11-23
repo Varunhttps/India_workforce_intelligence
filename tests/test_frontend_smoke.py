@@ -46,7 +46,7 @@ class FrontendSmokeTests(unittest.TestCase):
         self.assertIn("fetch_latest_research_run_health", source)
         self.assertIn("@st.cache_data(ttl=300)", source)
         self.assertIn('st.subheader("Research run health")', source)
-        self.assertIn('st.metric("Research freshness"', source)
+        self.assertIn('health_cols[2].metric("Research freshness", freshness)', source)
 
     def test_dashboard_has_independent_opportunity_changes_section(self):
         app_path = Path(__file__).resolve().parents[1] / "frontend" / "app.py"
