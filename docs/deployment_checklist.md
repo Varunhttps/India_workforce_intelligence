@@ -24,6 +24,7 @@
 - [ ] Rotate credentials if they are ever committed or exposed.
 
 ## Release smoke test
+- [ ] Verify the Research run health panel shows the latest run and freshness, and gracefully reports unavailable status if the GitHub API is rate-limited or unreachable.
 - [ ] CI tests pass on the release commit.
 - [ ] Dashboard imports/AST smoke test passes, including Streamlit authentication API version compatibility.
 - [ ] Sign-in and allowlist behavior tested with an approved and an unapproved account.

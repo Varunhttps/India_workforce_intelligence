@@ -19,6 +19,7 @@ from workforce_intelligence.skill_trends import analyze_skill_trends
 from workforce_intelligence.country_coverage import summarize_country_coverage, build_country_industry_matrix
 from workforce_intelligence.manager_actions import recommend_manager_actions
 from workforce_intelligence.signal_momentum import analyze_signal_momentum, rank_emerging_industries
+from workforce_intelligence.research_run_health import fetch_latest_research_run_health
 from frontend.private_access import (
     parse_allowed_emails,
     missing_auth_keys as missing_auth_settings,
@@ -112,6 +113,11 @@ def week_start(today=None):
     return today - timedelta(days=today.weekday())
 
 
+@st.cache_data(ttl=300)
+def load_research_run_health():
+    return fetch_latest_research_run_health()
+
+
 st.title("🌍 Global Workforce Intelligence")
 st.caption("Global workforce signals · Weekly trend intelligence · Staffing & enterprise planning opportunities")
 
@@ -131,6 +137,39 @@ with st.sidebar:
             st.success("Research workflow dispatched successfully.")
         except Exception as exc:
             st.error(str(exc))
+
+st.subheader("Research run health")
+health = load_research_run_health()
+if not health.get("available"):
+    st.info("GitHub Actions status is temporarily unavailable; research freshness cannot be verified.")
+    st.markdown("[View workflow history](https://github.com/Varunhttps/India_workforce_intelligence/actions/workflows/weekly-research.yml)")
+else:
+    latest_run = health.get("latest_run")
+    latest_success = health.get("latest_success")
+    latest_label = latest_run.get("label", "Unknown") if latest_run else "No runs found"
+    if latest_success and latest_success.get("date"):
+        age = latest_success.get("age_days")
+        last_success_label = f"{latest_success['date']} ({age} day(s) ago)" if age is not None else latest_success["date"]
+    else:
+        last_success_label = "No successful run"
+    freshness = health.get("freshness", "Unknown")
+    health_cols = st.columns(3)
+    health_cols[0].metric("Latest run", latest_label)
+    health_cols[1].metric("Last successful run", last_success_label)
+    health_cols[2].metric("Research freshness", freshness)
+    st.caption(f"GitHub workflow history is cached for 5 minutes. Fresh means a successful run within {health.get('freshness_days', 8)} days (weekly schedule plus grace).")
+    if latest_run and latest_label not in {"Success", "Running", "Queued"}:
+        st.warning("The latest research workflow did not succeed. Review the run before relying on this dashboard.")
+    if freshness == "Stale":
+        st.warning(f"No successful research run within the last {health.get('freshness_days', 8)} days. Refresh the research before sharing current conclusions.")
+    elif freshness == "Unknown":
+        st.info("No successful run timestamp is available, so freshness cannot be determined.")
+    if latest_run and latest_run.get("url"):
+        st.markdown(f"[View latest run]({latest_run['url']}) · [View workflow history](https://github.com/Varunhttps/India_workforce_intelligence/actions/workflows/weekly-research.yml)")
+    else:
+        st.markdown("[View workflow history](https://github.com/Varunhttps/India_workforce_intelligence/actions/workflows/weekly-research.yml)")
+
+
 
 st.subheader("Research overview")
 try:

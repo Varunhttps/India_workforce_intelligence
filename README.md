@@ -55,6 +55,10 @@ Source/country growth is only a signal of research coverage expansion, not proof
 
 GitHub Actions runs every Monday at 06:00 UTC (11:30 India Standard Time). Manual runs support all three research modes. The workflow requires `contents: write` permission to commit updates to `data/findings_history.jsonl`, as well as the four API/Google Sheets secrets listed above. If Google credentials or spreadsheet access are missing, the run fails visibly rather than silently reporting a successful publication.
 
+## Dashboard research-run health
+
+The private dashboard reads the public GitHub Actions history for the weekly research workflow and displays the latest run status, latest successful run, and a freshness indicator. This status request is read-only, does not require a GitHub token, and is cached for five minutes. **Fresh** means a successful run within eight days (the weekly cadence plus a grace period); **Stale** means no successful run within that window. If there has been no successful run, or GitHub's API is unavailable or rate-limited, the dashboard shows **Unknown / unavailable** instead of making an unsupported freshness claim.
+
 ## Local setup and tests
 
 Python 3.11+ recommended. Streamlit 1.42+ is required for the authentication APIs used by the dashboard.
