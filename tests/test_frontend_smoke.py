@@ -40,6 +40,14 @@ class FrontendSmokeTests(unittest.TestCase):
         self.assertIn('finding.get("Latest Week") or finding.get("Last Seen")', source)
         self.assertNotIn('finding.get("Weeks Seen") or ""', source)
 
+    def test_dashboard_displays_cached_research_run_health(self):
+        app_path = Path(__file__).resolve().parents[1] / "frontend" / "app.py"
+        source = app_path.read_text(encoding="utf-8")
+        self.assertIn("fetch_latest_research_run_health", source)
+        self.assertIn("@st.cache_data(ttl=300)", source)
+        self.assertIn('st.subheader("Research run health")', source)
+        self.assertIn('health_cols[2].metric("Research freshness", freshness)', source)
+
     def test_dashboard_has_independent_opportunity_changes_section(self):
         app_path = Path(__file__).resolve().parents[1] / "frontend" / "app.py"
         source = app_path.read_text(encoding="utf-8")
