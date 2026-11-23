@@ -51,6 +51,8 @@ st.markdown("""
 [data-testid="stSidebar"] {border-right: 1px solid #e6eaf0;}
 h1 {letter-spacing: -0.035em;}
 [data-testid="stTabs"] button {font-weight: 600;}
+/* Hide Streamlit's developer toolbar for end users. */
+[data-testid="stToolbar"] {visibility: hidden; height: 0;}
 </style>
 """, unsafe_allow_html=True)
 
@@ -112,10 +114,9 @@ with st.sidebar:
     if st.button("▶ Start Research", type="primary", use_container_width=True):
         try:
             trigger_research(mode, country, 8)
-            st.success("Research workflow dispatched. Check GitHub Actions for its live status.")
-            st.link_button("View workflow runs", "https://github.com/Varunhttps/India_workforce_intelligence/actions")
+            st.success("Research refresh started. New insights will appear once the update is complete.")
         except Exception as exc:
-            st.error(str(exc))
+            st.error("We couldn't start the research refresh. Please try again later or contact your dashboard administrator.")
 
 st.subheader("Research overview")
 try:
@@ -168,7 +169,7 @@ else:
             else:
                 columns = [c for c in [
                     "Industry", "Identified Problem", "Problem Description", "Country",
-                    "Region", "First Seen", "Last Seen", "Occurrences", "Weeks Seen", "Source URL"
+                    "Region", "Source URL"
                 ] if c in frame.columns]
                 st.dataframe(frame[columns], use_container_width=True, hide_index=True)
 
@@ -180,7 +181,7 @@ else:
         y.metric("Active this week", int((trends["Signal Status"] == "Active this week").sum()))
         z.metric("Not observed this week", int((trends["Signal Status"] == "Not observed this week").sum()))
         st.caption("Signals are aggregated by industry and workforce problem. 'Not observed this week' does not mean resolved.")
-        trend_cols = [c for c in ["Industry", "Workforce Problem", "Signal Status", "Weeks Observed", "Country Count", "Countries", "Supporting Source Count", "First Seen", "Last Seen"] if c in trends.columns]
+        trend_cols = [c for c in ["Industry", "Workforce Problem", "Signal Status", "Country Count", "Countries", "Supporting Source Count"] if c in trends.columns]
         st.dataframe(trends[trend_cols], use_container_width=True, hide_index=True)
     else:
         st.info("Weekly trend signals will appear after the cumulative history is published.")
@@ -263,9 +264,9 @@ else:
                 hide = ["Collection Status", "Key Information", "Evidence / Supporting Information", "Review Notes"]
                 frame = frame.drop(columns=[col for col in hide if col in frame.columns], errors="ignore")
             elif name == "Market Research":
-                hide = ["Evidence / Supporting Information", "Supporting Evidence", "Review Notes"]
+                hide = ["Evidence / Supporting Information", "Supporting Evidence", "Review Notes", "First Seen", "Last Seen", "Weeks Seen", "Observation Weeks", "Latest Week", "Last Week"]
                 frame = frame.drop(columns=[col for col in hide if col in frame.columns], errors="ignore")
             st.dataframe(frame, use_container_width=True, hide_index=True)
-    st.link_button("Open full Google Spreadsheet", sheet_url)
+    # Spreadsheet link is intentionally omitted from the general-user dashboard.
 
 st.caption("Research findings and product opportunities are AI-assisted candidates and require human review.")
