@@ -169,7 +169,7 @@ else:
             else:
                 columns = [c for c in [
                     "Industry", "Identified Problem", "Problem Description", "Country",
-                    "Region", "Source URL"
+                    "Region", "Observation Week", "Source URL"
                 ] if c in frame.columns]
                 st.dataframe(frame[columns], use_container_width=True, hide_index=True)
 
@@ -264,7 +264,7 @@ else:
                 hide = ["Collection Status", "Key Information", "Evidence / Supporting Information", "Review Notes"]
                 frame = frame.drop(columns=[col for col in hide if col in frame.columns], errors="ignore")
             elif name == "Market Research":
-                hide = ["Evidence / Supporting Information", "Supporting Evidence", "Review Notes", "First Seen", "Last Seen", "Weeks Seen", "Observation Weeks", "Latest Week", "Last Week"]
+                hide = ["Evidence / Supporting Information", "Supporting Evidence", "Review Notes", "First Seen", "Last Seen", "Weeks Seen", "Observation Week", "Observation Weeks", "Latest Week", "Last Week"]
                 frame = frame.drop(columns=[col for col in hide if col in frame.columns], errors="ignore")
             st.dataframe(frame, use_container_width=True, hide_index=True)
     # Spreadsheet link is intentionally omitted from the general-user dashboard.
