@@ -19,7 +19,6 @@ from workforce_intelligence.skill_trends import analyze_skill_trends
 from workforce_intelligence.country_coverage import summarize_country_coverage, build_country_industry_matrix
 from workforce_intelligence.manager_actions import recommend_manager_actions
 from workforce_intelligence.signal_momentum import analyze_signal_momentum, rank_emerging_industries
-from workforce_intelligence.research_run_health import fetch_latest_research_run_health
 from frontend.private_access import (
     parse_allowed_emails,
     missing_auth_keys as missing_auth_settings,
@@ -113,11 +112,6 @@ def trigger_research(mode, country, limit):
 def week_start(today=None):
     today = today or date.today()
     return today - timedelta(days=today.weekday())
-
-
-@st.cache_data(ttl=300)
-def load_research_run_health():
-    return fetch_latest_research_run_health()
 
 
 st.title("🌍 Global Workforce Intelligence")
