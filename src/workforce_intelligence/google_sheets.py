@@ -12,6 +12,7 @@ import gspread
 from .history import week_start
 from .trend_analysis import analyze_weekly_trends
 from .records import deduplicate_findings
+from .source_history import save_source_history
 
 SHEET_HEADERS = {
     "Source Register": [
@@ -376,14 +377,47 @@ def build_sheet_payloads(findings, sources, research_date=None, history_records=
 
 
 def publish_to_google_sheets(findings, sources, spreadsheet_id=None, service_account_json=None,
-                             new_findings=None, recurring_findings=None, history_records=None):
-    """Publish the cumulative research history to the persistent Google spreadsheet."""
+                             new_findings=None, recurring_findings=None, history_records=None,
+                             source_history_records=None, source_history_path=None):
+    """Publish the cumulative research history while permanently migrating old source dates."""
     spreadsheet_id = spreadsheet_id or os.getenv("GOOGLE_SHEET_ID")
     service_account_json = service_account_json or os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON")
     if not spreadsheet_id or not service_account_json:
         raise RuntimeError("Set GOOGLE_SHEET_ID and GOOGLE_SERVICE_ACCOUNT_JSON to publish Google Sheets.")
     client = gspread.service_account_from_dict(json.loads(service_account_json))
     spreadsheet = client.open_by_key(spreadsheet_id)
+    # Read the existing register before replacing it; preserve historical URLs and dates.
+    try:
+        old_register = spreadsheet.worksheet("Source Register").get_all_values()
+    except gspread.WorksheetNotFound:
+        old_register = []
+    legacy_by_url = {}
+    if old_register:
+        headers = old_register[0]
+        if "Source URL" in headers:
+            url_col = headers.index("Source URL")
+            date_col = headers.index("Access Date") if "Access Date" in headers else None
+            for row in old_register[1:]:
+                if len(row) <= url_col or not row[url_col]:
+                    continue
+                url = row[url_col]
+                access_date = row[date_col] if date_col is not None and len(row) > date_col else ""
+                legacy_by_url[url] = access_date
+    records_by_url = {record.get("source_url") or record.get("Source URL"): dict(record)
+                       for record in (source_history_records or [])
+                       if record.get("source_url") or record.get("Source URL")}
+    # Bootstrap from the live sheet. Existing nonblank dates remain unchanged;
+    # blank legacy dates remain blank rather than being falsely dated today.
+    for url, access_date in legacy_by_url.items():
+        record = records_by_url.get(url, {"source_url": url})
+        if access_date:
+            record["first_found_date"] = access_date
+        else:
+            record.setdefault("first_found_date", "")
+        records_by_url[url] = record
+    migrated_records = list(records_by_url.values())
+    if source_history_path:
+        save_source_history(migrated_records, source_history_path)
     # Delete the obsolete worksheet requested for removal from the workbook.
     try:
         obsolete = spreadsheet.worksheet("Opportunity Changes")
@@ -391,7 +425,8 @@ def publish_to_google_sheets(findings, sources, spreadsheet_id=None, service_acc
         obsolete = None
     if obsolete is not None:
         spreadsheet.del_worksheet(obsolete)
-    payloads = build_sheet_payloads(findings, sources, history_records=history_records)
+    payloads = build_sheet_payloads(findings, sources, history_records=history_records,
+                                    source_history_records=migrated_records)
     for title, values in payloads.items():
         try:
             worksheet = spreadsheet.worksheet(title)
