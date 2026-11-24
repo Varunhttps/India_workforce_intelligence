@@ -1,6 +1,7 @@
 """Lightweight cross-sheet evidence traceability checks for manager review."""
 from __future__ import annotations
 
+import ipaddress
 import re
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
@@ -44,7 +45,20 @@ def _url_key(value):
         parts = urlsplit(text)
         if parts.scheme.lower() not in {"http", "https"} or not parts.hostname or parts.username or parts.password:
             return None
-        host = parts.hostname.lower()
+        host = parts.hostname.lower().rstrip(".")
+        if not host or "%" in host:
+            return None
+        try:
+            address = ipaddress.ip_address(host)
+            if not address.is_global or address.is_reserved:
+                return None
+            host = address.compressed
+        except ValueError:
+            local_suffixes = (".localhost", ".local", ".internal", ".test", ".invalid", ".example", ".home", ".lan", ".intranet")
+            if host == "localhost" or host.endswith(local_suffixes) or "." not in host:
+                return None
+            if re.fullmatch(r"\d{1,3}(?:\.\d{1,3}){3}", host):
+                return None
         port = parts.port
         if port and not ((parts.scheme.lower() == "http" and port == 80) or (parts.scheme.lower() == "https" and port == 443)):
             host = f"{host}:{port}"
@@ -148,9 +162,16 @@ def audit_evidence_integrity(research, source_register, opportunities=None):
     for url_key, rows in register_by_url.items():
         if len(rows) > 1:
             add("Warning", "Duplicate Source Register URL", rows[0]["url"], f"URL appears on {len(rows)} source rows.", "duplicate_source_register_urls")
-    for sid_key, url_keys in register_by_id.items():
-        if len(set(url_keys)) > 1:
-            add("Warning", "Duplicate Source ID", sid_key, f"Source ID is used for {len(set(url_keys))} distinct URLs.", "duplicate_source_ids")
+    for sid_key, source_urls in register_by_id.items():
+        if len(source_urls) > 1:
+            distinct_urls = len({url_key for url_key in source_urls if url_key})
+            add(
+                "Warning",
+                "Duplicate Source ID",
+                sid_key,
+                f"Source ID appears on {len(source_urls)} source rows ({distinct_urls} distinct URLs).",
+                "duplicate_source_ids",
+            )
 
     for row in research_rows:
         rid = _clean(row.get("Research ID")) or "Research row"
