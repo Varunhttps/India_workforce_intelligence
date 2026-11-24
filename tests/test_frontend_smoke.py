@@ -24,6 +24,7 @@ class FrontendSmokeTests(unittest.TestCase):
         tabs = ast.literal_eval(tabs_node.value)
         self.assertEqual(len(tabs), 5)
         self.assertIn("Weekly Trends", tabs)
+        self.assertNotIn("Opportunity Changes", tabs)
 
     def test_dashboard_weekly_trends_uses_numeric_count(self):
         app_path = Path(__file__).resolve().parents[1] / "frontend" / "app.py"
