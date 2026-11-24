@@ -40,9 +40,13 @@ class FrontendSmokeTests(unittest.TestCase):
         self.assertNotIn("Emerging industries by evidence volume and problem diversity", source)
         self.assertNotIn("Country × industry coverage matrix", source)
         self.assertNotIn("Benchmark gaps", source)
+        self.assertNotIn('st.subheader("Opportunity changes")', source)
+        self.assertNotIn("Top 5 industries by distinct workforce problems", source)
         self.assertIn('st.subheader("Global Workforce Signals")', source)
         top_five_index = source.index("Top 5 industries facing workforce problems")
         weekly_changes_index = source.index('st.subheader(f"Weekly research changes')
+        global_signals_index = source.index('st.subheader("Global Workforce Signals")')
+        self.assertLess(top_five_index, global_signals_index)
         self.assertLess(top_five_index, weekly_changes_index)
 
     def test_dashboard_hides_research_run_health_panel(self):
