@@ -155,36 +155,6 @@ else:
     findings = data["Market Research"].copy()
     sources = data["Source Register"]
     insights = data["Market Insights & Trends"]
-    st.subheader("Evidence integrity & traceability")
-    integrity = audit_evidence_integrity(
-        integrity_data["Market Research"],
-        integrity_data["Source Register"],
-        integrity_data.get("Product Feature Opportunities", pd.DataFrame()),
-    )
-    integrity_metrics = integrity["metrics"]
-    integrity_cols = st.columns(5)
-    integrity_cols[0].metric("Missing research IDs", integrity_metrics["findings_missing_research_id"])
-    integrity_cols[1].metric(
-        "Missing / invalid source URLs",
-        integrity_metrics["findings_missing_source_url"] + integrity_metrics["findings_invalid_source_url"],
-    )
-    integrity_cols[2].metric("URLs not in Source Register", integrity_metrics["findings_urls_not_in_source_register"] + integrity_metrics["opportunity_urls_not_in_source_register"])
-    integrity_cols[3].metric("ID / source-link mismatches", integrity_metrics["findings_source_id_mismatch"] + integrity_metrics["source_register_link_mismatch"] + integrity_metrics["opportunity_research_source_mismatch"])
-    integrity_cols[4].metric("Duplicate IDs", integrity_metrics["duplicate_research_ids"] + integrity_metrics["duplicate_source_ids"])
-    st.caption("Audit covers the full workbook, independent of the industry filter. These checks validate cross-sheet IDs and links only; they do not validate source truth, article interpretation or the severity of a workforce claim.")
-    if integrity["warning_count"]:
-        st.warning(f"{integrity['warning_count']} warning-level traceability issue(s) detected. Review the details before relying on affected records.")
-    else:
-        st.success("No warning-level cross-sheet traceability issues were found in the loaded records.")
-    if integrity["info_count"]:
-        st.caption(f"{integrity['info_count']} informational source-register record(s) are not linked to research IDs.")
-    if integrity["issues"]:
-        with st.expander("Inspect traceability findings", expanded=False):
-            st.dataframe(pd.DataFrame(integrity["issues"]), use_container_width=True, hide_index=True)
-            if integrity["details_truncated"]:
-                st.caption(f"Showing the first {len(integrity['issues'])} of {integrity['total_issue_details']} traceability details.")
-
-
     weekly_status = weekly_statuses(findings, current_week=week_start().isoformat())
 
     new_week = findings[weekly_status == "New this week"].copy() if not findings.empty else findings.copy()
