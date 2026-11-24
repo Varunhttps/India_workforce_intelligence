@@ -146,6 +146,7 @@ if not loaded:
     st.info("Connect the Google Sheet using GOOGLE_SHEET_ID and GOOGLE_SERVICE_ACCOUNT_JSON in Streamlit secrets.")
 else:
     data, sheet_url = loaded
+    integrity_data = data  # Preserve the full workbook for cross-sheet audits before applying UI filters.
     with st.sidebar:
         st.divider()
         st.header("Dashboard filters")
@@ -157,7 +158,9 @@ else:
     insights = data["Market Insights & Trends"]
     st.subheader("Evidence integrity & traceability")
     integrity = audit_evidence_integrity(
-        findings, sources, data.get("Product Feature Opportunities", pd.DataFrame())
+        integrity_data["Market Research"],
+        integrity_data["Source Register"],
+        integrity_data.get("Product Feature Opportunities", pd.DataFrame()),
     )
     integrity_metrics = integrity["metrics"]
     integrity_cols = st.columns(5)
@@ -169,7 +172,7 @@ else:
     integrity_cols[2].metric("URLs not in Source Register", integrity_metrics["findings_urls_not_in_source_register"] + integrity_metrics["opportunity_urls_not_in_source_register"])
     integrity_cols[3].metric("ID / source-link mismatches", integrity_metrics["findings_source_id_mismatch"] + integrity_metrics["source_register_link_mismatch"] + integrity_metrics["opportunity_research_source_mismatch"])
     integrity_cols[4].metric("Duplicate IDs", integrity_metrics["duplicate_research_ids"] + integrity_metrics["duplicate_source_ids"])
-    st.caption("These checks validate cross-sheet IDs and links only. They do not validate source truth, article interpretation or the severity of a workforce claim.")
+    st.caption("Audit covers the full workbook, independent of the industry filter. These checks validate cross-sheet IDs and links only; they do not validate source truth, article interpretation or the severity of a workforce claim.")
     if integrity["warning_count"]:
         st.warning(f"{integrity['warning_count']} warning-level traceability issue(s) detected. Review the details before relying on affected records.")
     else:
