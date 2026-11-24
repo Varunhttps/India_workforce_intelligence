@@ -22,7 +22,7 @@ class FrontendSmokeTests(unittest.TestCase):
         module = ast.parse(source, filename=str(loader_path))
         tabs_node = next(node for node in module.body if isinstance(node, ast.Assign) and any(isinstance(target, ast.Name) and target.id == "TABS" for target in node.targets))
         tabs = ast.literal_eval(tabs_node.value)
-        self.assertEqual(len(tabs), 5
+        self.assertEqual(len(tabs), 5)
         self.assertIn("Weekly Trends", tabs)
 
     def test_dashboard_weekly_trends_uses_numeric_count(self):
