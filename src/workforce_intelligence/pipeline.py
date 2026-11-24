@@ -6,6 +6,7 @@ from .discovery import discover_sources
 from .collector import collect_document
 from .gemini_client import GeminiExtractor
 from .history import update_history
+from .source_history import update_source_history
 from .trend_analysis import analyze_weekly_trends, analyze_opportunity_changes
 from .reporting import export_workbook
 from .google_sheets import _opportunity, publish_to_google_sheets
@@ -89,6 +90,8 @@ def run_research(mode="manufacturing", country_searched=None, max_sources_per_in
                     cumulative_history.append(json.loads(line))
                 except json.JSONDecodeError:
                     continue
+    source_history_file = source_history_path or "data/source_history.jsonl"
+    source_history_records = update_source_history(source_rows, source_history_file, historical_findings=cumulative_history)
     weekly_trends = analyze_weekly_trends(cumulative_history, current_week=history["week_start"])
     opportunity_changes = analyze_opportunity_changes(
         cumulative_history, current_week=history["week_start"], classifier=_opportunity
