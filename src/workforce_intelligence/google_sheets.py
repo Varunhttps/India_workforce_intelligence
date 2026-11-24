@@ -28,16 +28,16 @@ SHEET_HEADERS = {
     "Market Insights & Trends": [
         "Insight ID", "Section", "Industry", "Insight / Challenge",
         "Distinct Problem Count", "Supporting Source Count", "Related Research IDs",
-        "Countries", "Research Date",
+        "Countries", "Latest Evidence Date",
     ],
     "Product Feature Opportunities": [
         "Opportunity ID", "Industry", "Identified Market Problem", "Market Need",
         "Proposed Product Capability", "Suggested Feature & Description",
         "Expected Business Value", "Priority", "Related Research IDs",
-        "Supporting Source URLs",
+        "Supporting Source URLs", "Last Updated",
     ],
     "Weekly Trends": [
-        "Trend ID", "Industry", "Workforce Problem", "Supporting Sources", "Weeks Seen",
+        "Trend ID", "Industry", "Workforce Problem", "Supporting Sources", "Weeks Seen", "Latest Evidence Date",
     ],
 }
 
@@ -300,6 +300,7 @@ def build_sheet_payloads(findings, sources, research_date=None, history_records=
                 oid, _cell(row.get("industry")), _cell(row.get("problem_type")),
                 mapped["market_need"], mapped["capability"], mapped["feature"],
                 mapped["business_value"], mapped["priority"], rid, _cell(row.get("source_url")),
+                _cell(meta.get("last_seen") or today),
             ])
 
     for source in source_rows:
@@ -310,13 +311,15 @@ def build_sheet_payloads(findings, sources, research_date=None, history_records=
     for (industry, problem_key), group in industry_groups.items():
         summary = industry_summaries.setdefault(industry, {
             "problem_keys": set(), "problem_labels": [], "ids": [],
-            "urls": set(), "countries": set(),
+            "urls": set(), "countries": set(), "latest_evidence_date": "",
         })
         summary["problem_keys"].add(problem_key)
         summary["problem_labels"].append(group["problem"])
         summary["ids"].extend(group["ids"])
         summary["urls"].update(group["urls"])
         summary["countries"].update(group["countries"])
+        evidence_date = max((str(meta_by_identity.get(_identity(row) + "|" + str(row.get("source_url") or ""), {}).get("last_seen") or "") for row in normalized if (row.get("industry") or "Unclassified") == industry), default="")
+        summary["latest_evidence_date"] = max(summary["latest_evidence_date"], evidence_date)
 
     insight_rows = []
     for industry, summary in sorted(industry_summaries.items()):
@@ -325,7 +328,7 @@ def build_sheet_payloads(findings, sources, research_date=None, history_records=
             _stable_id("INS", industry), "Industry Summary", industry,
             "; ".join(problems), len(summary["problem_keys"]), len(summary["urls"]),
             ", ".join(sorted(set(summary["ids"]))),
-            ", ".join(sorted(summary["countries"])), today,
+            ", ".join(sorted(summary["countries"])), summary["latest_evidence_date"] or today,
         ])
 
     opportunity_rows = list({row[0]: row for row in opportunity_rows}.values())
@@ -354,8 +357,14 @@ def build_sheet_payloads(findings, sources, research_date=None, history_records=
         trend_rows.append([
             trend_id, trend["industry"], trend["problem_type"],
             _cell(trend["supporting_sources"]), int(trend["weeks_observed"]),
+            _cell(trend.get("last_seen")),
         ])
 
+    source_rows.sort(key=lambda row: (str(row[5] or "").casefold(), str(row[1] or "").casefold()))
+    research_rows.sort(key=lambda row: (str(row[2] or "").casefold(), str(row[5] or "").casefold()))
+    insight_rows.sort(key=lambda row: (str(row[2] or "").casefold()))
+    opportunity_rows.sort(key=lambda row: (str(row[1] or "").casefold(), str(row[2] or "").casefold()))
+    trend_rows.sort(key=lambda row: (str(row[1] or "").casefold(), str(row[2] or "").casefold()))
     return {
         "Source Register": [SHEET_HEADERS["Source Register"]] + source_rows,
         "Market Research": [SHEET_HEADERS["Market Research"]] + research_rows,
