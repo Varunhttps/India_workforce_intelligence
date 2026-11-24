@@ -92,7 +92,7 @@ class GoogleSheetsPayloadTests(unittest.TestCase):
         self.assertEqual(set(payloads), set(SHEET_HEADERS))
         self.assertIn("Weekly Trends", payloads)
         self.assertEqual(len(payloads), 5)
-        self.assertEqual(payloads["Weekly Trends"], [["Trend ID", "Industry", "Workforce Problem", "Supporting Sources", "Weeks Seen"]])
+        self.assertEqual(payloads["Weekly Trends"], [["Trend ID", "Industry", "Workforce Problem", "Supporting Sources", "Weeks Seen", "Latest Evidence Date"]])
         self.assertTrue(all(len(rows) == 1 for rows in payloads.values()))
 
     def test_industry_summary_aggregates_distinct_problems_and_sources(self):
@@ -152,7 +152,7 @@ class GoogleSheetsPayloadTests(unittest.TestCase):
         insights = payloads["Market Insights & Trends"]
         alpha = next(dict(zip(insights[0], row)) for row in insights[1:] if row[2] == "Alpha Logistics")
         self.assertGreaterEqual(alpha["Distinct Problem Count"], 1)
-        self.assertEqual(alpha["Latest Evidence Date"], "2026-11-16")
+        self.assertEqual(alpha["Latest Evidence Date"], "2026-11-23")
 
     def test_historical_findings_are_retained_in_cumulative_payload(self):
         history = [{
