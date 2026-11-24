@@ -55,10 +55,6 @@ Source/country growth is only a signal of research coverage expansion, not proof
 
 GitHub Actions runs every Monday at 06:00 UTC (11:30 India Standard Time). Manual runs support all three research modes. The workflow requires `contents: write` permission to commit updates to `data/findings_history.jsonl`, as well as the four API/Google Sheets secrets listed above. If Google credentials or spreadsheet access are missing, the run fails visibly rather than silently reporting a successful publication.
 
-## Dashboard research-run health
-
-The private dashboard reads the public GitHub Actions history for the weekly research workflow and displays the latest run status, latest successful run, and a freshness indicator. This status request is read-only, does not require a GitHub token, and is cached for five minutes. **Fresh** means a successful run within eight days (the weekly cadence plus a grace period); **Stale** means no successful run within that window. If there has been no successful run, or GitHub's API is unavailable or rate-limited, the dashboard shows **Unknown / unavailable** instead of making an unsupported freshness claim.
-
 ## Local setup and tests
 
 Python 3.11+ recommended. Streamlit 1.42+ is required for the authentication APIs used by the dashboard.
@@ -116,6 +112,10 @@ The dashboard includes a **Opportunity Priorities** section that ranks mapped wo
 ## Weekly evidence momentum dashboard
 
 The dashboard includes a current-versus-previous ISO week comparison of unique supporting sources for workforce problem signals, with trend direction, country breadth, and an industry ranking. These are research coverage indicators—not proof of workforce problem severity. See [`docs/signal_momentum.md`](docs/signal_momentum.md) for methodology and caveats.
+
+## Evidence integrity & traceability
+
+The connected dashboard cross-checks Research IDs, Source IDs, research/source URLs, Source Register links and opportunity references across the workbook. It flags missing or invalid URLs, duplicate IDs, unregistered sources, mismatched links and unknown research references. Source Register entries with no related research IDs are informational. URL matching normalizes scheme/host, trailing slashes, fragments and common tracking parameters; displayed source links are not rewritten. The audit checks record consistency only—it does not validate source accuracy, article interpretation or the severity of workforce claims. Details are capped at 50 rows.
 
 ## Deployment readiness
 

@@ -15,6 +15,9 @@ class OfflineDemoRuntimeSmokeTests(unittest.TestCase):
             "Offline demo should execute without Streamlit runtime errors: "
             + "; ".join(str(exc) for exc in app.exception),
         )
+        metrics = {metric.label: metric.value for metric in app.metric}
+        self.assertIn("Latest finding observed", metrics)
+        self.assertNotEqual(metrics["Latest finding observed"], "Unknown")
 
 
 if __name__ == "__main__":

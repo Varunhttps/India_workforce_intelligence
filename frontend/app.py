@@ -18,7 +18,7 @@ from workforce_intelligence.opportunity_prioritization import build_opportunity_
 from workforce_intelligence.skill_trends import analyze_skill_trends
 from workforce_intelligence.country_coverage import summarize_country_coverage, build_country_industry_matrix
 from workforce_intelligence.manager_actions import recommend_manager_actions
-from workforce_intelligence.signal_momentum import analyze_signal_momentum, rank_emerging_industries
+from workforce_intelligence.evidence_integrity import audit_evidence_integrity
 from frontend.private_access import (
     parse_allowed_emails,
     missing_auth_keys as missing_auth_settings,
@@ -71,7 +71,7 @@ h1 {letter-spacing: -0.035em;}
 </style>
 """, unsafe_allow_html=True)
 
-SHEET_NAMES = ["Source Register", "Market Research", "Market Insights & Trends", "Product Feature Opportunities", "Weekly Trends", "Opportunity Changes"]
+SHEET_NAMES = ["Source Register", "Market Research", "Market Insights & Trends", "Product Feature Opportunities", "Weekly Trends"]
 
 
 @st.cache_data(ttl=90)
@@ -145,6 +145,7 @@ if not loaded:
     st.info("Connect the Google Sheet using GOOGLE_SHEET_ID and GOOGLE_SERVICE_ACCOUNT_JSON in Streamlit secrets.")
 else:
     data, sheet_url = loaded
+    integrity_data = data  # Preserve the full workbook for cross-sheet audits before applying UI filters.
     with st.sidebar:
         st.divider()
         st.header("Dashboard filters")
@@ -154,6 +155,35 @@ else:
     findings = data["Market Research"].copy()
     sources = data["Source Register"]
     insights = data["Market Insights & Trends"]
+    st.subheader("Evidence integrity & traceability")
+    integrity = audit_evidence_integrity(
+        integrity_data["Market Research"],
+        integrity_data["Source Register"],
+        integrity_data.get("Product Feature Opportunities", pd.DataFrame()),
+    )
+    integrity_metrics = integrity["metrics"]
+    integrity_cols = st.columns(5)
+    integrity_cols[0].metric("Missing research IDs", integrity_metrics["findings_missing_research_id"])
+    integrity_cols[1].metric(
+        "Missing / invalid source URLs",
+        integrity_metrics["findings_missing_source_url"] + integrity_metrics["findings_invalid_source_url"],
+    )
+    integrity_cols[2].metric("URLs not in Source Register", integrity_metrics["findings_urls_not_in_source_register"] + integrity_metrics["opportunity_urls_not_in_source_register"])
+    integrity_cols[3].metric("ID / source-link mismatches", integrity_metrics["findings_source_id_mismatch"] + integrity_metrics["source_register_link_mismatch"] + integrity_metrics["opportunity_research_source_mismatch"])
+    integrity_cols[4].metric("Duplicate IDs", integrity_metrics["duplicate_research_ids"] + integrity_metrics["duplicate_source_ids"])
+    st.caption("Audit covers the full workbook, independent of the industry filter. These checks validate cross-sheet IDs and links only; they do not validate source truth, article interpretation or the severity of a workforce claim.")
+    if integrity["warning_count"]:
+        st.warning(f"{integrity['warning_count']} warning-level traceability issue(s) detected. Review the details before relying on affected records.")
+    else:
+        st.success("No warning-level cross-sheet traceability issues were found in the loaded records.")
+    if integrity["info_count"]:
+        st.caption(f"{integrity['info_count']} informational source-register record(s) are not linked to research IDs.")
+    if integrity["issues"]:
+        with st.expander("Inspect traceability findings", expanded=False):
+            st.dataframe(pd.DataFrame(integrity["issues"]), use_container_width=True, hide_index=True)
+            if integrity["details_truncated"]:
+                st.caption(f"Showing the first {len(integrity['issues'])} of {integrity['total_issue_details']} traceability details.")
+
 
     weekly_status = weekly_statuses(findings, current_week=week_start().isoformat())
 
@@ -177,44 +207,36 @@ else:
     if latest_research_date:
         st.caption(f"Latest research date recorded: **{latest_research_date}** · Data refreshes automatically after the weekly research run.")
 
-    st.subheader("Global country coverage")
+    st.subheader("Global Workforce Signals")
     st.caption("Counts are based on explicit country attribution in findings—not the countries targeted during search.")
-    benchmark_text = st.text_input(
-        "Optional coverage benchmark countries",
-        placeholder="e.g. United States, Germany, Japan, India, Brazil",
-        help="Enter countries you want to benchmark. Countries with zero explicitly attributed findings will appear as coverage gaps.",
-        key="country_coverage_benchmarks",
-    )
-    benchmark_countries = [country.strip() for country in benchmark_text.split(",") if country.strip()]
-    coverage_rows = summarize_country_coverage(findings.to_dict("records"), target_countries=benchmark_countries)
+    coverage_rows = summarize_country_coverage(findings.to_dict("records"))
     coverage_frame = pd.DataFrame(coverage_rows)
-    matrix = build_country_industry_matrix(findings.to_dict("records"), target_countries=benchmark_countries)
-    matrix_frame = pd.DataFrame(matrix).T.fillna(0).astype(int) if matrix else pd.DataFrame()
     if not coverage_frame.empty:
         total_countries = int((coverage_frame["Findings"] > 0).sum())
         represented_regions = coverage_frame.loc[coverage_frame["Findings"] > 0, "Region"].nunique()
-        zero_coverage = int((coverage_frame["Findings"] == 0).sum())
-        coverage_metrics = st.columns(3)
+        coverage_metrics = st.columns(2)
         coverage_metrics[0].metric("Countries with findings", total_countries)
         coverage_metrics[1].metric("Regions represented", represented_regions)
-        coverage_metrics[2].metric("Benchmark gaps", zero_coverage if benchmark_countries else "—")
         covered = coverage_frame[coverage_frame["Findings"] > 0].copy()
-        gaps = coverage_frame[coverage_frame["Findings"] == 0].copy()
         if not covered.empty:
             chart_frame = covered.set_index("Country")["Findings"].head(10)
             st.bar_chart(chart_frame, height=280)
             st.dataframe(covered, use_container_width=True, hide_index=True)
-        if benchmark_countries:
-            st.markdown("**Countries in your benchmark with no findings**")
-            if gaps.empty:
-                st.success("All benchmark countries currently have at least one explicitly attributed finding.")
-            else:
-                st.dataframe(gaps[["Country", "Region"]], use_container_width=True, hide_index=True)
-        if not matrix_frame.empty:
-            st.markdown("**Country × industry coverage matrix**")
-            st.dataframe(matrix_frame, use_container_width=True)
     else:
         st.info("Country coverage will appear after findings with explicit country attribution are published.")
+
+    if not findings.empty and "Industry" in findings.columns and "Identified Problem" in findings.columns:
+        industry_counts = (
+            findings.dropna(subset=["Industry", "Identified Problem"])
+            .groupby("Industry")["Identified Problem"]
+            .nunique()
+            .sort_values(ascending=False)
+            .head(5)
+        )
+        if not industry_counts.empty:
+            st.subheader("Top 5 industries facing workforce problems")
+            st.caption("Ranked by the number of distinct workforce problem types identified in the current research.")
+            st.bar_chart(industry_counts, height=300)
 
     st.subheader(f"Weekly research changes · Week of {week_start().isoformat()}")
     st.caption("Weekly status is based on first-seen and last-seen week metadata. Older findings are retained; not seeing them in the latest research does not mean the problem has been resolved.")
@@ -231,9 +253,8 @@ else:
                 ] if c in frame.columns]
                 st.dataframe(frame[columns], use_container_width=True, hide_index=True)
 
-    st.subheader("Weekly Trends · Weeks Seen")
+    st.subheader("Weekly Trends")
     trends = data.get("Weekly Trends", pd.DataFrame()).copy()
-    opportunities = data.get("Opportunity Changes", pd.DataFrame()).copy()
     if not trends.empty and "Weeks Seen" in trends.columns:
         trends["Weeks Seen"] = pd.to_numeric(trends["Weeks Seen"], errors="coerce").fillna(0).astype(int)
         trends = trends.sort_values("Weeks Seen", ascending=False)
@@ -265,36 +286,6 @@ else:
         st.dataframe(opportunities[opportunity_cols], use_container_width=True, hide_index=True)
     else:
         st.info("Opportunity changes will appear after the history is published.")
-
-    st.subheader("Weekly evidence momentum")
-    momentum_records = []
-    if not findings.empty:
-        for _, finding in findings.iterrows():
-            raw_weeks = str(finding.get("Observation Weeks") or "")
-            weeks_seen = [week.strip() for week in raw_weeks.split(",") if week.strip()]
-            momentum_records.append({
-                "industry": finding.get("Industry"),
-                "problem_type": finding.get("Identified Problem"),
-                "source_url": finding.get("Source URL"),
-                "weeks_seen": weeks_seen,
-                "first_seen": finding.get("First Seen"),
-                "last_seen": finding.get("Latest Week") or finding.get("Last Seen"),
-                "country": finding.get("Country"),
-            })
-    momentum_rows = analyze_signal_momentum(momentum_records)
-    if momentum_rows:
-        momentum_frame = pd.DataFrame(momentum_rows)
-        momentum_columns = ["industry", "problem_type", "previous_source_count", "current_source_count", "source_delta", "trend", "country_count", "countries"]
-        st.caption("Changes in supporting source coverage, not confirmed changes in workforce severity. 'Not observed this week' may reflect research coverage.")
-        st.dataframe(momentum_frame[momentum_columns], use_container_width=True, hide_index=True)
-        industry_rank = rank_emerging_industries(momentum_rows)
-        if industry_rank:
-            rank_frame = pd.DataFrame(industry_rank)
-            rank_columns = ["rank", "industry", "current_sources", "distinct_problem_count", "increasing_problems", "staffing_candidates", "planning_candidates"]
-            st.markdown("**Emerging industries by evidence volume and problem diversity**")
-            st.dataframe(rank_frame[rank_columns], use_container_width=True, hide_index=True)
-    else:
-        st.info("Weekly momentum will populate once historical findings with week metadata are available.")
 
     st.subheader("Emerging Skills & Workforce Trends")
     st.caption("Global skill clusters inferred from findings. Signal score reflects research breadth and recency—not measured labor-market demand.")

@@ -32,11 +32,15 @@ with st.sidebar:
 
 source_count = df["Source URL"].loc[df["Source URL"].astype(str).str.strip() != ""].nunique()
 country_count = df.loc[df["Country"] != "Not specified", "Country"].nunique()
-k1, k2, k3, k4 = st.columns(4)
+latest_recorded = pd.to_datetime(df["Last Seen"], errors="coerce").max()
+latest_recorded_label = latest_recorded.strftime("%d %b %Y") if pd.notna(latest_recorded) else "Unknown"
+k1, k2, k3, k4, k5 = st.columns(5)
 k1.metric("Research findings", len(df))
 k2.metric("Industries", df["Industry"].nunique())
 k3.metric("Countries attributed", country_count)
 k4.metric("Unique source links", source_count)
+k5.metric("Latest finding observed", latest_recorded_label)
+st.caption("Latest finding date is based on the snapshot's Last Seen field and respects the selected industry filter.")
 
 st.subheader("Findings by industry")
 counts = df["Industry"].value_counts().sort_values(ascending=False)
