@@ -10,7 +10,8 @@ def main():
     parser.add_argument("--country-searched", default=None, help="Optional search filter; not assumed to be the finding's actual geography.")
     parser.add_argument("--max-sources-per-industry", type=int, default=3)
     parser.add_argument("--output-dir", default="research_output")
-    parser.add_argument("--history-path", default=None, help="Optional persistent JSONL history path.")\n    parser.add_argument("--source-history-path", default=None, help="Persistent cumulative source register JSONL path.")
+    parser.add_argument("--history-path", default=None, help="Optional persistent JSONL history path.")
+    parser.add_argument("--source-history-path", default=None, help="Persistent cumulative source register JSONL path.")
     parser.add_argument("--publish-google-sheets", action="store_true", help="Update the configured persistent Google Sheet.")
     args = parser.parse_args()
     result = run_research(
