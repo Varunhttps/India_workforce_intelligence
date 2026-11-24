@@ -48,6 +48,18 @@ class FrontendSmokeTests(unittest.TestCase):
         self.assertNotIn("fetch_latest_research_run_health", source)
         self.assertIn('[data-testid="stToolbar"] {visibility: hidden; height: 0;}', source)
 
+    def test_evidence_integrity_audit_uses_unfiltered_workbook_data(self):
+        app_path = Path(__file__).resolve().parents[1] / "frontend" / "app.py"
+        source = app_path.read_text(encoding="utf-8")
+        snapshot_index = source.index("integrity_data = data")
+        filter_index = source.index("data = filter_frames_by_industry(data, selected_industry)")
+        audit_index = source.index("integrity = audit_evidence_integrity(")
+        self.assertLess(snapshot_index, filter_index)
+        self.assertGreater(audit_index, filter_index)
+        audit_call = source[audit_index:audit_index + 400]
+        self.assertIn('integrity_data["Market Research"]', audit_call)
+        self.assertIn('integrity_data["Source Register"]', audit_call)
+
     def test_dashboard_displays_evidence_integrity_audit(self):
         app_path = Path(__file__).resolve().parents[1] / "frontend" / "app.py"
         source = app_path.read_text(encoding="utf-8")
