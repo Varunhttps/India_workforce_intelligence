@@ -30,12 +30,14 @@ class PipelineTests(unittest.TestCase):
                     "industry": "Manufacturing",
                     "source_name": "Old report",
                     "source_url": "https://example.org/old",
+                    "source_platform": "Web",
                 }) + "\n",
                 encoding="utf-8",
             )
             result = run_research(
                 output_dir=tmp, history_path=str(history), publish_google_sheets=True,
                 google_sheet_id="sheet-id", google_service_account_json="{}",
+                source_history_path=str(Path(tmp) / "sources.jsonl"),
             )
             self.assertEqual(result["google_sheet_url"], "https://docs.google.com/spreadsheets/d/test")
             kwargs = publish.call_args.kwargs
