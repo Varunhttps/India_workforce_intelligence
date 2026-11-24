@@ -52,3 +52,23 @@ def update_source_history(sources, history_path, observed_at=None, historical_fi
         encoding="utf-8",
     )
     return list(records.values())
+
+
+def save_source_history(records, history_path):
+    """Persist merged source-history records without changing their first-found dates."""
+    path = Path(history_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    by_url = {}
+    for record in records or []:
+        url = record.get("source_url") or record.get("Source URL")
+        if not url:
+            continue
+        normalized = dict(record)
+        normalized["source_url"] = url
+        normalized.pop("Source URL", None)
+        by_url[url] = normalized
+    path.write_text(
+        "".join(json.dumps(by_url[url], ensure_ascii=False, sort_keys=True) + "\n" for url in sorted(by_url)),
+        encoding="utf-8",
+    )
+    return list(by_url.values())

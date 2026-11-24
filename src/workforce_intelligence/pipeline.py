@@ -31,7 +31,7 @@ def run_research(mode="manufacturing", country_searched=None, max_sources_per_in
                  output_dir="research_output", tavily_api_key=None, gemini_api_key=None,
                  extractor=None, session=None, history_path=None,
                  publish_google_sheets=False, google_sheet_id=None,
-                 google_service_account_json=None):
+                 google_service_account_json=None, source_history_path=None):
     plan = build_research_plan(mode)
     sources = discover_sources(plan.industries, api_key=tavily_api_key, country=country_searched,
                                max_results=max_sources_per_industry, session=session)
