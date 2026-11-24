@@ -40,6 +40,7 @@ class FrontendSmokeTests(unittest.TestCase):
         self.assertNotIn("Emerging industries by evidence volume and problem diversity", source)
         self.assertNotIn("Country × industry coverage matrix", source)
         self.assertNotIn("Benchmark gaps", source)
+        self.assertNotIn("signal_score", source)
         self.assertNotIn('st.subheader("Opportunity changes")', source)
         self.assertNotIn("Top 5 industries by distinct workforce problems", source)
         self.assertNotIn('st.subheader("Opportunity changes")', source)
