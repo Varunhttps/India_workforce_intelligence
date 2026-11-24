@@ -83,7 +83,7 @@ def run_research(mode="manufacturing", country_searched=None, max_sources_per_in
         except Exception as exc:
             source_row["Relevance status"] = "Unable to assess — extraction failed"
             host = (urlparse(str(source.get("url") or "")).hostname or "unknown")
-            host = host.replace("\\r", "").replace("\\n", "")[:120]
+            host = host.lower()[:120]
             logger.warning(
                 "Source assessment failed for source %d (%s): %s",
                 source_index + 1, host, type(exc).__name__,
