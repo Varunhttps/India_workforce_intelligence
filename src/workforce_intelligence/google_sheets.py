@@ -406,7 +406,7 @@ def publish_to_google_sheets(findings, sources, spreadsheet_id=None, service_acc
             for url, access_date in legacy_dates.items():
                 record = known_hist.get(url)
                 if record:
-                    record.setdefault("first_found_date", access_date)
+                    record["first_found_date"] = access_date
                 else:
                     known_hist[url] = {"source_url": url, "first_found_date": access_date}
             source_history_records = list(known_hist.values())
