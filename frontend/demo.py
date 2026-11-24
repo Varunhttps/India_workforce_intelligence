@@ -68,8 +68,8 @@ skill_inputs = [{
 skills = analyze_skill_trends(skill_inputs)
 if skills:
     skill_df = pd.DataFrame(skills)
-    st.bar_chart(skill_df.set_index("skill")["signal_score"].head(10), height=300)
-    st.dataframe(skill_df, use_container_width=True, hide_index=True)
+    display_skill_columns = [column for column in skill_df.columns if column != "signal_score"]
+    st.dataframe(skill_df[display_skill_columns], use_container_width=True, hide_index=True)
 else:
     st.info("No keyword-mapped skills were detected in this snapshot.")
 
