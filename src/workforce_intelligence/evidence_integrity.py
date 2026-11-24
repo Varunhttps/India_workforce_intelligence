@@ -1,6 +1,7 @@
 """Lightweight cross-sheet evidence traceability checks for manager review."""
 from __future__ import annotations
 
+import re
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 DETAIL_LIMIT = 50
@@ -31,7 +32,7 @@ def _split_ids(value):
 
 
 def _split_urls(value):
-    return [part.strip() for part in _clean(value).split(",") if part.strip()]
+    return [part.strip() for part in re.split(r",\\s*(?=https?://)", _clean(value), flags=re.IGNORECASE) if part.strip()]
 
 
 def _url_key(value):

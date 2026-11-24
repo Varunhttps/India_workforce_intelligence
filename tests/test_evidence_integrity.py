@@ -77,6 +77,14 @@ class EvidenceIntegrityTests(unittest.TestCase):
         self.assertTrue(result["details_truncated"])
         self.assertGreater(result["total_issue_details"], 50)
 
+    def test_commas_inside_single_source_url_are_preserved(self):
+        url = "https://example.com/report?q=one,two"
+        research = [{"Research ID": "RES-1", "Source ID": "SRC-1", "Source URL": url}]
+        register = [{"Source ID": "SRC-1", "Source URL": url, "Related Research IDs": "RES-1"}]
+        opportunities = [{"Opportunity ID": "OP-1", "Related Research IDs": "RES-1", "Supporting Source URLs": url}]
+        result = audit_evidence_integrity(research, register, opportunities)
+        self.assertEqual(result["warning_count"], 0)
+
     def test_empty_inputs_are_safe(self):
         result = audit_evidence_integrity(None, None, None)
         self.assertEqual(result["warning_count"], 0)

@@ -166,9 +166,9 @@ else:
         "Missing / invalid source URLs",
         integrity_metrics["findings_missing_source_url"] + integrity_metrics["findings_invalid_source_url"],
     )
-    integrity_cols[2].metric("Research URLs not registered", integrity_metrics["findings_urls_not_in_source_register"])
-    integrity_cols[3].metric("Source ID mismatches", integrity_metrics["findings_source_id_mismatch"])
-    integrity_cols[4].metric("Duplicate research IDs", integrity_metrics["duplicate_research_ids"])
+    integrity_cols[2].metric("URLs not in Source Register", integrity_metrics["findings_urls_not_in_source_register"] + integrity_metrics["opportunity_urls_not_in_source_register"])
+    integrity_cols[3].metric("ID / source-link mismatches", integrity_metrics["findings_source_id_mismatch"] + integrity_metrics["source_register_link_mismatch"] + integrity_metrics["opportunity_research_source_mismatch"])
+    integrity_cols[4].metric("Duplicate IDs", integrity_metrics["duplicate_research_ids"] + integrity_metrics["duplicate_source_ids"])
     st.caption("These checks validate cross-sheet IDs and links only. They do not validate source truth, article interpretation or the severity of a workforce claim.")
     if integrity["warning_count"]:
         st.warning(f"{integrity['warning_count']} warning-level traceability issue(s) detected. Review the details before relying on affected records.")

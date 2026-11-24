@@ -54,7 +54,7 @@ class FrontendSmokeTests(unittest.TestCase):
         self.assertIn("audit_evidence_integrity", source)
         self.assertIn('st.subheader("Evidence integrity & traceability")', source)
         self.assertIn("integrity[\"details_truncated\"]", source)
-        self.assertIn("Source ID mismatches", source)
+        self.assertIn("ID / source-link mismatches", source)
 
     def test_dashboard_has_independent_opportunity_changes_section(self):
         app_path = Path(__file__).resolve().parents[1] / "frontend" / "app.py"
