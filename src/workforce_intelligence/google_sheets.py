@@ -37,7 +37,7 @@ SHEET_HEADERS = {
         "Supporting Source URLs", "Last Updated",
     ],
     "Weekly Trends": [
-        "Trend ID", "Industry", "Workforce Problem", "Supporting Sources", "Weeks Seen", "Latest Evidence Date", "Latest Evidence Date",
+        "Trend ID", "Industry", "Workforce Problem", "Supporting Sources", "Weeks Seen", "Latest Evidence Date",
     ],
 }
 
