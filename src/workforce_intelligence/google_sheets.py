@@ -235,6 +235,8 @@ def build_sheet_payloads(findings, sources, research_date=None, history_records=
             }
     normalized = deduplicate_findings(all_raw)
     sources = list(sources or [])
+    source_history_records = list(source_history_records or [])
+    source_dates = {record.get("source_url"): record.get("first_found_date") for record in source_history_records}
     known_urls = {s.get("Source URL") for s in sources}
     for old in history_records:
         url = old.get("source_url")
@@ -243,7 +245,18 @@ def build_sheet_payloads(findings, sources, research_date=None, history_records=
                 "Source title": old.get("source_name") or "Previously collected source",
                 "Source URL": url, "Source platform": old.get("source_platform") or "Web",
                 "Industry searched": old.get("industry"), "Publication date": "",
+                "Access Date": source_dates.get(url) or old.get("first_seen"),
                 "Relevance status": "Historical finding",
+            })
+            known_urls.add(url)
+    for old in source_history_records:
+        url = old.get("source_url") or old.get("Source URL")
+        if url and url not in known_urls:
+            sources.append({
+                "Source title": old.get("source_title") or old.get("Source title") or "Previously collected source",
+                "Source URL": url, "Source platform": old.get("source_platform") or "Web",
+                "Industry searched": old.get("industry"), "Publication date": old.get("publication_date") or "",
+                "Access Date": old.get("first_found_date") or "",
             })
             known_urls.add(url)
 
@@ -257,7 +270,7 @@ def build_sheet_payloads(findings, sources, research_date=None, history_records=
             source_id, _cell(source.get("Source title")), _cell(url),
             _cell(source.get("Source platform") or "Website"), "",
             _cell(source.get("Industry searched")), _cell(source.get("Publication date")),
-            today, "",
+            _cell(source.get("Access Date") or source_dates.get(url) or today), "",
         ])
 
     finding_ids = {}
