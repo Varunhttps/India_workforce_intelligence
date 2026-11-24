@@ -24,6 +24,7 @@ class GoogleSheetsPayloadTests(unittest.TestCase):
         self.assertEqual(set(payloads), set(SHEET_HEADERS))
         self.assertIn("Weekly Trends", payloads)
         self.assertNotIn("Opportunity Changes", payloads)
+        self.assertNotIn("Opportunity Changes", SHEET_HEADERS)
         self.assertEqual(len(payloads), 5)
         trend_headers = payloads["Weekly Trends"][0]
         self.assertEqual(trend_headers, ["Trend ID", "Industry", "Workforce Problem", "Supporting Sources", "Weeks Seen"])
@@ -62,6 +63,9 @@ class GoogleSheetsPayloadTests(unittest.TestCase):
                             for r in payloads["Market Insights & Trends"][1:]))
         self.assertNotIn("Interpretation Status", payloads["Market Insights & Trends"][0])
         self.assertNotIn("Review Status", payloads["Product Feature Opportunities"][0])
+        self.assertIn("Last Updated", payloads["Product Feature Opportunities"][0])
+        self.assertIn("Latest Evidence Date", payloads["Market Insights & Trends"][0])
+        self.assertIn("Latest Evidence Date", payloads["Weekly Trends"][0])
 
     def test_market_research_exports_exact_observation_weeks_for_dashboard(self):
         history = [{
@@ -126,6 +130,29 @@ class GoogleSheetsPayloadTests(unittest.TestCase):
         self.assertIn("High", {r[7] for r in rows[1:]})
         self.assertIn("Low", {r[7] for r in rows[1:]})
         self.assertNotIn("Review Status", rows[0])
+
+    def test_sheets_are_sorted_by_industry_and_insights_keep_history_dates_counts(self):
+        current = [
+            {"problem_type":"Worker shortage","description":"New current evidence","industry":"Zeta Manufacturing",
+             "source_name":"Current","source_url":"https://example.com/z","country":"India"},
+            {"problem_type":"Worker shortage","description":"Another current evidence","industry":"Alpha Logistics",
+             "source_name":"Current","source_url":"https://example.com/a","country":"Germany"},
+        ]
+        history = [
+            {"problem_type":"Worker shortage","description":"Historical finding","industry":"Alpha Logistics",
+             "source_name":"Old","source_url":"https://example.com/old","country":"Germany",
+             "first_seen":"2026-11-02","last_seen":"2026-11-16","first_seen_week":"2026-11-02",
+             "last_seen_week":"2026-11-16","weeks_seen":["2026-11-02","2026-11-09","2026-11-16"],"occurrences":3},
+        ]
+        payloads = build_sheet_payloads(current, [], research_date="2026-11-23", history_records=history)
+        for tab, industry_col in (("Market Research", 2), ("Product Feature Opportunities", 1),
+                                  ("Market Insights & Trends", 2), ("Weekly Trends", 1)):
+            industries = [row[industry_col] for row in payloads[tab][1:]]
+            self.assertEqual(industries, sorted(industries, key=str.casefold))
+        insights = payloads["Market Insights & Trends"]
+        alpha = next(dict(zip(insights[0], row)) for row in insights[1:] if row[2] == "Alpha Logistics")
+        self.assertGreaterEqual(alpha["Distinct Problem Count"], 1)
+        self.assertEqual(alpha["Latest Evidence Date"], "2026-11-16")
 
     def test_historical_findings_are_retained_in_cumulative_payload(self):
         history = [{
