@@ -5,8 +5,8 @@ from frontend.data_loader import TABS, read_workforce_sheets
 
 
 class DashboardSheetReaderTests(unittest.TestCase):
-    def test_dashboard_reader_lists_six_expected_tabs(self):
-        self.assertEqual(len(TABS), 6)
+    def test_dashboard_reader_lists_five_expected_tabs(self):
+        self.assertEqual(len(TABS), 5
         self.assertEqual(
             TABS,
             [
@@ -15,7 +15,6 @@ class DashboardSheetReaderTests(unittest.TestCase):
                 "Market Insights & Trends",
                 "Product Feature Opportunities",
                 "Weekly Trends",
-                "Opportunity Changes",
             ],
         )
 
