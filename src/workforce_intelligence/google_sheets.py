@@ -217,7 +217,7 @@ def _weekly_status(metadata: dict, current_week: str) -> str:
     return "Last seen before this week"
 
 
-def build_sheet_payloads(findings, sources, research_date=None, history_records=None):
+def build_sheet_payloads(findings, sources, research_date=None, history_records=None, source_history_records=None):
     """Build cumulative tabs and retain weekly metadata for each historical finding."""
     today = research_date or date.today().isoformat()
     current_week = week_start(today)
