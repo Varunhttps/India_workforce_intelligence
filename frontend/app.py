@@ -18,7 +18,6 @@ from workforce_intelligence.opportunity_prioritization import build_opportunity_
 from workforce_intelligence.skill_trends import analyze_skill_trends
 from workforce_intelligence.country_coverage import summarize_country_coverage, build_country_industry_matrix
 from workforce_intelligence.manager_actions import recommend_manager_actions
-from workforce_intelligence.evidence_integrity import audit_evidence_integrity
 from frontend.private_access import (
     parse_allowed_emails,
     missing_auth_keys as missing_auth_settings,
@@ -145,7 +144,6 @@ if not loaded:
     st.info("Connect the Google Sheet using GOOGLE_SHEET_ID and GOOGLE_SERVICE_ACCOUNT_JSON in Streamlit secrets.")
 else:
     data, sheet_url = loaded
-    integrity_data = data  # Preserve the full workbook for cross-sheet audits before applying UI filters.
     with st.sidebar:
         st.divider()
         st.header("Dashboard filters")
