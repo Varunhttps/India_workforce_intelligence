@@ -382,7 +382,7 @@ def publish_to_google_sheets(findings, sources, spreadsheet_id=None, service_acc
     if obsolete is not None:
         spreadsheet.del_worksheet(obsolete)
     payloads = build_sheet_payloads(findings, sources, history_records=history_records)
-    for title, values in payloads.items()
+    for title, values in payloads.items():
         try:
             worksheet = spreadsheet.worksheet(title)
         except gspread.WorksheetNotFound:
