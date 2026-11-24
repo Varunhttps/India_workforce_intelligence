@@ -24,7 +24,7 @@ class GoogleSheetsPayloadTests(unittest.TestCase):
         self.assertEqual(set(payloads), set(SHEET_HEADERS))
         self.assertIn("Weekly Trends", payloads)
         self.assertNotIn("Opportunity Changes", payloads)
-        self.assertEqual(len(payloads), 5
+        self.assertEqual(len(payloads), 5)
         trend_headers = payloads["Weekly Trends"][0]
         self.assertEqual(trend_headers, ["Trend ID", "Industry", "Workforce Problem", "Supporting Sources", "Weeks Seen"])
         trend = dict(zip(trend_headers, payloads["Weekly Trends"][1]))
@@ -87,7 +87,7 @@ class GoogleSheetsPayloadTests(unittest.TestCase):
         payloads = build_sheet_payloads([], [])
         self.assertEqual(set(payloads), set(SHEET_HEADERS))
         self.assertIn("Weekly Trends", payloads)
-        self.assertEqual(len(payloads), 6)
+        self.assertEqual(len(payloads), 5)
         self.assertEqual(payloads["Weekly Trends"], [["Trend ID", "Industry", "Workforce Problem", "Supporting Sources", "Weeks Seen"]])
         self.assertTrue(all(len(rows) == 1 for rows in payloads.values()))
 
