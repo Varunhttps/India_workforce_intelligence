@@ -376,7 +376,7 @@ def build_sheet_payloads(findings, sources, research_date=None, history_records=
 
 
 def publish_to_google_sheets(findings, sources, spreadsheet_id=None, service_account_json=None,
-                             new_findings=None, recurring_findings=None, history_records=None):
+                             new_findings=None, recurring_findings=None, history_records=None, source_history_records=None):
     """Publish the cumulative research history to the persistent Google spreadsheet."""
     spreadsheet_id = spreadsheet_id or os.getenv("GOOGLE_SHEET_ID")
     service_account_json = service_account_json or os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON")
@@ -391,7 +391,7 @@ def publish_to_google_sheets(findings, sources, spreadsheet_id=None, service_acc
         obsolete = None
     if obsolete is not None:
         spreadsheet.del_worksheet(obsolete)
-    payloads = build_sheet_payloads(findings, sources, history_records=history_records)
+    payloads = build_sheet_payloads(findings, sources, history_records=history_records, source_history_records=source_history_records)
     for title, values in payloads.items():
         try:
             worksheet = spreadsheet.worksheet(title)
