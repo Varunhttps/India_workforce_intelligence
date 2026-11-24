@@ -32,7 +32,7 @@ def _split_ids(value):
 
 
 def _split_urls(value):
-    return [part.strip() for part in re.split(r",\\s*(?=https?://)", _clean(value), flags=re.IGNORECASE) if part.strip()]
+    return [part.strip() for part in re.split(r",\s*(?=https?://)", _clean(value), flags=re.IGNORECASE) if part.strip()]
 
 
 def _url_key(value):

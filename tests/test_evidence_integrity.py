@@ -65,7 +65,8 @@ class EvidenceIntegrityTests(unittest.TestCase):
     def test_dataframe_like_inputs_are_supported(self):
         class FrameLike:
             def to_dict(self, orient):
-                self.assertion = orient
+                if orient != "records":
+                    raise AssertionError("records orientation required")
                 return [{"Research ID": "RES-1", "Source URL": "https://example.com/a"}]
         result = audit_evidence_integrity(FrameLike(), [], [])
         self.assertEqual(result["warning_count"], 1)
@@ -83,6 +84,21 @@ class EvidenceIntegrityTests(unittest.TestCase):
         register = [{"Source ID": "SRC-1", "Source URL": url, "Related Research IDs": "RES-1"}]
         opportunities = [{"Opportunity ID": "OP-1", "Related Research IDs": "RES-1", "Supporting Source URLs": url}]
         result = audit_evidence_integrity(research, register, opportunities)
+        self.assertEqual(result["warning_count"], 0)
+
+    def test_multiple_urls_split_at_url_boundaries(self):
+        url_a = "https://example.com/a"
+        url_b = "https://example.com/b"
+        research = [
+            {"Research ID": "RES-1", "Source ID": "SRC-1", "Source URL": url_a},
+            {"Research ID": "RES-2", "Source ID": "SRC-2", "Source URL": url_b},
+        ]
+        register = [
+            {"Source ID": "SRC-1", "Source URL": url_a, "Related Research IDs": "RES-1"},
+            {"Source ID": "SRC-2", "Source URL": url_b, "Related Research IDs": "RES-2"},
+        ]
+        opportunity = [{"Opportunity ID": "OP-1", "Related Research IDs": "RES-1, RES-2", "Supporting Source URLs": f"{url_a}, {url_b}"}]
+        result = audit_evidence_integrity(research, register, opportunity)
         self.assertEqual(result["warning_count"], 0)
 
     def test_empty_inputs_are_safe(self):
