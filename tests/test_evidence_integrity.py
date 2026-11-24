@@ -101,6 +101,30 @@ class EvidenceIntegrityTests(unittest.TestCase):
         result = audit_evidence_integrity(research, register, opportunity)
         self.assertEqual(result["warning_count"], 0)
 
+    def test_public_url_validation_rejects_local_and_private_hosts(self):
+        rows = [
+            {"Research ID": "R-LOCAL", "Source URL": "http://localhost/report"},
+            {"Research ID": "R-LOOPBACK", "Source URL": "http://127.0.0.1/report"},
+            {"Research ID": "R-PRIVATE", "Source URL": "http://192.168.1.20/report"},
+            {"Research ID": "R-INTRANET", "Source URL": "http://intranet/report"},
+            {"Research ID": "R-IPV6", "Source URL": "http://[::1]/report"},
+            {"Research ID": "R-PUBLIC", "Source URL": "https://example.com/report"},
+            {"Research ID": "R-PUBLIC-IP", "Source URL": "http://8.8.8.8/report"},
+        ]
+        result = audit_evidence_integrity(rows, [])
+        self.assertEqual(result["metrics"]["findings_invalid_source_url"], 5)
+
+    def test_duplicate_source_ids_are_detected_even_for_same_url(self):
+        url = "https://example.com/report"
+        research = [{"Research ID": "RES-1", "Source URL": url}]
+        register = [
+            {"Source ID": "SRC-1", "Source URL": url, "Related Research IDs": "RES-1"},
+            {"Source ID": "src-1", "Source URL": url, "Related Research IDs": "RES-1"},
+        ]
+        result = audit_evidence_integrity(research, register)
+        self.assertEqual(result["metrics"]["duplicate_source_ids"], 1)
+        self.assertEqual(result["metrics"]["duplicate_source_register_urls"], 1)
+
     def test_empty_inputs_are_safe(self):
         result = audit_evidence_integrity(None, None, None)
         self.assertEqual(result["warning_count"], 0)
