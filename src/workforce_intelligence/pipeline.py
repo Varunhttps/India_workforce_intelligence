@@ -114,7 +114,8 @@ def run_research(mode="manufacturing", country_searched=None, max_sources_per_in
             findings, source_rows, spreadsheet_id=google_sheet_id,
             service_account_json=google_service_account_json,
             new_findings=history["new"], recurring_findings=history["recurring"],
-            history_records=historical_records,
+            history_records=historical_records, source_history_records=source_history_records,
+            source_history_path=source_history_file,
         )
 
     return {
