@@ -6,7 +6,7 @@ from frontend.data_loader import TABS, read_workforce_sheets
 
 class DashboardSheetReaderTests(unittest.TestCase):
     def test_dashboard_reader_lists_five_expected_tabs(self):
-        self.assertEqual(len(TABS), 5
+        self.assertEqual(len(TABS), 5)
         self.assertEqual(
             TABS,
             [
