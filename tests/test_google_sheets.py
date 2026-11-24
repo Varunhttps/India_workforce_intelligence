@@ -3,7 +3,7 @@ from workforce_intelligence.google_sheets import build_sheet_payloads, SHEET_HEA
 
 
 class GoogleSheetsPayloadTests(unittest.TestCase):
-    def test_six_manager_tabs_and_linked_source_register(self):
+    def test_five_manager_tabs_and_linked_source_register(self):
         url = "https://www.linkedin.com/posts/example-company_workforce-activity-123"
         findings = [{
             "problem_type": "Skilled worker shortage",
@@ -23,7 +23,8 @@ class GoogleSheetsPayloadTests(unittest.TestCase):
         payloads = build_sheet_payloads(findings, sources)
         self.assertEqual(set(payloads), set(SHEET_HEADERS))
         self.assertIn("Weekly Trends", payloads)
-        self.assertEqual(len(payloads), 6)
+        self.assertNotIn("Opportunity Changes", payloads)
+        self.assertEqual(len(payloads), 5
         trend_headers = payloads["Weekly Trends"][0]
         self.assertEqual(trend_headers, ["Trend ID", "Industry", "Workforce Problem", "Supporting Sources", "Weeks Seen"])
         trend = dict(zip(trend_headers, payloads["Weekly Trends"][1]))
@@ -82,7 +83,7 @@ class GoogleSheetsPayloadTests(unittest.TestCase):
         self.assertEqual(row["Observation Weeks"], "2026-11-02, 2026-11-09, 2026-11-23")
 
 
-    def test_empty_run_returns_six_headers_including_weekly_trends(self):
+    def test_empty_run_returns_five_headers_including_weekly_trends(self):
         payloads = build_sheet_payloads([], [])
         self.assertEqual(set(payloads), set(SHEET_HEADERS))
         self.assertIn("Weekly Trends", payloads)
@@ -148,60 +149,6 @@ class GoogleSheetsPayloadTests(unittest.TestCase):
         self.assertEqual(len(payloads["Source Register"]), 2)
 
 
-    def test_opportunity_changes_has_no_seen_date_columns(self):
-        history = [
-            {
-                "problem_type": "Skills gap",
-                "description": "Missing technical skills at factory",
-                "industry": "Manufacturing",
-                "source_name": "Report A",
-                "source_url": "https://example.org/a",
-                "source_platform": "Web",
-                "country": "Germany",
-                "first_seen": "2026-11-10",
-                "last_seen": "2026-11-17",
-                "first_seen_week": "2026-11-09",
-                "last_seen_week": "2026-11-16",
-                "weeks_seen": ["2026-11-09", "2026-11-16"],
-                "occurrences": 2,
-            },
-            {
-                "problem_type": "Skills gap",
-                "description": "Missing technical skills at another factory",
-                "industry": "Manufacturing",
-                "source_name": "Report B",
-                "source_url": "https://example.org/b",
-                "source_platform": "Web",
-                "country": "France",
-                "first_seen": "2026-11-17",
-                "last_seen": "2026-11-17",
-                "first_seen_week": "2026-11-16",
-                "last_seen_week": "2026-11-16",
-                "weeks_seen": ["2026-11-16"],
-                "occurrences": 1,
-            },
-        ]
-        payloads = build_sheet_payloads([], [], research_date="2026-11-21", history_records=history)
-        trends = payloads["Weekly Trends"]
-        trend = dict(zip(trends[0], trends[1]))
-        self.assertEqual(trends[0], ["Trend ID", "Industry", "Workforce Problem", "Supporting Sources", "Weeks Seen"])
-        self.assertEqual(trend["Industry"], "Manufacturing")
-        self.assertEqual(trend["Weeks Seen"], 2)
-        self.assertIsInstance(trend["Weeks Seen"], int)
-        self.assertNotIn("First Seen", trend)
-        self.assertNotIn("Latest Week", trend)
-
-        changes = payloads["Opportunity Changes"]
-        self.assertEqual(len(changes), 2)
-        opportunity = dict(zip(changes[0], changes[1]))
-        self.assertIn("Market Need", opportunity)
-        self.assertIn("Suggested Feature", opportunity)
-        self.assertIn("Supporting Sources", opportunity)
-        self.assertEqual(opportunity["Priority"], "Medium")
-        self.assertNotIn("Change Status", opportunity)
-        self.assertNotIn("Weeks Observed", opportunity)
-        self.assertNotIn("First Seen", opportunity)
-        self.assertNotIn("Latest Week", opportunity)
 
 if __name__ == "__main__":
     unittest.main()
