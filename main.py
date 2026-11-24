@@ -10,7 +10,7 @@ def main():
     parser.add_argument("--country-searched", default=None, help="Optional search filter; not assumed to be the finding's actual geography.")
     parser.add_argument("--max-sources-per-industry", type=int, default=3)
     parser.add_argument("--output-dir", default="research_output")
-    parser.add_argument("--history-path", default=None, help="Optional persistent JSONL history path.")
+    parser.add_argument("--history-path", default=None, help="Optional persistent JSONL history path.")\n    parser.add_argument("--source-history-path", default=None, help="Persistent cumulative source register JSONL path.")
     parser.add_argument("--publish-google-sheets", action="store_true", help="Update the configured persistent Google Sheet.")
     args = parser.parse_args()
     result = run_research(
@@ -19,7 +19,7 @@ def main():
         output_dir=args.output_dir, history_path=args.history_path,
         publish_google_sheets=args.publish_google_sheets,
         google_sheet_id=os.getenv("GOOGLE_SHEET_ID"),
-        google_service_account_json=os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON"),
+        google_service_account_json=os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON"), source_history_path=args.source_history_path,
     )
     print(f"Mode: {result['mode']}")
     print(f"Sources discovered: {result['sources_discovered']}")
