@@ -218,7 +218,7 @@ def _weekly_status(metadata: dict, current_week: str) -> str:
     return "Last seen before this week"
 
 
-def build_sheet_payloads(findings, sources, research_date=None, history_records=None):
+def build_sheet_payloads(findings, sources, research_date=None, history_records=None, source_history_records=None):
     """Build cumulative tabs and retain weekly metadata for each historical finding."""
     today = research_date or date.today().isoformat()
     current_week = week_start(today)
@@ -236,6 +236,8 @@ def build_sheet_payloads(findings, sources, research_date=None, history_records=
             }
     normalized = deduplicate_findings(all_raw)
     sources = list(sources or [])
+    source_history_records = list(source_history_records or [])
+    source_dates = {record.get("source_url") or record.get("Source URL"): record.get("first_found_date") for record in source_history_records}
     known_urls = {s.get("Source URL") for s in sources}
     for old in history_records:
         url = old.get("source_url")
@@ -245,6 +247,16 @@ def build_sheet_payloads(findings, sources, research_date=None, history_records=
                 "Source URL": url, "Source platform": old.get("source_platform") or "Web",
                 "Industry searched": old.get("industry"), "Publication date": "",
                 "Relevance status": "Historical finding",
+            })
+            known_urls.add(url)
+    for old in source_history_records:
+        url = old.get("source_url") or old.get("Source URL")
+        if url and url not in known_urls:
+            sources.append({
+                "Source title": old.get("source_title") or old.get("Source title") or "Previously collected source",
+                "Source URL": url, "Source platform": old.get("source_platform") or "Web",
+                "Industry searched": old.get("industry"), "Publication date": old.get("publication_date") or "",
+                "Access Date": old.get("first_found_date") or "",
             })
             known_urls.add(url)
 
