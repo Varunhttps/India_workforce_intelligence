@@ -207,6 +207,20 @@ else:
     if latest_research_date:
         st.caption(f"Latest research date recorded: **{latest_research_date}** · Data refreshes automatically after the weekly research run.")
 
+    if not findings.empty and "Industry" in findings.columns and "Identified Problem" in findings.columns:
+        industry_counts = (
+            findings.dropna(subset=["Industry", "Identified Problem"])
+            .groupby("Industry")["Identified Problem"]
+            .nunique()
+            .sort_values(ascending=False)
+            .head(5)
+        )
+        if not industry_counts.empty:
+            st.subheader("Top 5 industries facing workforce problems")
+            st.caption("Ranked by the number of distinct workforce problem types identified in the current research.")
+            st.bar_chart(industry_counts, height=300)
+
+
     st.subheader("Global Workforce Signals")
     st.caption("Counts are based on explicit country attribution in findings—not the countries targeted during search.")
     coverage_rows = summarize_country_coverage(findings.to_dict("records"))
@@ -224,19 +238,6 @@ else:
             st.dataframe(covered, use_container_width=True, hide_index=True)
     else:
         st.info("Country coverage will appear after findings with explicit country attribution are published.")
-
-    if not findings.empty and "Industry" in findings.columns and "Identified Problem" in findings.columns:
-        industry_counts = (
-            findings.dropna(subset=["Industry", "Identified Problem"])
-            .groupby("Industry")["Identified Problem"]
-            .nunique()
-            .sort_values(ascending=False)
-            .head(5)
-        )
-        if not industry_counts.empty:
-            st.subheader("Top 5 industries facing workforce problems")
-            st.caption("Ranked by the number of distinct workforce problem types identified in the current research.")
-            st.bar_chart(industry_counts, height=300)
 
     st.subheader(f"Weekly research changes · Week of {week_start().isoformat()}")
     st.caption("Weekly status is based on first-seen and last-seen week metadata. Older findings are retained; not seeing them in the latest research does not mean the problem has been resolved.")
@@ -265,27 +266,6 @@ else:
         st.dataframe(trends[trend_cols], use_container_width=True, hide_index=True)
     else:
         st.info("Weekly trend counts will appear after the cumulative history is published.")
-
-    # Opportunity Changes is independent of Weekly Trends: one tab may be populated before the other.
-    st.subheader("Opportunity changes")
-    if not opportunities.empty:
-        new_opportunities = int(opportunities.get("New This Week", pd.Series(dtype=object)).astype(str).str.lower().isin(["true", "1", "yes"]).sum())
-        expanded_opportunities = int(opportunities.get("Expanded Evidence", pd.Series(dtype=object)).astype(str).str.lower().isin(["true", "1", "yes"]).sum())
-        opportunity_receding = int((opportunities.get("Change Status", pd.Series(dtype=object)) == "Evidence receded").sum())
-        x, y, z = st.columns(3)
-        x.metric("New opportunities", new_opportunities)
-        y.metric("Expanded evidence", expanded_opportunities)
-        z.metric("Evidence receded", opportunity_receding)
-        opportunity_cols = [col for col in [
-            "Industry", "Market Need", "Capability", "Suggested Feature", "Business Value",
-            "Priority", "Supporting Sources", "First Seen", "Latest Week"
-        ] if col in opportunities.columns]
-        if "Source Count Delta" in opportunities.columns:
-            opportunities["Source Count Delta"] = pd.to_numeric(opportunities["Source Count Delta"], errors="coerce").fillna(0)
-            opportunities = opportunities.sort_values("Source Count Delta", ascending=False)
-        st.dataframe(opportunities[opportunity_cols], use_container_width=True, hide_index=True)
-    else:
-        st.info("Opportunity changes will appear after the history is published.")
 
     st.subheader("Emerging Skills & Workforce Trends")
     st.caption("Global skill clusters inferred from findings. Signal score reflects research breadth and recency—not measured labor-market demand.")
@@ -384,40 +364,6 @@ else:
     e.metric("Sources", len(sources))
     f.metric("Countries identified", countries)
     g.metric("Historical records", len(findings))
-
-    st.subheader("Top 5 industries by distinct workforce problems")
-    if not insights.empty and {"Section", "Industry", "Distinct Problem Count"}.issubset(insights.columns):
-        consolidated = insights[
-            insights["Section"].astype(str).str.casefold() == "consolidated workforce challenges"
-        ].copy()
-        consolidated["Distinct Problem Count"] = pd.to_numeric(
-            consolidated["Distinct Problem Count"], errors="coerce"
-        ).fillna(0)
-        ranking = (consolidated.groupby("Industry", as_index=False)["Distinct Problem Count"]
-                   .sum().sort_values("Distinct Problem Count", ascending=False).head(5))
-    elif not findings.empty and {"Industry", "Identified Problem"}.issubset(findings.columns):
-        ranking = (findings.groupby("Industry")["Identified Problem"].nunique()
-                   .sort_values(ascending=False).head(5).rename("Distinct Problem Count").reset_index())
-    else:
-        ranking = pd.DataFrame(columns=["Industry", "Distinct Problem Count"])
-
-    if not ranking.empty:
-        st.bar_chart(ranking.set_index("Industry"))
-        st.dataframe(ranking, use_container_width=True, hide_index=True)
-        st.subheader("Top 5 industry research reports")
-        for industry in ranking["Industry"].tolist():
-            with st.expander(str(industry)):
-                report = findings[findings["Industry"].astype(str) == str(industry)].copy()
-                if report.empty:
-                    st.info("No detailed research records are available for this industry yet.")
-                else:
-                    display_columns = [c for c in [
-                        "Identified Problem", "Problem Description", "Business Impact",
-                        "Country", "Region", "Research Date", "Weekly Status", "Source URL"
-                    ] if c in report.columns]
-                    st.dataframe(report[display_columns], use_container_width=True, hide_index=True)
-    else:
-        st.info("No research findings have been published yet.")
 
     tabs = st.tabs(SHEET_NAMES)
     for tab, name in zip(tabs, SHEET_NAMES):
