@@ -10,7 +10,7 @@ from typing import Any
 import gspread
 
 from .history import week_start
-from .trend_analysis import analyze_weekly_trends, analyze_opportunity_changes
+from .trend_analysis import analyze_weekly_trends
 from .records import deduplicate_findings
 
 SHEET_HEADERS = {
@@ -38,10 +38,6 @@ SHEET_HEADERS = {
     ],
     "Weekly Trends": [
         "Trend ID", "Industry", "Workforce Problem", "Supporting Sources", "Weeks Seen",
-    ],
-    "Opportunity Changes": [
-        "Opportunity ID", "Industry", "Market Need", "Capability", "Suggested Feature",
-        "Business Value", "Priority", "Supporting Sources",
     ],
 }
 
@@ -352,23 +348,12 @@ def build_sheet_payloads(findings, sources, research_date=None, history_records=
         seen_records.add(key)
 
     weekly_trends = analyze_weekly_trends(analysis_records, current_week=current_week)
-    opportunity_changes = analyze_opportunity_changes(
-        analysis_records, current_week=current_week, classifier=_opportunity
-    )
     trend_rows = []
     for trend in weekly_trends:
         trend_id = _stable_id("TRD", trend["industry"] + "|" + trend["problem_type"])
         trend_rows.append([
             trend_id, trend["industry"], trend["problem_type"],
             _cell(trend["supporting_sources"]), int(trend["weeks_observed"]),
-        ])
-    opportunity_change_rows = []
-    for opportunity in opportunity_changes:
-        opportunity_id = _stable_id("OCH", opportunity["industry"] + "|" + opportunity["capability"])
-        opportunity_change_rows.append([
-            opportunity_id, opportunity["industry"], opportunity["market_need"],
-            opportunity["capability"], opportunity["feature"], opportunity["business_value"],
-            opportunity["priority"], _cell(opportunity["supporting_sources"]),
         ])
 
     return {
@@ -377,7 +362,6 @@ def build_sheet_payloads(findings, sources, research_date=None, history_records=
         "Market Insights & Trends": [SHEET_HEADERS["Market Insights & Trends"]] + insight_rows,
         "Product Feature Opportunities": [SHEET_HEADERS["Product Feature Opportunities"]] + opportunity_rows,
         "Weekly Trends": [SHEET_HEADERS["Weekly Trends"]] + trend_rows,
-        "Opportunity Changes": [SHEET_HEADERS["Opportunity Changes"]] + opportunity_change_rows,
     }
 
 
@@ -390,8 +374,15 @@ def publish_to_google_sheets(findings, sources, spreadsheet_id=None, service_acc
         raise RuntimeError("Set GOOGLE_SHEET_ID and GOOGLE_SERVICE_ACCOUNT_JSON to publish Google Sheets.")
     client = gspread.service_account_from_dict(json.loads(service_account_json))
     spreadsheet = client.open_by_key(spreadsheet_id)
+    # Delete the obsolete worksheet requested for removal from the workbook.
+    try:
+        obsolete = spreadsheet.worksheet("Opportunity Changes")
+    except gspread.WorksheetNotFound:
+        obsolete = None
+    if obsolete is not None:
+        spreadsheet.del_worksheet(obsolete)
     payloads = build_sheet_payloads(findings, sources, history_records=history_records)
-    for title, values in payloads.items():
+    for title, values in payloads.items()
         try:
             worksheet = spreadsheet.worksheet(title)
         except gspread.WorksheetNotFound:
