@@ -68,7 +68,7 @@ def save_source_history(records, history_path):
         normalized.pop("Source URL", None)
         by_url[url] = normalized
     path.write_text(
-        "".join(json.dumps(by_url[url], ensure_ascii=False, sort_keys=True) + "\\n" for url in sorted(by_url)),
+        "".join(json.dumps(by_url[url], ensure_ascii=False, sort_keys=True) + "\n" for url in sorted(by_url)),
         encoding="utf-8",
     )
     return list(by_url.values())
