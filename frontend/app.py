@@ -266,7 +266,6 @@ else:
     else:
         st.info("Weekly trend counts will appear after the cumulative history is published.")
 
-    # Opportunity Changes is independent of Weekly Trends: one tab may be populated before the other.
     st.subheader("Emerging Skills & Workforce Trends")
     st.caption("Global skill clusters inferred from findings. Signal score reflects research breadth and recency—not measured labor-market demand.")
     skill_records = []
