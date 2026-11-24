@@ -19,6 +19,7 @@ from workforce_intelligence.skill_trends import analyze_skill_trends
 from workforce_intelligence.country_coverage import summarize_country_coverage, build_country_industry_matrix
 from workforce_intelligence.manager_actions import recommend_manager_actions
 from workforce_intelligence.signal_momentum import analyze_signal_momentum, rank_emerging_industries
+from workforce_intelligence.evidence_integrity import audit_evidence_integrity
 from frontend.private_access import (
     parse_allowed_emails,
     missing_auth_keys as missing_auth_settings,
@@ -154,6 +155,33 @@ else:
     findings = data["Market Research"].copy()
     sources = data["Source Register"]
     insights = data["Market Insights & Trends"]
+    st.subheader("Evidence integrity & traceability")
+    integrity = audit_evidence_integrity(
+        findings, sources, data.get("Product Feature Opportunities", pd.DataFrame())
+    )
+    integrity_metrics = integrity["metrics"]
+    integrity_cols = st.columns(5)
+    integrity_cols[0].metric("Missing research IDs", integrity_metrics["findings_missing_research_id"])
+    integrity_cols[1].metric(
+        "Missing / invalid source URLs",
+        integrity_metrics["findings_missing_source_url"] + integrity_metrics["findings_invalid_source_url"],
+    )
+    integrity_cols[2].metric("Research URLs not registered", integrity_metrics["findings_urls_not_in_source_register"])
+    integrity_cols[3].metric("Source ID mismatches", integrity_metrics["findings_source_id_mismatch"])
+    integrity_cols[4].metric("Duplicate research IDs", integrity_metrics["duplicate_research_ids"])
+    st.caption("These checks validate cross-sheet IDs and links only. They do not validate source truth, article interpretation or the severity of a workforce claim.")
+    if integrity["warning_count"]:
+        st.warning(f"{integrity['warning_count']} warning-level traceability issue(s) detected. Review the details before relying on affected records.")
+    else:
+        st.success("No warning-level cross-sheet traceability issues were found in the loaded records.")
+    if integrity["info_count"]:
+        st.caption(f"{integrity['info_count']} informational source-register record(s) are not linked to research IDs.")
+    if integrity["issues"]:
+        with st.expander("Inspect traceability findings", expanded=False):
+            st.dataframe(pd.DataFrame(integrity["issues"]), use_container_width=True, hide_index=True)
+            if integrity["details_truncated"]:
+                st.caption(f"Showing the first {len(integrity['issues'])} of {integrity['total_issue_details']} traceability details.")
+
 
     weekly_status = weekly_statuses(findings, current_week=week_start().isoformat())
 

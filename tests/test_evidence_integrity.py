@@ -1,0 +1,88 @@
+import unittest
+
+from workforce_intelligence.evidence_integrity import audit_evidence_integrity
+
+
+class EvidenceIntegrityTests(unittest.TestCase):
+    def test_clean_records_normalize_tracking_fragments_and_ids(self):
+        research = [{"Research ID": "RES-1", "Source ID": "src-1", "Source URL": "https://example.com/report"}]
+        register = [{"Source ID": "SRC-1", "Source URL": "https://EXAMPLE.com/report/?utm_source=x#page", "Related Research IDs": "res-1"}]
+        opportunity = [{"Opportunity ID": "OP-1", "Related Research IDs": "RES-1", "Supporting Source URLs": "https://example.com/report?utm_campaign=abc"}]
+        result = audit_evidence_integrity(research, register, opportunity)
+        self.assertEqual(result["warning_count"], 0)
+        self.assertEqual(result["info_count"], 0)
+
+    def test_missing_id_and_invalid_url_are_counted(self):
+        result = audit_evidence_integrity([{"Source URL": "not a URL"}], [], [])
+        metrics = result["metrics"]
+        self.assertEqual(metrics["findings_missing_research_id"], 1)
+        self.assertEqual(metrics["findings_invalid_source_url"], 1)
+        self.assertEqual(metrics["findings_urls_not_in_source_register"], 0)
+        self.assertEqual(result["warning_count"], 2)
+
+    def test_duplicate_research_ids_and_duplicate_source_urls_detected(self):
+        research = [{"Research ID": "RES-1", "Source URL": "https://example.com/a"}, {"Research ID": "res-1", "Source URL": "https://example.com/b"}]
+        register = [{"Source ID": "SRC-1", "Source URL": "https://example.com/a", "Related Research IDs": "RES-1"}, {"Source ID": "SRC-2", "Source URL": "https://example.com/a/", "Related Research IDs": "RES-1"}]
+        result = audit_evidence_integrity(research, register)
+        self.assertEqual(result["metrics"]["duplicate_research_ids"], 1)
+        self.assertEqual(result["metrics"]["duplicate_source_register_urls"], 1)
+
+    def test_research_url_not_registered_and_source_id_mismatch(self):
+        research = [{"Research ID": "RES-1", "Source ID": "SRC-WRONG", "Source URL": "https://example.com/a"}, {"Research ID": "RES-2", "Source ID": "", "Source URL": "https://example.com/b"}]
+        register = [{"Source ID": "SRC-1", "Source URL": "https://example.com/a", "Related Research IDs": "RES-1"}]
+        result = audit_evidence_integrity(research, register)
+        metrics = result["metrics"]
+        self.assertEqual(metrics["findings_source_id_mismatch"], 1)
+        self.assertEqual(metrics["findings_urls_not_in_source_register"], 1)
+        self.assertEqual(metrics["findings_missing_source_id"], 0)
+
+    def test_register_link_mismatch_and_unknown_references_are_flagged(self):
+        research = [{"Research ID": "RES-1", "Source ID": "SRC-1", "Source URL": "https://example.com/a"}]
+        register = [{"Source ID": "SRC-1", "Source URL": "https://example.com/a", "Related Research IDs": "RES-1, RES-GHOST"}, {"Source ID": "SRC-2", "Source URL": "https://example.com/unused", "Related Research IDs": ""}, {"Source ID": "SRC-1", "Source URL": "https://example.com/other", "Related Research IDs": "RES-1"}]
+        opportunities = [{"Opportunity ID": "OP-1", "Related Research IDs": "RES-1, RES-GHOST", "Supporting Source URLs": "https://example.com/ghost"}]
+        result = audit_evidence_integrity(research, register, opportunities)
+        metrics = result["metrics"]
+        self.assertEqual(metrics["source_register_unknown_research_ids"], 1)
+        self.assertEqual(metrics["source_register_unlinked"], 1)
+        self.assertEqual(metrics["source_register_link_mismatch"], 1)
+        self.assertEqual(metrics["duplicate_source_ids"], 1)
+        self.assertEqual(metrics["opportunity_unknown_research_ids"], 1)
+        self.assertEqual(metrics["opportunity_urls_not_in_source_register"], 1)
+        self.assertEqual(metrics["opportunity_research_source_mismatch"], 1)
+        self.assertGreater(result["info_count"], 0)
+
+    def test_source_register_missing_and_invalid_urls(self):
+        result = audit_evidence_integrity([], [{"Source ID": "S1", "Source URL": ""}, {"Source ID": "S2", "Source URL": "ftp://example.com/a"}])
+        self.assertEqual(result["metrics"]["source_register_missing_urls"], 1)
+        self.assertEqual(result["metrics"]["source_register_invalid_urls"], 1)
+
+    def test_missing_source_id_on_registered_finding(self):
+        research = [{"Research ID": "RES-1", "Source ID": "", "Source URL": "https://example.com/a"}]
+        register = [{"Source ID": "SRC-1", "Source URL": "https://example.com/a", "Related Research IDs": "RES-1"}]
+        result = audit_evidence_integrity(research, register)
+        self.assertEqual(result["metrics"]["findings_missing_source_id"], 1)
+
+    def test_dataframe_like_inputs_are_supported(self):
+        class FrameLike:
+            def to_dict(self, orient):
+                self.assertion = orient
+                return [{"Research ID": "RES-1", "Source URL": "https://example.com/a"}]
+        result = audit_evidence_integrity(FrameLike(), [], [])
+        self.assertEqual(result["warning_count"], 1)
+
+    def test_detail_list_is_capped(self):
+        rows = [{"Research ID": f"RES-{i}", "Source URL": f"https://example.com/{i}"} for i in range(60)]
+        result = audit_evidence_integrity(rows, [])
+        self.assertEqual(len(result["issues"]), 50)
+        self.assertTrue(result["details_truncated"])
+        self.assertGreater(result["total_issue_details"], 50)
+
+    def test_empty_inputs_are_safe(self):
+        result = audit_evidence_integrity(None, None, None)
+        self.assertEqual(result["warning_count"], 0)
+        self.assertEqual(result["info_count"], 0)
+        self.assertEqual(result["issues"], [])
+
+
+if __name__ == "__main__":
+    unittest.main()

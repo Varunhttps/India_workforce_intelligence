@@ -48,6 +48,14 @@ class FrontendSmokeTests(unittest.TestCase):
         self.assertNotIn("fetch_latest_research_run_health", source)
         self.assertIn('[data-testid="stToolbar"] {visibility: hidden; height: 0;}', source)
 
+    def test_dashboard_displays_evidence_integrity_audit(self):
+        app_path = Path(__file__).resolve().parents[1] / "frontend" / "app.py"
+        source = app_path.read_text(encoding="utf-8")
+        self.assertIn("audit_evidence_integrity", source)
+        self.assertIn('st.subheader("Evidence integrity & traceability")', source)
+        self.assertIn("integrity[\"details_truncated\"]", source)
+        self.assertIn("Source ID mismatches", source)
+
     def test_dashboard_has_independent_opportunity_changes_section(self):
         app_path = Path(__file__).resolve().parents[1] / "frontend" / "app.py"
         source = app_path.read_text(encoding="utf-8")
