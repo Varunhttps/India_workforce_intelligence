@@ -53,6 +53,8 @@ def _url_key(value):
             if not address.is_global or address.is_reserved:
                 return None
             host = address.compressed
+            if address.version == 6:
+                host = f"[{host}]"
         except ValueError:
             local_suffixes = (".localhost", ".local", ".internal", ".test", ".invalid", ".example", ".home", ".lan", ".intranet")
             if host == "localhost" or host.endswith(local_suffixes) or "." not in host:
