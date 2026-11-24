@@ -60,7 +60,7 @@ class PipelineTests(unittest.TestCase):
             self.assertIn("opportunity_changes", result)
             workbook = load_workbook(result["workbook_path"], read_only=True)
             self.assertIn("Weekly Trends", workbook.sheetnames)
-            self.assertIn("Opportunity Changes", workbook.sheetnames)
+            self.assertNotIn("Opportunity Changes", workbook.sheetnames)
             sheet = workbook["Source Register"]
             headers = [cell.value for cell in sheet[1]]
             row = dict(zip(headers, [cell.value for cell in sheet[2]]))
