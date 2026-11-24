@@ -36,7 +36,7 @@ def filter_frames_by_industry(frames, selected_industry=ALL_INDUSTRIES):
 
 
 def weekly_statuses(frame, current_week=None):
-    """Derive weekly categories from first/last dates, preferring legacy status when present."""
+    """Classify observations using dates and explicit observation-week history, not stale labels."""
     from datetime import date, timedelta
 
     if frame is None:
@@ -55,20 +55,24 @@ def weekly_statuses(frame, current_week=None):
         return (day - timedelta(days=day.weekday())).isoformat()
 
     first = frame.get("First Seen", pd.Series("", index=frame.index)).map(week_key)
+    # Prefer the explicit observation-week list when available. This prevents a
+    # stale/duplicated date column from masking an actual current-week sighting.
+    observation_weeks = frame.get("Observation Weeks", pd.Series("", index=frame.index))
+    observed_current = observation_weeks.map(
+        lambda value: current_monday in {week_key(part) for part in str(value or "").split(",") if part.strip()}
+    )
     last_values = frame.get("Last Seen", frame.get("Latest Week", pd.Series("", index=frame.index)))
     last = last_values.map(week_key)
     derived = []
-    for first_week, last_week in zip(first, last):
+    for first_week, last_week, observed in zip(first, last, observed_current):
         if first_week == current_monday:
             derived.append("New this week")
-        elif last_week == current_monday:
+        elif observed or last_week == current_monday:
             derived.append("Recurring this week")
         elif first_week and last_week:
             derived.append("Last seen before this week")
         else:
             derived.append("Unknown")
-    statuses = pd.Series(derived, index=frame.index, dtype=object)
-    if "Weekly Status" in frame.columns:
-        explicit = frame["Weekly Status"].fillna("").astype(str).str.strip()
-        statuses = statuses.where(explicit.eq(""), explicit)
-    return statuses
+    # Historical Weekly Status labels are intentionally not trusted; they can be
+    # stale after date metadata is refreshed. Always derive from observation dates.
+    return pd.Series(derived, index=frame.index, dtype=object)
