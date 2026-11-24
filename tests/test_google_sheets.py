@@ -27,7 +27,7 @@ class GoogleSheetsPayloadTests(unittest.TestCase):
         self.assertNotIn("Opportunity Changes", SHEET_HEADERS)
         self.assertEqual(len(payloads), 5)
         trend_headers = payloads["Weekly Trends"][0]
-        self.assertEqual(trend_headers, ["Trend ID", "Industry", "Workforce Problem", "Supporting Sources", "Weeks Seen"])
+        self.assertEqual(trend_headers, ["Trend ID", "Industry", "Workforce Problem", "Supporting Sources", "Weeks Seen", "Latest Evidence Date"])
         trend = dict(zip(trend_headers, payloads["Weekly Trends"][1]))
         self.assertEqual(trend["Weeks Seen"], 1)
         self.assertIsInstance(trend["Weeks Seen"], int)
