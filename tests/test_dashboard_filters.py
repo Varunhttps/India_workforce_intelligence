@@ -55,13 +55,19 @@ class DashboardIndustryFilterTests(unittest.TestCase):
             "New this week", "Recurring this week", "Last seen before this week", "Unknown"
         ])
 
-    def test_legacy_weekly_status_values_override_date_fallback(self):
+    def test_observation_weeks_are_used_and_stale_legacy_labels_ignored(self):
         frame = pd.DataFrame([
-            {"First Seen": "2026-11-17", "Last Seen": "2026-11-17", "Weekly Status": "Legacy label"},
-            {"First Seen": "2026-11-02", "Last Seen": "2026-11-20", "Weekly Status": ""},
+            {"First Seen": "2026-11-02", "Latest Week": "2026-11-16",
+             "Observation Weeks": "2026-11-02, 2026-11-16, 2026-11-23", "Weekly Status": "Old label"},
+            {"First Seen": "2026-11-23", "Latest Week": "2026-11-23",
+             "Observation Weeks": "2026-11-23"},
+            {"First Seen": "2026-11-02", "Latest Week": "2026-11-09",
+             "Observation Weeks": "2026-11-02, 2026-11-09"},
         ])
-        statuses = weekly_statuses(frame, current_week="2026-11-16")
-        self.assertEqual(statuses.tolist(), ["Legacy label", "Recurring this week"])
+        statuses = weekly_statuses(frame, current_week="2026-11-23")
+        self.assertEqual(statuses.tolist(), [
+            "Recurring this week", "New this week", "Last seen before this week"
+        ])
 
 if __name__ == "__main__":
     unittest.main()
