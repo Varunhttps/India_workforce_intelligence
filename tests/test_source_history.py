@@ -17,6 +17,8 @@ class SourceHistoryTests(unittest.TestCase):
             second = first + [{"Source title": "New source", "Source URL": "https://example.com/new",
                               "Source platform": "Web", "Industry searched": "Logistics"}]
             records = update_source_history(second, path, observed_at="2026-11-24")
+            # A source may disappear from search results but remains cumulative.
+            records = update_source_history([second[1]], path, observed_at="2026-11-25")
             by_url = {row["source_url"]: row for row in records}
             self.assertEqual(by_url["https://example.com/old"]["first_found_date"], "2026-11-23")
             self.assertEqual(by_url["https://example.com/new"]["first_found_date"], "2026-11-24")
