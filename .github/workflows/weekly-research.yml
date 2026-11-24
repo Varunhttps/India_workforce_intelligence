@@ -65,12 +65,12 @@ jobs:
           COUNTRY="${COUNTRY_SEARCHED:-}"
           COUNTRY_ARGS=()
           if [ -n "$COUNTRY" ]; then COUNTRY_ARGS=(--country-searched "$COUNTRY"); fi
-          PYTHONPATH=src python main.py --mode "$MODE" --max-sources-per-industry "$LIMIT" "${COUNTRY_ARGS[@]}" --output-dir research_output --history-path data/findings_history.jsonl --publish-google-sheets
+          PYTHONPATH=src python main.py --mode "$MODE" --max-sources-per-industry "$LIMIT" "${COUNTRY_ARGS[@]}" --output-dir research_output --history-path data/findings_history.jsonl --source-history-path data/source_history.jsonl --publish-google-sheets
       - name: Commit updated public-source research history
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/findings_history.jsonl
+          git add data/findings_history.jsonl data/source_history.jsonl
           if git diff --cached --quiet; then
             echo "No history changes to commit."
           else
