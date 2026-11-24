@@ -391,6 +391,25 @@ def publish_to_google_sheets(findings, sources, spreadsheet_id=None, service_acc
         obsolete = None
     if obsolete is not None:
         spreadsheet.del_worksheet(obsolete)
+    # Preserve existing Access Dates during the first migration to cumulative source history.
+    try:
+        old_register = spreadsheet.worksheet("Source Register").get_all_values()
+    except gspread.WorksheetNotFound:
+        old_register = []
+    if old_register:
+        old_headers = old_register[0]
+        if "Source URL" in old_headers and "Access Date" in old_headers:
+            url_col, date_col = old_headers.index("Source URL"), old_headers.index("Access Date")
+            legacy_dates = {row[url_col]: row[date_col] for row in old_register[1:]
+                            if len(row) > max(url_col, date_col) and row[url_col] and row[date_col]}
+            known_hist = {record.get("source_url"): record for record in (source_history_records or [])}
+            for url, access_date in legacy_dates.items():
+                record = known_hist.get(url)
+                if record:
+                    record.setdefault("first_found_date", access_date)
+                else:
+                    known_hist[url] = {"source_url": url, "first_found_date": access_date}
+            source_history_records = list(known_hist.values())
     payloads = build_sheet_payloads(findings, sources, history_records=history_records, source_history_records=source_history_records)
     for title, values in payloads.items():
         try:
