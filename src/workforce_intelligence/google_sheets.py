@@ -37,7 +37,7 @@ SHEET_HEADERS = {
         "Supporting Source URLs", "Last Updated",
     ],
     "Weekly Trends": [
-        "Trend ID", "Industry", "Workforce Problem", "Supporting Sources", "Weeks Seen", "Latest Evidence Date",
+        "Trend ID", "Industry", "Workforce Problem", "Supporting Sources", "Weeks Seen", "Latest Evidence Date", "Latest Evidence Date",
     ],
 }
 
@@ -286,9 +286,11 @@ def build_sheet_payloads(findings, sources, research_date=None, history_records=
         display_problem = row.get("problem_type") or "Unclassified"
         key = (row.get("industry") or "Unclassified", problem)
         group = industry_groups.setdefault(key, {
-            "problem": display_problem, "ids": [], "urls": set(), "countries": set()
+            "problem": display_problem, "ids": [], "urls": set(), "countries": set(), "latest_evidence_date": ""
         })
         group["ids"].append(rid)
+        evidence_date = str(meta.get("last_seen") or today)
+        group["latest_evidence_date"] = max(group["latest_evidence_date"], evidence_date)
         if row.get("source_url"):
             group["urls"].add(row["source_url"])
         if row.get("country"):
@@ -318,8 +320,7 @@ def build_sheet_payloads(findings, sources, research_date=None, history_records=
         summary["ids"].extend(group["ids"])
         summary["urls"].update(group["urls"])
         summary["countries"].update(group["countries"])
-        evidence_date = max((str(meta_by_identity.get(_identity(row) + "|" + str(row.get("source_url") or ""), {}).get("last_seen") or "") for row in normalized if (row.get("industry") or "Unclassified") == industry), default="")
-        summary["latest_evidence_date"] = max(summary["latest_evidence_date"], evidence_date)
+        summary["latest_evidence_date"] = max(summary["latest_evidence_date"], group["latest_evidence_date"])
 
     insight_rows = []
     for industry, summary in sorted(industry_summaries.items()):
