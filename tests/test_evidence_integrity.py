@@ -1,6 +1,6 @@
 import unittest
 
-from workforce_intelligence.evidence_integrity import audit_evidence_integrity
+from workforce_intelligence.evidence_integrity import _url_key, audit_evidence_integrity
 
 
 class EvidenceIntegrityTests(unittest.TestCase):
@@ -124,6 +124,10 @@ class EvidenceIntegrityTests(unittest.TestCase):
         result = audit_evidence_integrity(research, register)
         self.assertEqual(result["metrics"]["duplicate_source_ids"], 1)
         self.assertEqual(result["metrics"]["duplicate_source_register_urls"], 1)
+
+    def test_public_ipv6_url_key_keeps_brackets(self):
+        url = "https://[2606:4700:4700::1111]/report"
+        self.assertEqual(_url_key(url), url)
 
     def test_empty_inputs_are_safe(self):
         result = audit_evidence_integrity(None, None, None)
