@@ -267,26 +267,6 @@ else:
         st.info("Weekly trend counts will appear after the cumulative history is published.")
 
     # Opportunity Changes is independent of Weekly Trends: one tab may be populated before the other.
-    st.subheader("Opportunity changes")
-    if not opportunities.empty:
-        new_opportunities = int(opportunities.get("New This Week", pd.Series(dtype=object)).astype(str).str.lower().isin(["true", "1", "yes"]).sum())
-        expanded_opportunities = int(opportunities.get("Expanded Evidence", pd.Series(dtype=object)).astype(str).str.lower().isin(["true", "1", "yes"]).sum())
-        opportunity_receding = int((opportunities.get("Change Status", pd.Series(dtype=object)) == "Evidence receded").sum())
-        x, y, z = st.columns(3)
-        x.metric("New opportunities", new_opportunities)
-        y.metric("Expanded evidence", expanded_opportunities)
-        z.metric("Evidence receded", opportunity_receding)
-        opportunity_cols = [col for col in [
-            "Industry", "Market Need", "Capability", "Suggested Feature", "Business Value",
-            "Priority", "Supporting Sources", "First Seen", "Latest Week"
-        ] if col in opportunities.columns]
-        if "Source Count Delta" in opportunities.columns:
-            opportunities["Source Count Delta"] = pd.to_numeric(opportunities["Source Count Delta"], errors="coerce").fillna(0)
-            opportunities = opportunities.sort_values("Source Count Delta", ascending=False)
-        st.dataframe(opportunities[opportunity_cols], use_container_width=True, hide_index=True)
-    else:
-        st.info("Opportunity changes will appear after the history is published.")
-
     st.subheader("Emerging Skills & Workforce Trends")
     st.caption("Global skill clusters inferred from findings. Signal score reflects research breadth and recency—not measured labor-market demand.")
     skill_records = []
