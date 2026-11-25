@@ -24,21 +24,36 @@ on:
         type: number
         default: 8
 
-permissions:
-  contents: write
-
 concurrency:
   group: weekly-workforce-research
   cancel-in-progress: false
 
 jobs:
-  weekly-research:
+  tests:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Run regression tests before research
+        run: PYTHONPATH=src python -m unittest discover -s tests -v
+
+  weekly-research:
+    needs: tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v7
         with:
           ref: main
-          token: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
