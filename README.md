@@ -31,29 +31,26 @@ The weekly workflow writes into the same Google spreadsheet on every run; it cle
    - `GOOGLE_SERVICE_ACCOUNT_JSON`: complete JSON key contents (keep it secret; never commit it).
    - Existing `TAVILY_API_KEY` and `GEMINI_API_KEY` remain required.
 
-The persistent Google spreadsheet refreshes these six tabs:
+The persistent Google spreadsheet refreshes these five tabs:
 - **Source Register**
 - **Market Research**
 - **Market Insights & Trends**
 - **Product Feature Opportunities**
 - **Weekly Trends**
-- **Opportunity Changes**
 
-The Source Register contains source ID, title, direct URL, platform/type, industry, publication/access dates, source-credibility assessment, related research IDs and relevance status. Publisher / Author is left blank unless source metadata explicitly identifies it. Credibility labels are heuristic prioritization—not guarantees of article accuracy.
+The Google Sheet's **Source Register** tracks source ID, title, direct URL, source type, publisher/author, industry, publication date, access date and related research IDs. The Excel export's Source Register also includes source assessment fields. Publisher / Author is left blank unless source metadata explicitly identifies it.
 
-The Excel workbook additionally contains Run Overview, Workforce Findings, New Findings, Recurring Findings, Source Register, Research Summary, Weekly Trends and Opportunity Changes.
+The Excel workbook contains seven tabs: Run Overview, Workforce Findings, New Findings, Recurring Findings, Weekly Trends, Source Register and Research Summary.
 
 ## Weekly comparison signals
 
-**Weekly Trends** aggregates findings by industry and workforce-problem category. Its **Weeks Seen** column is a numeric count of distinct ISO weeks observed in the cumulative research history; the tab intentionally excludes First Seen and Latest Week date columns. The dashboard's separate weekly evidence-momentum view compares supporting source and country coverage with the previous week.
-
-**Opportunity Changes** groups mapped planning capabilities and tracks new opportunities, expanded or receding evidence, source/country breadth and heuristic priority.
+**Weekly Trends** aggregates findings by industry and workforce-problem category. **Weeks Seen** is a numeric count of distinct ISO weeks observed in the cumulative research history, and the tab also shows supporting source counts and latest evidence date. The dashboard uses the numeric week count for filtering and comparisons.
 
 Source/country growth is only a signal of research coverage expansion, not proof that a workforce problem worsened. A finding not observed in the latest scan is not marked resolved. Opportunity mappings are suggestions for review, not approved product commitments.
 
 ## Weekly automation
 
-GitHub Actions runs every Monday at 06:00 UTC (11:30 India Standard Time). Manual runs support all three research modes. The workflow requires `contents: write` permission to commit updates to `data/findings_history.jsonl`, as well as the four API/Google Sheets secrets listed above. If Google credentials or spreadsheet access are missing, the run fails visibly rather than silently reporting a successful publication.
+GitHub Actions runs every Monday at 06:00 UTC (11:30 India Standard Time). Manual runs support all three research modes. The workflow runs the regression test suite before research; research is skipped if tests fail. Only the research job has `contents: write` permission to commit updates to `data/findings_history.jsonl` and `data/source_history.jsonl`. If Google credentials or spreadsheet access are missing, the run fails visibly rather than silently reporting a successful publication.
 
 ## Local setup and tests
 
@@ -84,7 +81,6 @@ Available modes: `manufacturing`, `other_industries`, `all_industries`.
 
 LinkedIn is a discovery channel inside the existing pipeline, not a separate agent. The agent uses search-engine indexing to discover public LinkedIn post/article URLs and only attempts ordinary public-page collection; it does not scrape logged-in content, profiles, contact details or private data. Access restrictions or login walls are recorded as collection failures. Every accepted LinkedIn finding carries `source_platform=LinkedIn` and the original direct LinkedIn `source_url`; the pipeline attaches attribution from source metadata rather than asking the language model to reproduce it. Findings remain candidates requiring human review.
 
-
 ## Private dashboard access
 
 The connected dashboard always requires Streamlit Google OIDC sign-in and an explicit email allowlist; there is no environment-variable authentication bypass. For local presentations without OAuth or Google Sheets credentials, use the separate read-only offline demo: `streamlit run frontend/demo.py`. For hosted deployment, configure the `.streamlit/secrets.toml` values from `.streamlit/secrets.toml.example` and replace the empty/placeholder allowlist with invited users. Never commit real secrets.
@@ -100,10 +96,9 @@ pip install -r requirements.txt
 streamlit run frontend/app.py
 ```
 
-Configure Streamlit secrets (or environment variables) for `GOOGLE_SHEET_ID` and `GOOGLE_SERVICE_ACCOUNT_JSON` to read the six tabs. To enable the **Start Research** control, also configure `GITHUB_TOKEN` with permission to dispatch repository Actions workflows. Do not commit these credentials. The control currently supports the existing research scopes (Manufacturing, Other Industries, All Industries), optional comma-separated country filters (blank means global) and the source cap per industry. Multiple countries trigger separate targeted discovery searches; extracted country attribution is still accepted only when explicitly supported by the source text. The pipeline's existing discovery channels are web search and public, search-indexed LinkedIn.
+Configure Streamlit secrets (or environment variables) for `GOOGLE_SHEET_ID` and `GOOGLE_SERVICE_ACCOUNT_JSON` to read the five tabs. To enable the **Start Research** control, also configure `GITHUB_TOKEN` with permission to dispatch repository Actions workflows. Do not commit these credentials. The control currently supports the existing research scopes (Manufacturing, Other Industries, All Industries), optional comma-separated country filters (blank means global) and the source cap per industry. Multiple countries trigger separate targeted discovery searches; extracted country attribution is still accepted only when explicitly supported by the source text. The pipeline's existing discovery channels are web search and public, search-indexed LinkedIn.
 
 The dashboard supports a global industry filter across tables and summary metrics, displays distinct problem counts by industry when unfiltered, and links to the full spreadsheet. Research findings and generated opportunity mappings are candidates for human review, not verified market conclusions or approved Nexplan product commitments.
-
 
 ## Manager Opportunity Priorities
 
