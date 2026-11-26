@@ -90,7 +90,12 @@ class FrontendSmokeTests(unittest.TestCase):
         self.assertNotIn('st.subheader("Global Workforce Signals")', source)
         self.assertNotIn("summarize_country_coverage", source)
         self.assertNotIn("Ranked horizontal bar chart", source)
-        self.assertIn("st.line_chart(emerging_counts", source)
+        self.assertIn("import altair as alt", source)
+        self.assertIn("mark_bar()", source)
+        self.assertIn('mark_text(align="left", dx=5)', source)
+        self.assertIn('"Recent findings"', source)
+        self.assertIn('"Change"', source)
+        self.assertIn("st.altair_chart", source)
 
     def test_dashboard_hides_research_run_health_panel(self):
         app_path = Path(__file__).resolve().parents[1] / "frontend" / "app.py"
