@@ -207,45 +207,64 @@ else:
         monthly_counts = monthly_source.groupby(["_trend_month", "Identified Problem"]).size().unstack(fill_value=0)
         month_order = sorted(monthly_counts.index)
         monthly_counts = monthly_counts.reindex(month_order)
-        if len(month_order) >= 3:
+        has_comparison = False
+        if len(month_order) >= 4:
             recent_months = month_order[-2:]
             prior_months = month_order[-4:-2]
             recent_totals = monthly_counts.loc[recent_months].sum()
-            prior_totals = monthly_counts.loc[prior_months].sum() if prior_months else pd.Series(0, index=monthly_counts.columns)
+            prior_totals = monthly_counts.loc[prior_months].sum()
             change = recent_totals.subtract(prior_totals, fill_value=0)
+            has_comparison = True
+            period_label = "recent two months vs previous two months"
+        elif len(month_order) >= 2:
+            recent_totals = monthly_counts.iloc[-1]
+            prior_totals = monthly_counts.iloc[-2]
+            change = recent_totals.subtract(prior_totals, fill_value=0)
+            has_comparison = True
+            period_label = "latest month vs previous month"
+        else:
+            recent_totals = monthly_counts.iloc[-1]
+            change = pd.Series(None, index=monthly_counts.columns, dtype="object")
+            period_label = "only one month available; ranked by counts"
+
+        if has_comparison:
             rising = change[change > 0].sort_values(ascending=False)
             if not rising.empty:
                 emerging_names = rising.head(10).index
-                ranking = "Ranked by increase versus the previous two-month period"
+                ranking = f"Ranked by increase ({period_label})"
             else:
                 emerging_names = recent_totals.sort_values(ascending=False).head(10).index
-                ranking = "No challenges increased versus the prior period; shown by recent counts"
+                ranking = f"No challenges increased ({period_label}); shown by recent counts"
         else:
-            recent_totals = monthly_counts.sum()
-            change = pd.Series(0, index=monthly_counts.columns)
             emerging_names = recent_totals.sort_values(ascending=False).head(10).index
             ranking = "Date history is limited; ranked by available counts"
 
         chart_data = pd.DataFrame({
             "Challenge": emerging_names,
             "Recent findings": [int(recent_totals.get(name, 0)) for name in emerging_names],
-            "Change": [int(change.get(name, 0)) for name in emerging_names],
+            "Change": [int(change.get(name, 0)) if has_comparison else None for name in emerging_names],
         })
         chart_data = chart_data.sort_values("Recent findings", ascending=True)
         chart_data["Label"] = chart_data.apply(
-            lambda row: f"{int(row['Recent findings'])}  (Δ {int(row['Change']):+d})", axis=1
+            lambda row: (
+                f"{int(row['Recent findings'])}  (Δ {int(row['Change']):+d})"
+                if has_comparison else f"{int(row['Recent findings'])}"
+            ), axis=1
         )
+        max_value = max(1, int(chart_data["Recent findings"].max()))
+        x_scale = alt.Scale(domain=[0, max_value * 1.25])
         bars = alt.Chart(chart_data).mark_bar().encode(
-            x=alt.X("Recent findings:Q", title="Findings in recent period"),
+            x=alt.X("Recent findings:Q", title="Findings in recent period", scale=x_scale),
             y=alt.Y("Challenge:N", sort=chart_data["Challenge"].tolist(), title=None),
             tooltip=["Challenge:N", "Recent findings:Q", "Change:Q"],
         )
         labels = alt.Chart(chart_data).mark_text(align="left", dx=5).encode(
-            x=alt.X("Recent findings:Q"),
+            x=alt.X("Recent findings:Q", scale=x_scale),
             y=alt.Y("Challenge:N", sort=chart_data["Challenge"].tolist()),
             text="Label:N",
         )
-        st.caption(ranking + " · Bar labels show recent count and change.")
+        caption = ranking + (" · Bar labels show recent count and change." if has_comparison else " · Bar labels show counts only.")
+        st.caption(caption)
         st.altair_chart((bars + labels).properties(height=max(320, 34 * len(chart_data))), use_container_width=True)
     else:
         st.info("Emerging workforce challenges will appear when findings include research dates.")
