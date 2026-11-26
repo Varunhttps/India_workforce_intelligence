@@ -73,6 +73,7 @@ class FrontendSmokeTests(unittest.TestCase):
         self.assertNotIn("summarize_country_coverage", source)
         self.assertIn("render_labeled_horizontal_bars", source)
         self.assertIn('mark_text(align="left", dx=5)', source)
+        self.assertIn("Weekly observations in recent period", source)
 
     def test_emerging_challenges_show_counts_without_fake_delta_for_one_month(self):
         records = [
@@ -80,10 +81,20 @@ class FrontendSmokeTests(unittest.TestCase):
             {"Identified Problem": "Skills gap", "Observation Weeks": "2026-11-16"},
         ]
         rows, caption = build_emerging_challenge_chart_data(records)
-        self.assertEqual(rows[0]["Recent findings"], 3)
+        self.assertEqual(rows[0]["Weekly observations"], 3)
         self.assertIsNone(rows[0]["Change"])
         self.assertEqual(rows[0]["Label"], "3")
         self.assertIn("only one month", caption)
+
+    def test_emerging_challenges_do_not_compare_across_missing_calendar_months(self):
+        records = [
+            {"Identified Problem": "Skills gap", "Observation Weeks": "2026-10-05, 2026-12-07"},
+        ]
+        rows, caption = build_emerging_challenge_chart_data(records)
+        self.assertEqual(rows[0]["Weekly observations"], 1)
+        self.assertIsNone(rows[0]["Change"])
+        self.assertEqual(rows[0]["Label"], "1")
+        self.assertIn("calendar month gaps prevent comparison", caption)
 
     def test_emerging_challenges_compare_latest_month_to_previous_month(self):
         records = [
