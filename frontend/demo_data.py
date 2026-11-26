@@ -94,18 +94,28 @@ def build_emerging_challenge_chart_data(records, top_n=10):
 
     months = sorted(monthly_counts)
     has_comparison = False
-    if len(months) >= 4:
+
+    def month_number(month):
+        year, month_value = month.split("-")
+        return int(year) * 12 + int(month_value)
+
+    last_four = months[-4:]
+    last_two = months[-2:]
+    if len(last_four) == 4 and all(
+        month_number(next_month) - month_number(previous_month) == 1
+        for previous_month, next_month in zip(last_four, last_four[1:])
+    ):
         recent = Counter()
         prior = Counter()
-        for month in months[-2:]:
+        for month in last_four[-2:]:
             recent.update(monthly_counts[month])
-        for month in months[-4:-2]:
+        for month in last_four[:2]:
             prior.update(monthly_counts[month])
         changes = {problem: recent.get(problem, 0) - prior.get(problem, 0)
                    for problem in set(recent) | set(prior)}
         has_comparison = True
         period = "increase across the latest two months versus the preceding two months"
-    elif len(months) >= 2:
+    elif len(last_two) == 2 and month_number(last_two[-1]) - month_number(last_two[-2]) == 1:
         recent = monthly_counts[months[-1]]
         prior = monthly_counts[months[-2]]
         changes = {problem: recent.get(problem, 0) - prior.get(problem, 0)
@@ -115,7 +125,11 @@ def build_emerging_challenge_chart_data(records, top_n=10):
     elif months:
         recent = monthly_counts[months[-1]]
         changes = {}
-        period = "only one month of observations; ranked by counts (no trend inferred)"
+        period = (
+            "calendar month gaps prevent comparison; ranked by latest month counts"
+            if len(months) >= 2
+            else "only one month of observations; ranked by counts (no trend inferred)"
+        )
     else:
         recent = overall_counts
         changes = {}
@@ -141,7 +155,7 @@ def build_emerging_challenge_chart_data(records, top_n=10):
         label = f"{count} (Δ {delta:+d})" if delta is not None else str(count)
         rows.append({
             "Challenge": problem,
-            "Recent findings": count,
+            "Weekly observations": count,
             "Change": delta,
             "Label": label,
         })
