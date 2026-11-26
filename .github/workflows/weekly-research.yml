@@ -36,6 +36,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
+          ref: main
           persist-credentials: false
       - uses: actions/setup-python@v7
         with:
