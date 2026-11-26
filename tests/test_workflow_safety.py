@@ -22,6 +22,8 @@ class WeeklyWorkflowSafetyTests(unittest.TestCase):
         workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
         tests_job = _job_block(workflow, "tests")
         self.assertTrue(tests_job, "weekly-research workflow must include a tests job")
+        self.assertIn("    if: github.ref == 'refs/heads/main'", tests_job,
+                      "preflight job must not run from non-main manual dispatches")
         self.assertIn("    permissions:", tests_job)
         self.assertIn("      contents: read", tests_job)
         self.assertIn("          persist-credentials: false", tests_job)
@@ -35,6 +37,8 @@ class WeeklyWorkflowSafetyTests(unittest.TestCase):
         workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
         research_job = _job_block(workflow, "weekly-research")
         self.assertTrue(research_job, "weekly-research job is missing")
+        self.assertIn("    if: github.ref == 'refs/heads/main'", research_job,
+                      "research job must be limited to main")
         self.assertIn("    needs: tests", research_job)
         self.assertIn("    permissions:", research_job)
         self.assertIn("      contents: write", research_job)
