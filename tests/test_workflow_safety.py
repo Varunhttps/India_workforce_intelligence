@@ -8,11 +8,11 @@ WORKFLOW_PATH = ROOT / ".github" / "workflows" / "weekly-research.yml"
 
 
 def _job_block(workflow, job_name):
-    header = re.search(rf"(?m)^  {re.escape(job_name)}:\\s*$", workflow)
+    header = re.search(rf"(?m)^  {re.escape(job_name}:\s*$", workflow)
     if header is None:
         return ""
     start = header.end()
-    next_job = re.search(r"(?m)^  [A-Za-z0-9_-]+:\\s*$", workflow[start:])
+    next_job = re.search(r"(?m)^  [A-Za-z0-9_-]+:\s*$", workflow[start:])
     end = start + next_job.start() if next_job else len(workflow)
     return workflow[start:end]
 
