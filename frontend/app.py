@@ -237,10 +237,12 @@ else:
                 else "only one month available; ranked by counts"
             )
 
+        rank_by_change = False
         if has_comparison:
             rising = change[change > 0].sort_values(ascending=False)
             if not rising.empty:
                 emerging_names = rising.head(10).index
+                rank_by_change = True
                 ranking = f"Ranked by increase ({period_label})"
             else:
                 emerging_names = recent_totals.sort_values(ascending=False).head(10).index
@@ -258,7 +260,10 @@ else:
             "Recent findings": [int(recent_totals.get(name, 0)) for name in emerging_names],
             "Change": [int(change.get(name, 0)) if has_comparison else None for name in emerging_names],
         })
-        chart_data = chart_data.sort_values("Recent findings", ascending=True)
+        if rank_by_change:
+            chart_data = chart_data.sort_values(["Change", "Recent findings"], ascending=True)
+        else:
+            chart_data = chart_data.sort_values("Recent findings", ascending=True)
         chart_data["Label"] = chart_data.apply(
             lambda row: (
                 f"{int(row['Recent findings'])}  (Δ {int(row['Change']):+d})"
