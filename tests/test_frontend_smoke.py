@@ -96,6 +96,9 @@ class FrontendSmokeTests(unittest.TestCase):
         self.assertIn('"Recent findings"', source)
         self.assertIn('"Change"', source)
         self.assertIn("st.altair_chart", source)
+        self.assertIn("has_comparison = False", source)
+        self.assertIn("only one month available; ranked by counts", source)
+        self.assertIn("Bar labels show counts only.", source)
 
     def test_dashboard_hides_research_run_health_panel(self):
         app_path = Path(__file__).resolve().parents[1] / "frontend" / "app.py"
