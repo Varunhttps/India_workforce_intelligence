@@ -25,6 +25,15 @@ def main():
     print(f"Mode: {result['mode']}")
     print(f"Sources discovered: {result['sources_discovered']}")
     print(f"Findings extracted (source-excerpt checked, not editorially reviewed): {result['findings_extracted']}")
+    assessment = result.get("source_assessment_counts", {})
+    print(
+        "Source assessments: "
+        f"{assessment.get('with_findings', 0)} with findings; "
+        f"{assessment.get('no_findings', 0)} no qualifying finding; "
+        f"{assessment.get('unable_to_assess', 0)} unable to assess."
+    )
+    if result["sources_discovered"] and not result["findings_extracted"]:
+        print("WARNING: Zero findings were extracted. Review the source-assessment counts and warnings before treating this run as complete.")
     print(f"New findings: {result['new_findings']}")
     print(f"Recurring findings: {result['recurring_findings']}")
     print(f"History records: {result['history_records']}")

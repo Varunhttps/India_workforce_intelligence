@@ -1,6 +1,9 @@
 """End-to-end orchestration for one research run."""
 from pathlib import Path
 import json
+import logging
+from urllib.parse import urlparse
+
 from .research_modes import build_research_plan
 from .discovery import discover_sources
 from .collector import collect_document
@@ -10,6 +13,8 @@ from .source_history import update_source_history
 from .trend_analysis import analyze_weekly_trends, analyze_opportunity_changes
 from .reporting import export_workbook
 from .google_sheets import _opportunity, publish_to_google_sheets
+
+logger = logging.getLogger(__name__)
 
 
 def _source_credibility_assessment(source_class, platform):
@@ -42,7 +47,7 @@ def run_research(mode="manufacturing", country_searched=None, max_sources_per_in
     if sources and model is None:
         model = GeminiExtractor(api_key=gemini_api_key)
 
-    for source in sources:
+    for source_index, source in enumerate(sources):
         source_row = {
             "Source title": source.get("title"), "Source URL": source.get("url"), "Source platform": source.get("source_platform", "Web"),
             "Candidate source class (domain heuristic)": source.get("source_class", "Other / unclassified"),
@@ -77,7 +82,21 @@ def run_research(mode="manufacturing", country_searched=None, max_sources_per_in
                 source_row["Region"] = next(iter(regions))
         except Exception as exc:
             source_row["Relevance status"] = "Unable to assess — extraction failed"
+            try:
+                host = (urlparse(str(source.get("url") or "")).hostname or "unknown").lower()[:120]
+            except ValueError:
+                host = "unknown"
+            logger.warning(
+                "Source assessment failed for source %d (%s): %s",
+                source_index + 1, host, type(exc).__name__,
+            )
         source_rows.append(source_row)
+
+    source_assessment_counts = {
+        "with_findings": sum(row["Relevance status"].startswith("Relevant —") for row in source_rows),
+        "no_findings": sum(row["Relevance status"].startswith("Not relevant —") for row in source_rows),
+        "unable_to_assess": sum(row["Relevance status"].startswith("Unable to assess —") for row in source_rows),
+    }
 
     history_file = history_path or str(Path(output_dir) / "findings_history.jsonl")
     history = update_history(findings, history_file)
@@ -121,6 +140,7 @@ def run_research(mode="manufacturing", country_searched=None, max_sources_per_in
     return {
         "mode": plan.mode, "industries": list(plan.industries),
         "sources_discovered": len(sources), "findings_extracted": len(findings),
+        "source_assessment_counts": source_assessment_counts,
         "new_findings": len(history["new"]), "recurring_findings": len(history["recurring"]),
         "history_records": history["history_records"], "history_path": history["history_path"],
         "weekly_trends": weekly_trends, "opportunity_changes": opportunity_changes,
