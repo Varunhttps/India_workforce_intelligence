@@ -105,7 +105,7 @@ class FrontendSmokeTests(unittest.TestCase):
         ]
         rows, caption = build_emerging_challenge_chart_data(records)
         self.assertEqual([row["Challenge"] for row in rows], ["Talent shortage"])
-        self.assertEqual(rows[0]["Recent findings"], 2)
+        self.assertEqual(rows[0]["Weekly observations"], 2)
         self.assertEqual(rows[0]["Change"], 1)
         self.assertEqual(rows[0]["Label"], "2 (Δ +1)")
         self.assertIn("latest month", caption)
@@ -118,7 +118,7 @@ class FrontendSmokeTests(unittest.TestCase):
         ]
         rows, caption = build_emerging_challenge_chart_data(records)
         self.assertEqual([row["Challenge"] for row in rows], ["Skills gap"])
-        self.assertEqual(rows[0]["Recent findings"], 4)
+        self.assertEqual(rows[0]["Weekly observations"], 4)
         self.assertEqual(rows[0]["Change"], 2)
         self.assertEqual(rows[0]["Label"], "4 (Δ +2)")
         self.assertIn("latest two months", caption)
