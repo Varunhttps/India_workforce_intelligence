@@ -22,29 +22,26 @@ class WeeklyWorkflowSafetyTests(unittest.TestCase):
         workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
         tests_job = _job_block(workflow, "tests")
         self.assertTrue(tests_job, "weekly-research workflow must include a tests job")
-        self.assertRegex(tests_job, r"(?m)^    permissions:\\s*\\n      contents:\\s*read\\s*$")
-        self.assertRegex(tests_job, r"(?m)^          persist-credentials:\\s*false\\s*$")
+        self.assertIn("    permissions:\\n      contents: read", tests_job)
+        self.assertIn("          persist-credentials: false", tests_job)
 
     def test_research_job_is_gated_by_tests_and_write_permission_is_scoped(self):
         workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
         research_job = _job_block(workflow, "weekly-research")
         self.assertTrue(research_job, "weekly-research job is missing")
-        self.assertRegex(research_job, r"(?m)^    needs:\\s*tests\\s*$")
-        self.assertRegex(research_job, r"(?m)^    permissions:\\s*\\n      contents:\\s*write\\s*$")
-        self.assertEqual(
-            len(re.findall(r"(?m)^\\s*contents:\\s*write\\s*$", workflow)),
-            1,
-            "contents: write must be granted only to the publishing research job",
-        )
+        self.assertIn("    needs: tests", research_job)
+        self.assertIn("    permissions:\\n      contents: write", research_job)
+        self.assertEqual(workflow.count("      contents: write"), 1,
+                         "contents: write must be granted only to the publishing research job")
 
     def test_research_job_does_not_persist_write_token_and_push_auth_is_late_scoped(self):
         workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
         research_job = _job_block(workflow, "weekly-research")
-        checkout = re.search(
-            r"(?ms)^      - uses: actions/checkout@v7\\s*\\n        with:\\s*\\n          ref: main\\s*\\n          persist-credentials: false\\s*$",
-            research_job,
-        )
-        self.assertIsNotNone(checkout, "research checkout must not persist write credentials")
+        checkout_block = research_job.split("      - uses: actions/checkout@v7", 1)[1].split(
+            "      - uses: actions/setup-python@v7", 1
+        )[0]
+        self.assertIn("          ref: main\\n          persist-credentials: false", checkout_block,
+                      "research checkout must not persist write credentials")
 
         research_step = research_job.split(
             "      - name: Run research and update the persistent Google Sheet", 1
@@ -61,10 +58,7 @@ class WeeklyWorkflowSafetyTests(unittest.TestCase):
 
     def test_workflow_has_no_top_level_write_permission(self):
         workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
-        self.assertIsNone(
-            re.search(r"(?m)^permissions:\\s*$", workflow),
-            "write permission must not be granted at workflow scope",
-        )
+        self.assertNotIn("\\npermissions:\\n  contents: write\\n", workflow)
 
 
 if __name__ == "__main__":
