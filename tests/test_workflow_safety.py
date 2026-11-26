@@ -22,7 +22,8 @@ class WeeklyWorkflowSafetyTests(unittest.TestCase):
         workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
         tests_job = _job_block(workflow, "tests")
         self.assertTrue(tests_job, "weekly-research workflow must include a tests job")
-        self.assertIn("    permissions:\\n      contents: read", tests_job)
+        self.assertIn("    permissions:", tests_job)
+        self.assertIn("      contents: read", tests_job)
         self.assertIn("          persist-credentials: false", tests_job)
 
     def test_research_job_is_gated_by_tests_and_write_permission_is_scoped(self):
@@ -30,7 +31,8 @@ class WeeklyWorkflowSafetyTests(unittest.TestCase):
         research_job = _job_block(workflow, "weekly-research")
         self.assertTrue(research_job, "weekly-research job is missing")
         self.assertIn("    needs: tests", research_job)
-        self.assertIn("    permissions:\\n      contents: write", research_job)
+        self.assertIn("    permissions:", research_job)
+        self.assertIn("      contents: write", research_job)
         self.assertEqual(workflow.count("      contents: write"), 1,
                          "contents: write must be granted only to the publishing research job")
 
@@ -40,7 +42,8 @@ class WeeklyWorkflowSafetyTests(unittest.TestCase):
         checkout_block = research_job.split("      - uses: actions/checkout@v7", 1)[1].split(
             "      - uses: actions/setup-python@v7", 1
         )[0]
-        self.assertIn("          ref: main\\n          persist-credentials: false", checkout_block,
+        self.assertIn("ref: main", checkout_block)
+        self.assertIn("persist-credentials: false", checkout_block,
                       "research checkout must not persist write credentials")
 
         research_step = research_job.split(
@@ -58,7 +61,8 @@ class WeeklyWorkflowSafetyTests(unittest.TestCase):
 
     def test_workflow_has_no_top_level_write_permission(self):
         workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
-        self.assertNotIn("\\npermissions:\\n  contents: write\\n", workflow)
+        header = workflow.split("jobs:", 1)[0]
+        self.assertNotIn("permissions:", header)
 
 
 if __name__ == "__main__":
