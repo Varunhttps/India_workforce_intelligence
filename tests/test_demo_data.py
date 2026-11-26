@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from frontend.demo_data import load_demo_findings
+from frontend.demo_data import load_demo_findings, build_emerging_challenge_chart_data
 
 
 class OfflineDemoTests(unittest.TestCase):
@@ -40,6 +40,25 @@ class OfflineDemoTests(unittest.TestCase):
         self.assertEqual(result[0]["Weeks Seen"], 2)
         self.assertIsInstance(result[0]["Weeks Seen"], int)
         self.assertEqual(result[0]["Observation Weeks"], "2026-11-09, 2026-11-16")
+
+    def test_emerging_challenges_rank_by_increase_not_recent_count(self):
+        records = [
+            {
+                "Identified Problem": "Slow growth",
+                "Observation Weeks": "2026-10-05, 2026-10-12, 2026-10-19, 2026-11-02, 2026-11-09, 2026-11-16, 2026-11-23",
+            },
+            {
+                "Identified Problem": "Fast growth",
+                "Observation Weeks": "2026-10-05, 2026-11-02, 2026-11-09, 2026-11-16",
+            },
+        ]
+        rows, caption = build_emerging_challenge_chart_data(records)
+        self.assertEqual([row["Challenge"] for row in rows], ["Fast growth", "Slow growth"])
+        self.assertEqual(rows[0]["Weekly observations"], 3)
+        self.assertEqual(rows[0]["Change"], 2)
+        self.assertEqual(rows[1]["Weekly observations"], 4)
+        self.assertEqual(rows[1]["Change"], 1)
+        self.assertIn("increase", caption)
 
     def test_missing_file_returns_empty(self):
         result = load_demo_findings(Path("/nonexistent/demo-history.jsonl"))
