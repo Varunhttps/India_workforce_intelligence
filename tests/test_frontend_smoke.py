@@ -4,6 +4,8 @@ import tempfile
 from pathlib import Path
 import unittest
 
+from streamlit.testing.v1 import AppTest
+
 from frontend.demo_data import load_demo_findings, build_emerging_challenge_chart_data
 
 
@@ -21,6 +23,11 @@ class FrontendSmokeTests(unittest.TestCase):
         self.assertNotIn("requests.post", calls)
         self.assertNotIn("trigger_research", source)
         self.assertNotIn("GITHUB_TOKEN", source)
+
+    def test_offline_demo_runs_without_streamlit_runtime_exceptions(self):
+        demo_path = Path(__file__).resolve().parents[1] / "frontend" / "demo.py"
+        app_test = AppTest.from_file(str(demo_path)).run()
+        self.assertEqual(len(app_test.exception), 0)
 
     def test_offline_demo_loader_maps_history_and_skips_invalid_lines(self):
         with tempfile.TemporaryDirectory() as tmp:
