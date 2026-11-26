@@ -208,15 +208,21 @@ else:
         month_order = sorted(monthly_counts.index)
         monthly_counts = monthly_counts.reindex(month_order)
         has_comparison = False
-        if len(month_order) >= 4:
-            recent_months = month_order[-2:]
-            prior_months = month_order[-4:-2]
+        month_number = lambda period: period.year * 12 + period.month
+        last_four = month_order[-4:]
+        last_two = month_order[-2:]
+        if len(last_four) == 4 and all(
+            month_number(next_month) - month_number(previous_month) == 1
+            for previous_month, next_month in zip(last_four, last_four[1:])
+        ):
+            recent_months = last_four[-2:]
+            prior_months = last_four[:2]
             recent_totals = monthly_counts.loc[recent_months].sum()
             prior_totals = monthly_counts.loc[prior_months].sum()
             change = recent_totals.subtract(prior_totals, fill_value=0)
             has_comparison = True
             period_label = "recent two months vs previous two months"
-        elif len(month_order) >= 2:
+        elif len(last_two) == 2 and month_number(last_two[-1]) - month_number(last_two[-2]) == 1:
             recent_totals = monthly_counts.iloc[-1]
             prior_totals = monthly_counts.iloc[-2]
             change = recent_totals.subtract(prior_totals, fill_value=0)
@@ -225,7 +231,11 @@ else:
         else:
             recent_totals = monthly_counts.iloc[-1]
             change = pd.Series(None, index=monthly_counts.columns, dtype="object")
-            period_label = "only one month available; ranked by counts"
+            period_label = (
+                "calendar month gaps prevent comparison"
+                if len(month_order) >= 2
+                else "only one month available; ranked by counts"
+            )
 
         if has_comparison:
             rising = change[change > 0].sort_values(ascending=False)
@@ -237,7 +247,11 @@ else:
                 ranking = f"No challenges increased ({period_label}); shown by recent counts"
         else:
             emerging_names = recent_totals.sort_values(ascending=False).head(10).index
-            ranking = "Date history is limited; ranked by available counts"
+            ranking = (
+                "Calendar month gaps prevent comparison; ranked by latest month counts"
+                if len(month_order) >= 2
+                else "Date history is limited; ranked by available counts"
+            )
 
         chart_data = pd.DataFrame({
             "Challenge": emerging_names,
