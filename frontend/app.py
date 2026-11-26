@@ -260,10 +260,9 @@ else:
             "Recent findings": [int(recent_totals.get(name, 0)) for name in emerging_names],
             "Change": [int(change.get(name, 0)) if has_comparison else None for name in emerging_names],
         })
-        if rank_by_change:
-            chart_data = chart_data.sort_values(["Change", "Recent findings"], ascending=True)
-        else:
-            chart_data = chart_data.sort_values("Recent findings", ascending=True)
+        chart_sort = alt.EncodingSortField(
+            field="Change" if rank_by_change else "Recent findings", order="descending"
+        )
         chart_data["Label"] = chart_data.apply(
             lambda row: (
                 f"{int(row['Recent findings'])}  (Δ {int(row['Change']):+d})"
@@ -274,12 +273,12 @@ else:
         x_scale = alt.Scale(domain=[0, max_value * 1.25])
         bars = alt.Chart(chart_data).mark_bar().encode(
             x=alt.X("Recent findings:Q", title="Findings in recent period", scale=x_scale),
-            y=alt.Y("Challenge:N", sort=chart_data["Challenge"].tolist(), title=None),
+            y=alt.Y("Challenge:N", sort=chart_sort, title=None),
             tooltip=["Challenge:N", "Recent findings:Q", "Change:Q"],
         )
         labels = alt.Chart(chart_data).mark_text(align="left", dx=5).encode(
             x=alt.X("Recent findings:Q", scale=x_scale),
-            y=alt.Y("Challenge:N", sort=chart_data["Challenge"].tolist()),
+            y=alt.Y("Challenge:N", sort=chart_sort),
             text="Label:N",
         )
         caption = ranking + (" · Bar labels show recent count and change." if has_comparison else " · Bar labels show counts only.")
