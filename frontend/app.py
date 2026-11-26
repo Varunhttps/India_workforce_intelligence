@@ -4,6 +4,7 @@ import sys
 from pathlib import Path
 from datetime import date, timedelta
 
+import altair as alt
 import gspread
 import pandas as pd
 import requests
@@ -206,20 +207,48 @@ else:
         monthly_counts = monthly_source.groupby(["_trend_month", "Identified Problem"]).size().unstack(fill_value=0)
         month_order = sorted(monthly_counts.index)
         monthly_counts = monthly_counts.reindex(month_order)
-        if len(month_order) >= 2:
+        if len(month_order) >= 3:
             recent_months = month_order[-2:]
             prior_months = month_order[-4:-2]
             recent_totals = monthly_counts.loc[recent_months].sum()
             prior_totals = monthly_counts.loc[prior_months].sum() if prior_months else pd.Series(0, index=monthly_counts.columns)
-            growth = recent_totals.subtract(prior_totals, fill_value=0)
-            emerging_names = growth.sort_values(ascending=False).head(10).index
+            change = recent_totals.subtract(prior_totals, fill_value=0)
+            rising = change[change > 0].sort_values(ascending=False)
+            if not rising.empty:
+                emerging_names = rising.head(10).index
+                ranking = "Ranked by increase versus the previous two-month period"
+            else:
+                emerging_names = recent_totals.sort_values(ascending=False).head(10).index
+                ranking = "No challenges increased versus the prior period; shown by recent counts"
         else:
-            emerging_names = monthly_counts.sum().sort_values(ascending=False).head(10).index
-        emerging_counts = monthly_counts.loc[:, emerging_names]
-        st.line_chart(emerging_counts.rename_axis("Month").rename(columns=str), height=360)
-    else:
-        st.info("Monthly workforce challenge trends will appear when findings include research dates.")
+            recent_totals = monthly_counts.sum()
+            change = pd.Series(0, index=monthly_counts.columns)
+            emerging_names = recent_totals.sort_values(ascending=False).head(10).index
+            ranking = "Date history is limited; ranked by available counts"
 
+        chart_data = pd.DataFrame({
+            "Challenge": emerging_names,
+            "Recent findings": [int(recent_totals.get(name, 0)) for name in emerging_names],
+            "Change": [int(change.get(name, 0)) for name in emerging_names],
+        })
+        chart_data = chart_data.sort_values("Recent findings", ascending=True)
+        chart_data["Label"] = chart_data.apply(
+            lambda row: f"{int(row['Recent findings'])}  (Δ {int(row['Change']):+d})", axis=1
+        )
+        bars = alt.Chart(chart_data).mark_bar().encode(
+            x=alt.X("Recent findings:Q", title="Findings in recent period"),
+            y=alt.Y("Challenge:N", sort=chart_data["Challenge"].tolist(), title=None),
+            tooltip=["Challenge:N", "Recent findings:Q", "Change:Q"],
+        )
+        labels = alt.Chart(chart_data).mark_text(align="left", dx=5).encode(
+            x=alt.X("Recent findings:Q"),
+            y=alt.Y("Challenge:N", sort=chart_data["Challenge"].tolist()),
+            text="Label:N",
+        )
+        st.caption(ranking + " · Bar labels show recent count and change.")
+        st.altair_chart((bars + labels).properties(height=max(320, 34 * len(chart_data))), use_container_width=True)
+    else:
+        st.info("Emerging workforce challenges will appear when findings include research dates.")
 
     st.subheader(f"Weekly research changes · Week of {week_start().isoformat()}")
     st.caption("Weekly status is based on first-seen and last-seen week metadata. Older findings are retained; not seeing them in the latest research does not mean the problem has been resolved.")
