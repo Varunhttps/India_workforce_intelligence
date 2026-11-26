@@ -76,27 +76,21 @@ class FrontendSmokeTests(unittest.TestCase):
         self.assertIn('pd.to_numeric(trends["Weeks Seen"]', source)
         self.assertIn('"Industry", "Workforce Problem", "Supporting Sources", "Weeks Seen"', source)
 
-    def test_dashboard_removes_requested_sections_and_shows_top_five_first(self):
+    def test_dashboard_prioritizes_requested_workforce_challenge_sections_and_removes_country_signals(self):
         app_path = Path(__file__).resolve().parents[1] / "frontend" / "app.py"
         source = app_path.read_text(encoding="utf-8")
-        self.assertIn("Top 5 industries facing workforce problems", source)
-        self.assertNotIn("Weekly evidence momentum", source)
-        self.assertNotIn("Emerging industries by evidence volume and problem diversity", source)
-        self.assertNotIn("Country × industry coverage matrix", source)
-        self.assertNotIn("Benchmark gaps", source)
-        self.assertNotIn("signal_score", source)
-        self.assertNotIn('st.subheader("Opportunity changes")', source)
-        self.assertNotIn("Top 5 industries by distinct workforce problems", source)
-        self.assertNotIn('st.subheader("Opportunity changes")', source)
-        self.assertNotIn("Top 5 industries by distinct workforce problems", source)
-        self.assertIn('st.subheader("Global Workforce Signals")', source)
-        top_five_index = source.index("Top 5 industries facing workforce problems")
-        weekly_changes_index = source.index('st.subheader(f"Weekly research changes')
-        global_signals_index = source.index('st.subheader("Global Workforce Signals")')
-        self.assertLess(top_five_index, global_signals_index)
-        global_signals_index = source.index('st.subheader("Global Workforce Signals")')
-        self.assertLess(top_five_index, global_signals_index)
-        self.assertLess(top_five_index, weekly_changes_index)
+        sections = [
+            'st.subheader("Top 5 Industries Facing Workforce Planning Challenges")',
+            'st.subheader("Most Critical Workforce Planning Challenges")',
+            'st.subheader("Emerging Workforce Planning Challenges · Top 10")',
+        ]
+        positions = [source.index(section) for section in sections]
+        self.assertEqual(positions, sorted(positions))
+        self.assertNotIn("Global workforce signals · Weekly trend intelligence · Staffing & enterprise planning opportunities", source)
+        self.assertNotIn('st.subheader("Global Workforce Signals")', source)
+        self.assertNotIn("summarize_country_coverage", source)
+        self.assertNotIn("Ranked horizontal bar chart", source)
+        self.assertIn("st.line_chart(emerging_counts", source)
 
     def test_dashboard_hides_research_run_health_panel(self):
         app_path = Path(__file__).resolve().parents[1] / "frontend" / "app.py"

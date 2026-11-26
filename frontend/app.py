@@ -16,7 +16,6 @@ sys.path.insert(0, str(PROJECT_ROOT / "src"))
 from workforce_intelligence.dashboard_filters import industry_options, filter_frames_by_industry, weekly_statuses
 from workforce_intelligence.opportunity_prioritization import build_opportunity_priorities
 from workforce_intelligence.skill_trends import analyze_skill_trends
-from workforce_intelligence.country_coverage import summarize_country_coverage, build_country_industry_matrix
 from workforce_intelligence.manager_actions import recommend_manager_actions
 from frontend.private_access import (
     parse_allowed_emails,
@@ -114,7 +113,6 @@ def week_start(today=None):
 
 
 st.title("🌍 Global Workforce Intelligence")
-st.caption("Global workforce signals · Weekly trend intelligence · Staffing & enterprise planning opportunities")
 
 with st.sidebar:
     st.header("Research controls")
@@ -184,28 +182,44 @@ else:
             .head(5)
         )
         if not industry_counts.empty:
-            st.subheader("Top 5 industries facing workforce problems")
-            st.caption("Ranked by the number of distinct workforce problem types identified in the current research.")
+            st.subheader("Top 5 Industries Facing Workforce Planning Challenges")
             st.bar_chart(industry_counts, height=300)
 
-
-    st.subheader("Global Workforce Signals")
-    st.caption("Counts are based on explicit country attribution in findings—not the countries targeted during search.")
-    coverage_rows = summarize_country_coverage(findings.to_dict("records"))
-    coverage_frame = pd.DataFrame(coverage_rows)
-    if not coverage_frame.empty:
-        total_countries = int((coverage_frame["Findings"] > 0).sum())
-        represented_regions = coverage_frame.loc[coverage_frame["Findings"] > 0, "Region"].nunique()
-        coverage_metrics = st.columns(2)
-        coverage_metrics[0].metric("Countries with findings", total_countries)
-        coverage_metrics[1].metric("Regions represented", represented_regions)
-        covered = coverage_frame[coverage_frame["Findings"] > 0].copy()
-        if not covered.empty:
-            chart_frame = covered.set_index("Country")["Findings"].head(10)
-            st.bar_chart(chart_frame, height=280)
-            st.dataframe(covered, use_container_width=True, hide_index=True)
+    st.subheader("Most Critical Workforce Planning Challenges")
+    problem_counts = findings["Identified Problem"].dropna().value_counts().head(10)
+    if not problem_counts.empty:
+        st.bar_chart(problem_counts, height=320)
     else:
-        st.info("Country coverage will appear after findings with explicit country attribution are published.")
+        st.info("Workforce challenge rankings will appear when findings are available.")
+
+    st.subheader("Emerging Workforce Planning Challenges · Top 10")
+    monthly_source = findings.copy()
+    date_candidates = ["Research Date", "Latest Week", "Last Seen", "First Seen"]
+    trend_date = pd.Series(pd.NaT, index=monthly_source.index, dtype="datetime64[ns]")
+    for date_col in date_candidates:
+        if date_col in monthly_source.columns:
+            parsed = pd.to_datetime(monthly_source[date_col], errors="coerce")
+            trend_date = trend_date.fillna(parsed)
+    monthly_source["_trend_month"] = trend_date.dt.to_period("M")
+    monthly_source = monthly_source.dropna(subset=["_trend_month", "Identified Problem"])
+    if not monthly_source.empty:
+        monthly_counts = monthly_source.groupby(["_trend_month", "Identified Problem"]).size().unstack(fill_value=0)
+        month_order = sorted(monthly_counts.index)
+        monthly_counts = monthly_counts.reindex(month_order)
+        if len(month_order) >= 2:
+            recent_months = month_order[-2:]
+            prior_months = month_order[-4:-2]
+            recent_totals = monthly_counts.loc[recent_months].sum()
+            prior_totals = monthly_counts.loc[prior_months].sum() if prior_months else pd.Series(0, index=monthly_counts.columns)
+            growth = recent_totals.subtract(prior_totals, fill_value=0)
+            emerging_names = growth.sort_values(ascending=False).head(10).index
+        else:
+            emerging_names = monthly_counts.sum().sort_values(ascending=False).head(10).index
+        emerging_counts = monthly_counts.loc[:, emerging_names]
+        st.line_chart(emerging_counts.rename_axis("Month").rename(columns=str), height=360)
+    else:
+        st.info("Monthly workforce challenge trends will appear when findings include research dates.")
+
 
     st.subheader(f"Weekly research changes · Week of {week_start().isoformat()}")
     st.caption("Weekly status is based on first-seen and last-seen week metadata. Older findings are retained; not seeing them in the latest research does not mean the problem has been resolved.")
