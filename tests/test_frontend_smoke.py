@@ -123,6 +123,13 @@ class FrontendSmokeTests(unittest.TestCase):
         self.assertEqual(rows[0]["Label"], "4 (Δ +2)")
         self.assertIn("latest two months", caption)
 
+    def test_dashboard_emerging_chart_sorts_by_change_when_ranking_by_increase(self):
+        app_path = Path(__file__).resolve().parents[1] / "frontend" / "app.py"
+        source = app_path.read_text(encoding="utf-8")
+        self.assertIn("rank_by_change = False", source)
+        self.assertIn('chart_data.sort_values(["Change", "Recent findings"], ascending=True)', source)
+        self.assertIn('chart_data.sort_values("Recent findings", ascending=True)', source)
+
     def test_streamlit_minimum_version_supports_auth_api(self):
         requirements_path = Path(__file__).resolve().parents[1] / "requirements.txt"
         requirement = next(
