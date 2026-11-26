@@ -94,6 +94,7 @@ def build_emerging_challenge_chart_data(records, top_n=10):
 
     months = sorted(monthly_counts)
     has_comparison = False
+    rank_by_change = False
 
     def month_number(month):
         year, month_value = month.split("-")
@@ -140,6 +141,7 @@ def build_emerging_challenge_chart_data(records, top_n=10):
         if increasing:
             increasing.sort(key=lambda problem: (-changes[problem], -recent.get(problem, 0), problem.lower()))
             chosen = increasing[:max(1, int(top_n))]
+            rank_by_change = True
             caption = "Ranked by " + period
         else:
             chosen = sorted(recent, key=lambda problem: (-recent[problem], problem.lower()))[:max(1, int(top_n))]
@@ -157,6 +159,7 @@ def build_emerging_challenge_chart_data(records, top_n=10):
             "Challenge": problem,
             "Weekly observations": count,
             "Change": delta,
+            "Rank score": int(changes[problem]) if rank_by_change else count,
             "Label": label,
         })
     # Preserve the selected ranking: rising challenges are ordered by delta; fallbacks by counts.
