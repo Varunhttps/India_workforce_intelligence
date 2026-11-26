@@ -68,6 +68,19 @@ class WeeklyWorkflowSafetyTests(unittest.TestCase):
         self.assertIn("credential_helper", push_step)
         self.assertIn("rm -f", push_step)
 
+    def test_ci_workflow_is_read_only_and_does_not_persist_checkout_credentials(self):
+        workflow_path = ROOT / ".github" / "workflows" / "tests.yml"
+        workflow = workflow_path.read_text(encoding="utf-8")
+        header = workflow.split("jobs:", 1)[0]
+        self.assertIn("permissions:\\n  contents: read", header)
+        self.assertNotIn("contents: write", workflow)
+        tests_job = _job_block(workflow, "tests")
+        self.assertTrue(tests_job, "CI workflow must include a tests job")
+        checkout_block = tests_job.split("      - uses: actions/checkout@v7", 1)[1].split(
+            "      - uses: actions/setup-python@v7", 1
+        )[0]
+        self.assertIn("persist-credentials: false", checkout_block)
+
     def test_workflow_has_no_top_level_write_permission(self):
         workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
         header = workflow.split("jobs:", 1)[0]
