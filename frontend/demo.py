@@ -2,15 +2,15 @@
 import sys
 from pathlib import Path
 
+import altair as alt
 import pandas as pd
 import streamlit as st
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
-from workforce_intelligence.country_coverage import summarize_country_coverage
 from workforce_intelligence.skill_trends import analyze_skill_trends
 from workforce_intelligence.manager_actions import recommend_manager_actions
 from workforce_intelligence.opportunity_prioritization import build_opportunity_priorities
-from frontend.demo_data import load_demo_findings
+from frontend.demo_data import load_demo_findings, build_emerging_challenge_chart_data
 
 st.set_page_config(page_title="Global Workforce Intelligence · Demo", page_icon="🌍", layout="wide")
 st.title("🌍 Global Workforce Intelligence")
@@ -42,21 +42,78 @@ k4.metric("Unique source links", source_count)
 k5.metric("Latest finding observed", latest_recorded_label)
 st.caption("Latest finding date is based on the snapshot's Last Seen field and respects the selected industry filter.")
 
-st.subheader("Findings by industry")
-counts = df["Industry"].value_counts().sort_values(ascending=False)
-st.bar_chart(counts, height=300)
+def render_labeled_horizontal_bars(data, category, value, axis_title, height=300):
+    chart_data = data.copy().sort_values(value, ascending=False)
+    chart_data["Label"] = chart_data[value].astype(int).astype(str)
+    sort_order = chart_data[category].tolist()
+    max_value = max(1, int(chart_data[value].max()))
+    scale = alt.Scale(domain=[0, max_value * 1.25])
+    bars = alt.Chart(chart_data).mark_bar().encode(
+        x=alt.X(f"{value}:Q", title=axis_title, scale=scale),
+        y=alt.Y(f"{category}:N", sort=sort_order, title=None),
+        tooltip=[f"{category}:N", f"{value}:Q"],
+    )
+    labels = alt.Chart(chart_data).mark_text(align="left", dx=5).encode(
+        x=alt.X(f"{value}:Q", scale=scale),
+        y=alt.Y(f"{category}:N", sort=sort_order),
+        text="Label:N",
+    )
+    st.altair_chart((bars + labels).properties(height=max(height, 34 * len(chart_data))), use_container_width=True)
 
-st.subheader("Workforce problem categories")
-problem_counts = df["Identified Problem"].value_counts().head(12)
-st.bar_chart(problem_counts, height=300)
 
-st.subheader("Country coverage")
-coverage = pd.DataFrame(summarize_country_coverage(df.to_dict("records")))
-if not coverage.empty:
-    coverage = coverage.sort_values("Findings", ascending=False)
-    st.dataframe(coverage, use_container_width=True, hide_index=True)
+st.subheader("Top 5 Industries Facing Workforce Planning Challenges")
+industry_counts = (
+    df.dropna(subset=["Industry", "Identified Problem"])
+    .groupby("Industry")["Identified Problem"]
+    .nunique()
+    .sort_values(ascending=False)
+    .head(5)
+)
+if not industry_counts.empty:
+    industry_chart_data = industry_counts.rename_axis("Industry").reset_index(name="Challenge types")
+    render_labeled_horizontal_bars(
+        industry_chart_data, "Industry", "Challenge types",
+        "Distinct workforce challenge types", height=260
+    )
+    st.caption("Ranked by distinct challenge types identified in the snapshot.")
 else:
-    st.info("No explicit country attribution in the current demo snapshot.")
+    st.info("Industry rankings will appear when findings are available.")
+
+st.subheader("Most Critical Workforce Planning Challenges")
+problem_counts = df["Identified Problem"].dropna().value_counts().head(10)
+if not problem_counts.empty:
+    critical_chart_data = problem_counts.rename_axis("Challenge").reset_index(name="Findings")
+    render_labeled_horizontal_bars(
+        critical_chart_data, "Challenge", "Findings",
+        "Finding count", height=320
+    )
+    st.caption("Counts represent records in the snapshot—not independently verified severity.")
+else:
+    st.info("Workforce challenge rankings will appear when findings are available.")
+
+st.subheader("Emerging Workforce Planning Challenges · Top 10")
+emerging_chart_data, emerging_caption = build_emerging_challenge_chart_data(
+    df.to_dict("records"), top_n=10
+)
+if emerging_chart_data:
+    emerging_frame = pd.DataFrame(emerging_chart_data)
+    sort_order = emerging_frame["Challenge"].tolist()
+    max_value = max(1, int(emerging_frame["Recent findings"].max()))
+    scale = alt.Scale(domain=[0, max_value * 1.25])
+    bars = alt.Chart(emerging_frame).mark_bar().encode(
+        x=alt.X("Recent findings:Q", title="Findings in recent period", scale=scale),
+        y=alt.Y("Challenge:N", sort=sort_order, title=None),
+        tooltip=["Challenge:N", "Recent findings:Q", "Change:Q"],
+    )
+    labels = alt.Chart(emerging_frame).mark_text(align="left", dx=5).encode(
+        x=alt.X("Recent findings:Q", scale=scale),
+        y=alt.Y("Challenge:N", sort=sort_order),
+        text="Label:N",
+    )
+    st.altair_chart((bars + labels).properties(height=max(320, 34 * len(emerging_frame))), use_container_width=True)
+    st.caption(emerging_caption + " · Labels show counts and change when a comparison is possible.")
+else:
+    st.info("Emerging workforce challenges will appear when findings are available.")
 
 st.subheader("Emerging skills and workforce signals")
 skill_inputs = [{
