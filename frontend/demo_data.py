@@ -159,5 +159,5 @@ def build_emerging_challenge_chart_data(records, top_n=10):
             "Change": delta,
             "Label": label,
         })
-    rows.sort(key=lambda row: (-row["Recent findings"], row["Challenge"].lower()))
+    rows.sort(key=lambda row: (-row["Weekly observations"], row["Challenge"].lower()))
     return rows, caption
