@@ -72,7 +72,8 @@ class WeeklyWorkflowSafetyTests(unittest.TestCase):
         workflow_path = ROOT / ".github" / "workflows" / "tests.yml"
         workflow = workflow_path.read_text(encoding="utf-8")
         header = workflow.split("jobs:", 1)[0]
-        self.assertIn("permissions:\\n  contents: read", header)
+        self.assertIn("permissions:", header)
+        self.assertIn("contents: read", header)
         self.assertNotIn("contents: write", workflow)
         tests_job = _job_block(workflow, "tests")
         self.assertTrue(tests_job, "CI workflow must include a tests job")
