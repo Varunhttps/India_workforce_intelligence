@@ -58,6 +58,8 @@ class OfflineDemoTests(unittest.TestCase):
         self.assertEqual(rows[0]["Change"], 2)
         self.assertEqual(rows[1]["Weekly observations"], 4)
         self.assertEqual(rows[1]["Change"], 1)
+        self.assertEqual(rows[0]["Rank score"], 2)
+        self.assertEqual(rows[1]["Rank score"], 1)
         self.assertIn("increase", caption)
 
     def test_missing_file_returns_empty(self):
