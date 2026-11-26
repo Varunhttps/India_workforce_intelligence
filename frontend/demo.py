@@ -98,15 +98,15 @@ emerging_chart_data, emerging_caption = build_emerging_challenge_chart_data(
 if emerging_chart_data:
     emerging_frame = pd.DataFrame(emerging_chart_data)
     sort_order = emerging_frame["Challenge"].tolist()
-    max_value = max(1, int(emerging_frame["Recent findings"].max()))
+    max_value = max(1, int(emerging_frame["Weekly observations"].max()))
     scale = alt.Scale(domain=[0, max_value * 1.25])
     bars = alt.Chart(emerging_frame).mark_bar().encode(
-        x=alt.X("Recent findings:Q", title="Findings in recent period", scale=scale),
+        x=alt.X("Weekly observations:Q", title="Weekly observations in recent period", scale=scale),
         y=alt.Y("Challenge:N", sort=sort_order, title=None),
-        tooltip=["Challenge:N", "Recent findings:Q", "Change:Q"],
+        tooltip=["Challenge:N", "Weekly observations:Q", "Change:Q"],
     )
     labels = alt.Chart(emerging_frame).mark_text(align="left", dx=5).encode(
-        x=alt.X("Recent findings:Q", scale=scale),
+        x=alt.X("Weekly observations:Q", scale=scale),
         y=alt.Y("Challenge:N", sort=sort_order),
         text="Label:N",
     )
