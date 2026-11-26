@@ -35,7 +35,7 @@ server_metadata_url = "https://accounts.google.com/.well-known/openid-configurat
 
 For the service-account JSON, paste the entire JSON as a single quoted string as
 shown in `.streamlit/secrets.toml.example`. Share the target spreadsheet with
-the service-account email as Editor. Verify the spreadsheet contains the six tabs
+the service-account email as Editor. Verify the spreadsheet contains the five tabs
 listed in the app's `SHEET_NAMES`.
 
 ## 3. Configure Google OAuth
@@ -66,7 +66,7 @@ Before sharing the hosted link:
 
 - Test sign-in with an allowlisted Google account.
 - Test an unallowlisted account and confirm it is blocked.
-- Confirm the dashboard reads the intended spreadsheet and all six tabs.
+- Confirm the dashboard reads the intended spreadsheet and all five tabs.
 - Confirm empty-sheet and missing-data states are understandable.
 - If `GITHUB_TOKEN` is omitted, confirm the research-trigger button reports a clear configuration error without exposing secrets. If configured, dispatch a controlled manual run and verify the workflow status.
 - Check HTTPS, app logs, and the visible app URL.

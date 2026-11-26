@@ -2,7 +2,7 @@
 
 ## Streamlit configuration
 - [ ] Deploy from the repository root and use `streamlit run frontend/app.py` as the app entry point.
-- [ ] Add `GOOGLE_SHEET_ID` for the workbook that contains the six dashboard tabs.
+- [ ] Add `GOOGLE_SHEET_ID` for the workbook that contains the five dashboard tabs.
 - [ ] Add `GOOGLE_SERVICE_ACCOUNT_JSON` as a secret; share the spreadsheet with the service-account email.
 - [ ] Add `ALLOWED_EMAILS` as a comma-separated list of approved Google sign-in email addresses.
 - [ ] Configure Streamlit Google OIDC sign-in using the app's `st.login("google")` flow and `[auth]` settings.

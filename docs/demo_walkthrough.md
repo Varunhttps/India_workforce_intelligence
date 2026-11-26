@@ -1,35 +1,52 @@
 # Demo walkthrough and portfolio narrative
 
-## 3–5 minute demo
+## 3–5 minute offline portfolio demo
 
-1. **Research scope (30 sec):** Show Manufacturing, Other Industries, and All Industries. Explain global coverage and the manufacturing emphasis.
-2. **Research overview (30 sec):** Show cumulative findings, new/recurring counts, industries and countries. Explain the selected industry filter.
-3. **Source Register (45 sec):** Open a source link and show source platform, collection status and heuristic credibility. Explain that an accepted finding has a source excerpt checked against collected text, but this is not a human fact-check.
-4. **Country coverage (30 sec):** Show explicit country attribution, regions and the optional benchmark gap list. Explain that search target does not equal finding geography.
-5. **Weekly trends (45 sec):** Show the numeric **Weeks Seen** count and supporting sources, then the dashboard's weekly evidence-momentum comparison. Explain that observation counts and source/country growth measure research coverage, not proof of worsening conditions.
-6. **Emerging skills (30 sec):** Show keyword-mapped clusters and explain scores as breadth/recency heuristics.
-7. **Manager action intelligence (45 sec):** Open one ranked item, its score rationale, recommended next step and source links. Show that the score is explainable and not a validated severity score.
-8. **Opportunity priorities (30 sec):** Show the opportunity track and priority filters; explain mappings are candidates for investigation rather than approved business decisions.
+Use the credential-free snapshot demo from the repository root:
+
+```bash
+pip install -r requirements.txt
+streamlit run frontend/demo.py
+```
+
+1. **Set the context (20 sec):** Explain that this is a read-only snapshot of committed research history. It does not trigger research, call external APIs, or require OAuth/Google Sheets credentials.
+2. **Summary metrics (30 sec):** Point out the cumulative research-finding count, number of industries, countries attributed, unique source links, and latest recorded finding date. Select an industry and note that the metrics update with the filter.
+3. **Industry/problem distribution (45 sec):** Compare the findings-by-industry chart and workforce-problem categories. Clarify that these reflect the collected snapshot, not a statistical estimate of the global labor market.
+4. **Country coverage (30 sec):** Show the explicit country attribution table. Explain that the pipeline does not infer a country from the search target alone.
+5. **Emerging skills (40 sec):** Show keyword-mapped skill signals and explain that the mapping is heuristic; it is not a validated demand forecast.
+6. **Manager action intelligence (45 sec):** Open one priority item and show its suggested next step, rationale and source links. Explain that suggestions are decision support, not approved actions or verified severity ratings.
+7. **Opportunity priorities (30 sec):** Show any mapped opportunity rows. If the snapshot has none, explain that this view needs mapped data and that the connected dashboard uses workbook-backed opportunity priorities.
+8. **Traceability (30 sec):** Finish with the raw research snapshot table and open an original source link. Emphasize that findings are candidates for human review.
 
 ## Architecture story
 
-- **Discovery:** Tavily search across industry research and public source channels, with a global scope or optional country search.
-- **Collection:** bounded public-document fetching with HTTP(S), public-address validation, redirect limits, content-size limits and HTML/PDF extraction.
-- **Extraction:** Gemini proposes findings from collected documents; accepted findings require a verbatim supporting excerpt.
-- **Quality:** URL normalization, duplicate merging, relevance/source/date/geography annotations and human-review caveats.
-- **Persistence:** append-only JSONL history plus the persistent Google Sheets report.
-- **Analysis:** weekly comparisons, country coverage, skill clusters, opportunity priorities and manager action recommendations.
-- **Presentation:** Streamlit dashboard with industry filters and Google OIDC allowlist gate.
+- **Discovery:** Tavily searches public research and indexed public source channels.
+- **Collection:** Bounded fetching of accessible public HTML/PDF content with network-safety checks.
+- **Extraction:** Gemini proposes workforce findings; accepted findings require a supporting excerpt checked against collected text.
+- **Quality:** URL normalization, duplicate handling, relevance/source/date/geography checks and human-review caveats.
+- **Persistence:** Append-only JSONL research history and a persistent Google Sheets report.
+- **Analysis:** Country coverage, keyword-mapped skills, manager actions and opportunity-priority heuristics.
+- **Presentation:** A connected Streamlit dashboard for authorized users and a separate read-only offline snapshot demo.
 
 ## Portfolio explanation (use your own words)
 
-"I built a global workforce research pipeline that turns public reporting into traceable workforce signals. The pipeline discovers sources, collects bounded public documents, extracts source-supported findings with an LLM, deduplicates and annotates them, tracks week-over-week evidence, and publishes to Google Sheets and a Streamlit dashboard. I added decision-support layers for country coverage, emerging skills, manager actions and product opportunities. I deliberately keep scoring explainable and label evidence-volume changes as research coverage rather than workforce severity."
+“I built a global workforce research pipeline that turns public reporting into traceable workforce signals. It discovers sources, collects bounded public documents, extracts source-supported findings with an LLM, deduplicates and annotates records, maintains cumulative history, and publishes to Google Sheets and a Streamlit dashboard. The offline demo lets people explore a committed snapshot without credentials or research dispatch. I added decision-support layers for country coverage, emerging skills, manager actions and product opportunities, while keeping their heuristic limitations visible.”
 
-## Live demo checklist
+## Offline demo checklist
 
-- Refresh the sheet and confirm the latest research run is current.
-- Pick 2–3 examples with accessible original source links and clear geography.
-- Avoid showing an example with ambiguous source attribution unless you use it to explain limitations.
-- Verify login and research dispatch permissions with a test account.
-- Do not display API keys, service-account JSON, OAuth client secrets or personal data.
-- Have a static screenshot/demo dataset ready in case API limits or the live sheet fail.
+- Run the demo from the repository root using the command above.
+- Confirm the snapshot loads and an industry filter updates the displayed metrics and tables.
+- Choose 2–3 examples with accessible source URLs and clear geography.
+- Avoid presenting heuristic scores or evidence volume as validated workforce severity.
+- Keep a screenshot or snapshot demo available if live services are unavailable.
+- Do not display API keys, service-account JSON, OAuth secrets or personal data.
+
+## Connected dashboard / live research checklist
+
+- Configure Streamlit Google OIDC and the explicit email allowlist.
+- Configure Google Sheet ID and service-account credentials; grant the service account access to the intended spreadsheet.
+- Confirm the dashboard reads the correct tabs and handles empty/missing data.
+- Test an allowlisted sign-in and verify that an unallowlisted account is blocked.
+- Only configure the research-dispatch token if the **Start Research** action is intentionally enabled.
+- Before a controlled live run, confirm API credentials, publishing destination and run scope.
+- Verify the run status and spreadsheet update; never treat “sources discovered” as proof that findings were extracted or published.
