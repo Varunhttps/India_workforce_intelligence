@@ -4,7 +4,7 @@ import tempfile
 from pathlib import Path
 import unittest
 
-from frontend.demo_data import load_demo_findings
+from frontend.demo_data import load_demo_findings, build_emerging_challenge_chart_data
 
 
 class FrontendSmokeTests(unittest.TestCase):
@@ -51,6 +51,59 @@ class FrontendSmokeTests(unittest.TestCase):
         self.assertEqual(result["Observation Weeks"], "2026-11-16, 2026-11-23")
         self.assertEqual(result["Weeks Seen"], 2)
         self.assertEqual(result["Occurrences"], 3)
+
+    def test_offline_demo_shows_challenge_sections_in_requested_order_and_removes_country_chart(self):
+        demo_path = Path(__file__).resolve().parents[1] / "frontend" / "demo.py"
+        source = demo_path.read_text(encoding="utf-8")
+        sections = [
+            'st.subheader("Top 5 Industries Facing Workforce Planning Challenges")',
+            'st.subheader("Most Critical Workforce Planning Challenges")',
+            'st.subheader("Emerging Workforce Planning Challenges · Top 10")',
+        ]
+        positions = [source.index(section) for section in sections]
+        self.assertEqual(positions, sorted(positions))
+        self.assertNotIn('st.subheader("Country coverage")', source)
+        self.assertNotIn("summarize_country_coverage", source)
+        self.assertIn("render_labeled_horizontal_bars", source)
+        self.assertIn('mark_text(align="left", dx=5)', source)
+
+    def test_emerging_challenges_show_counts_without_fake_delta_for_one_month(self):
+        records = [
+            {"Identified Problem": "Skills gap", "Observation Weeks": "2026-11-09, 2026-11-16"},
+            {"Identified Problem": "Skills gap", "Observation Weeks": "2026-11-16"},
+        ]
+        rows, caption = build_emerging_challenge_chart_data(records)
+        self.assertEqual(rows[0]["Recent findings"], 3)
+        self.assertIsNone(rows[0]["Change"])
+        self.assertEqual(rows[0]["Label"], "3")
+        self.assertIn("only one month", caption)
+
+    def test_emerging_challenges_compare_latest_month_to_previous_month(self):
+        records = [
+            {"Identified Problem": "Talent shortage", "Observation Weeks": "2026-10-05, 2026-11-02"},
+            {"Identified Problem": "Talent shortage", "Observation Weeks": "2026-11-02"},
+            {"Identified Problem": "Skills gap", "Observation Weeks": "2026-10-05"},
+            {"Identified Problem": "Skills gap", "Observation Weeks": "2026-10-05, 2026-11-02"},
+        ]
+        rows, caption = build_emerging_challenge_chart_data(records)
+        self.assertEqual([row["Challenge"] for row in rows], ["Talent shortage"])
+        self.assertEqual(rows[0]["Recent findings"], 2)
+        self.assertEqual(rows[0]["Change"], 1)
+        self.assertEqual(rows[0]["Label"], "2 (Δ +1)")
+        self.assertIn("latest month", caption)
+
+    def test_emerging_challenges_compare_two_month_windows_when_history_is_longer(self):
+        records = [
+            {"Identified Problem": "Talent shortage", "Observation Weeks": "2026-10-05, 2026-11-02"},
+            {"Identified Problem": "Skills gap", "Observation Weeks": "2026-10-05, 2026-11-02, 2026-12-07, 2027-01-04"},
+            {"Identified Problem": "Skills gap", "Observation Weeks": "2026-12-07, 2027-01-04"},
+        ]
+        rows, caption = build_emerging_challenge_chart_data(records)
+        self.assertEqual([row["Challenge"] for row in rows], ["Skills gap"])
+        self.assertEqual(rows[0]["Recent findings"], 4)
+        self.assertEqual(rows[0]["Change"], 2)
+        self.assertEqual(rows[0]["Label"], "4 (Δ +2)")
+        self.assertIn("latest two months", caption)
 
     def test_streamlit_minimum_version_supports_auth_api(self):
         requirements_path = Path(__file__).resolve().parents[1] / "requirements.txt"
