@@ -8,11 +8,11 @@ WORKFLOW_PATH = ROOT / ".github" / "workflows" / "weekly-research.yml"
 
 
 def _job_block(workflow, job_name):
-    header = re.search(rf"(?m)^  {re.escape(job_name)}:\s*$", workflow)
+    header = re.search(rf"(?m)^  {re.escape(job_name)}:\\s*$", workflow)
     if header is None:
         return ""
     start = header.end()
-    next_job = re.search(r"(?m)^  [A-Za-z0-9_-]+:\s*$", workflow[start:])
+    next_job = re.search(r"(?m)^  [A-Za-z0-9_-]+:\\s*$", workflow[start:])
     end = start + next_job.start() if next_job else len(workflow)
     return workflow[start:end]
 
@@ -25,6 +25,11 @@ class WeeklyWorkflowSafetyTests(unittest.TestCase):
         self.assertIn("    permissions:", tests_job)
         self.assertIn("      contents: read", tests_job)
         self.assertIn("          persist-credentials: false", tests_job)
+        checkout_block = tests_job.split("      - uses: actions/checkout@v7", 1)[1].split(
+            "      - uses: actions/setup-python@v7", 1
+        )[0]
+        self.assertIn("          ref: main", checkout_block,
+                      "preflight tests must test the same main branch that research checks out")
 
     def test_research_job_is_gated_by_tests_and_write_permission_is_scoped(self):
         workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
