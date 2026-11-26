@@ -45,7 +45,7 @@ st.caption("Latest finding date is based on the snapshot's Last Seen field and r
 def render_labeled_horizontal_bars(data, category, value, axis_title, height=300):
     chart_data = data.copy().sort_values(value, ascending=False)
     chart_data["Label"] = chart_data[value].astype(int).astype(str)
-    sort_order = chart_data[category].tolist()
+    sort_order = alt.EncodingSortField(field=value, order="descending")
     max_value = max(1, int(chart_data[value].max()))
     scale = alt.Scale(domain=[0, max_value * 1.25])
     bars = alt.Chart(chart_data).mark_bar().encode(
@@ -97,7 +97,7 @@ emerging_chart_data, emerging_caption = build_emerging_challenge_chart_data(
 )
 if emerging_chart_data:
     emerging_frame = pd.DataFrame(emerging_chart_data)
-    sort_order = emerging_frame["Challenge"].tolist()
+    sort_order = alt.EncodingSortField(field="Rank score", order="descending")
     max_value = max(1, int(emerging_frame["Weekly observations"].max()))
     scale = alt.Scale(domain=[0, max_value * 1.25])
     bars = alt.Chart(emerging_frame).mark_bar().encode(
