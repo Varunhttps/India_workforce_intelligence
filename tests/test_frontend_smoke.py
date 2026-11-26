@@ -73,6 +73,8 @@ class FrontendSmokeTests(unittest.TestCase):
         self.assertNotIn("summarize_country_coverage", source)
         self.assertIn("render_labeled_horizontal_bars", source)
         self.assertIn('mark_text(align="left", dx=5)', source)
+        self.assertIn('alt.EncodingSortField(field=value, order="descending")', source)
+        self.assertIn('alt.EncodingSortField(field="Rank score", order="descending")', source)
         self.assertIn("Weekly observations in recent period", source)
 
     def test_emerging_challenges_show_counts_without_fake_delta_for_one_month(self):
@@ -123,12 +125,13 @@ class FrontendSmokeTests(unittest.TestCase):
         self.assertEqual(rows[0]["Label"], "4 (Δ +2)")
         self.assertIn("latest two months", caption)
 
-    def test_dashboard_emerging_chart_sorts_by_change_when_ranking_by_increase(self):
+    def test_dashboard_emerging_chart_sorts_by_trend_or_recent_counts(self):
         app_path = Path(__file__).resolve().parents[1] / "frontend" / "app.py"
         source = app_path.read_text(encoding="utf-8")
         self.assertIn("rank_by_change = False", source)
-        self.assertIn('chart_data.sort_values(["Change", "Recent findings"], ascending=True)', source)
-        self.assertIn('chart_data.sort_values("Recent findings", ascending=True)', source)
+        self.assertIn('chart_sort = alt.EncodingSortField(', source)
+        self.assertIn('field="Change" if rank_by_change else "Recent findings"', source)
+        self.assertIn("sort=chart_sort", source)
 
     def test_streamlit_minimum_version_supports_auth_api(self):
         requirements_path = Path(__file__).resolve().parents[1] / "requirements.txt"
