@@ -23,6 +23,8 @@ class FrontendSmokeTests(unittest.TestCase):
         self.assertNotIn("requests.post", calls)
         self.assertNotIn("trigger_research", source)
         self.assertNotIn("GITHUB_TOKEN", source)
+        self.assertNotIn("build_opportunity_priorities", source)
+        self.assertNotIn('st.subheader("Opportunity priorities")', source)
 
     def test_offline_demo_runs_without_streamlit_runtime_exceptions(self):
         demo_path = Path(__file__).resolve().parents[1] / "frontend" / "demo.py"
