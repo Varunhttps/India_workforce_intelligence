@@ -124,7 +124,7 @@ skill_inputs = [{
 skills = analyze_skill_trends(skill_inputs)
 if skills:
     skill_df = pd.DataFrame(skills)
-    display_skill_columns = [column for column in skill_df.columns if column != "signal_score"]
+    display_skill_columns = [column for column in skill_df.columns if column not in {"signal_score", "source_count"}]
     st.dataframe(skill_df[display_skill_columns], use_container_width=True, hide_index=True)
 else:
     st.info("No keyword-mapped skills were detected in this snapshot.")
