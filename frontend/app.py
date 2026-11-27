@@ -15,7 +15,6 @@ sys.path.insert(0, str(PROJECT_ROOT))
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 from workforce_intelligence.dashboard_filters import industry_options, filter_frames_by_industry, weekly_statuses
-from workforce_intelligence.opportunity_prioritization import build_opportunity_priorities
 from workforce_intelligence.skill_trends import analyze_skill_trends
 from workforce_intelligence.manager_actions import recommend_manager_actions
 from frontend.private_access import (
@@ -266,12 +265,6 @@ else:
             lambda row: f"{int(row['Rank']):02d}  {row['Challenge']}", axis=1
         )
         chart_sort = alt.EncodingSortField(field="Rank", order="ascending")
-        chart_data["Label"] = chart_data.apply(
-            lambda row: (
-                f"{int(row['Recent findings'])}  (Δ {int(row['Change']):+d})"
-                if has_comparison else f"{int(row['Recent findings'])}"
-            ), axis=1
-        )
         chart_data["Label"] = chart_data.apply(
             lambda row: (
                 f"{int(row['Recent findings'])}  (Δ {int(row['Change']):+d})"
