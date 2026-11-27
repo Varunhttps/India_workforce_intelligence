@@ -43,6 +43,20 @@ SHEET_HEADERS = {
 }
 
 
+def _format_sheet_date(value: Any) -> Any:
+    """Convert ISO date/date-time strings to DDMMYYYY; leave blanks and unknowns untouched."""
+    if value is None or str(value).strip() == "":
+        return ""
+    text = str(value).strip()
+    if "," in text:
+        return ", ".join(_format_sheet_date(part.strip()) for part in text.split(","))
+    try:
+        parsed = date.fromisoformat(text[:10])
+        return parsed.strftime("%d%m%Y")
+    except (TypeError, ValueError):
+        return value
+
+
 def _stable_id(prefix: str, value: str) -> str:
     digest = hashlib.sha1(value.encode("utf-8")).hexdigest()[:10].upper()
     return f"{prefix}-{digest}"
@@ -373,6 +387,21 @@ def build_sheet_payloads(findings, sources, research_date=None, history_records=
             _cell(trend["supporting_sources"]), int(trend["weeks_observed"]),
             _cell(trend.get("last_seen")),
         ])
+
+    # Normalize all sheet date cells to DDMMYYYY before publishing.
+    for row in source_rows:
+        row[6] = _format_sheet_date(row[6])  # Publication Date
+        row[7] = _format_sheet_date(row[7])  # Access Date
+    for row in research_rows:
+        for index in (7, 11, 12):  # Research Date, First Seen, Latest Week
+            row[index] = _format_sheet_date(row[index])
+        row[13] = _format_sheet_date(row[13])  # Observation Weeks (comma-separated)
+    for row in insight_rows:
+        row[8] = _format_sheet_date(row[8])  # Latest Evidence Date
+    for row in opportunity_rows:
+        row[10] = _format_sheet_date(row[10])  # Last Updated
+    for row in trend_rows:
+        row[5] = _format_sheet_date(row[5])  # Latest Evidence Date
 
     source_rows.sort(key=lambda row: (str(row[5] or "").casefold(), str(row[1] or "").casefold()))
     research_rows.sort(key=lambda row: (str(row[2] or "").casefold(), str(row[5] or "").casefold()))
