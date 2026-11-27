@@ -347,7 +347,7 @@ else:
         manager_metrics[1].metric("Validate now", int((manager_frame["Priority"] == "Act / validate now").sum()))
         manager_metrics[2].metric("Investigate next", int((manager_frame["Priority"] == "Investigate next").sum()))
         st.bar_chart(top_manager.set_index("Workforce Problem")["Rank Score"], height=300)
-        st.dataframe(manager_frame[["Rank Score", "Priority", "Industry", "Workforce Problem", "Manager Action", "Source Count", "Country Count", "Latest Evidence", "Weekly Momentum"]], use_container_width=True, hide_index=True)
+        st.dataframe(manager_frame[["Rank Score", "Priority", "Industry", "Workforce Problem", "Manager Action", "Source Count"]], use_container_width=True, hide_index=True)
         for _, manager_action in manager_frame.head(10).iterrows():
             with st.expander(f"{manager_action['Priority']} · {manager_action['Industry']} · {manager_action['Workforce Problem']}"):
                 st.write("**Recommended next step:** " + str(manager_action["Recommended Next Step"]))
