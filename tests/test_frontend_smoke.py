@@ -129,9 +129,9 @@ class FrontendSmokeTests(unittest.TestCase):
         app_path = Path(__file__).resolve().parents[1] / "frontend" / "app.py"
         source = app_path.read_text(encoding="utf-8")
         self.assertIn("rank_by_change = False", source)
-        self.assertIn('chart_sort = alt.EncodingSortField(', source)
-        self.assertIn('field="Change" if rank_by_change else "Recent findings"', source)
-        self.assertIn('sort=alt.EncodingSortField(field="Rank", order="ascending")', source)
+        self.assertIn('Display Challenge', source)
+        self.assertIn('field="Rank", order="ascending"', source)
+        self.assertIn('Recent observation count', source)
 
     def test_streamlit_minimum_version_supports_auth_api(self):
         requirements_path = Path(__file__).resolve().parents[1] / "requirements.txt"
