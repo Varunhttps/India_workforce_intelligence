@@ -45,7 +45,7 @@ class SourceHistoryTests(unittest.TestCase):
                     "source_platform": "Web", "industry": "Manufacturing", "first_found_date": "2026-11-20"}]
         payload = build_sheet_payloads([], sources, research_date="2026-11-24", source_history_records=history)
         headers, row = payload["Source Register"][0], payload["Source Register"][1]
-        self.assertEqual(dict(zip(headers, row))["Access Date"], "2026-11-20")
+        self.assertEqual(dict(zip(headers, row))["Access Date"], "20112026")
 
 
 if __name__ == "__main__":
