@@ -143,14 +143,6 @@ if manager:
 else:
     st.info("Manager action suggestions need more populated data.")
 
-st.subheader("Opportunity priorities")
-opportunities = build_opportunity_priorities(df, pd.DataFrame(), pd.DataFrame())
-if opportunities:
-    opp_df = pd.DataFrame(opportunities)
-    st.dataframe(opp_df, use_container_width=True, hide_index=True)
-else:
-    st.info("No mapped product-capability opportunities are included in this offline snapshot. Use the connected dashboard for workbook-mapped opportunity priorities.")
-
 st.subheader("Raw research snapshot")
 display_cols = ["Industry", "Identified Problem", "Problem Description", "Country", "Source Name", "Source Platform", "Weeks Seen", "Source URL"]
 st.dataframe(df[display_cols], use_container_width=True, hide_index=True)
