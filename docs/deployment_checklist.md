@@ -2,7 +2,7 @@
 
 ## Streamlit configuration
 - [ ] Deploy from the repository root and use `streamlit run frontend/app.py` as the app entry point.
-- [ ] Add `GOOGLE_SHEET_ID` for the workbook that contains the five dashboard tabs.
+- [ ] Add `GOOGLE_SHEET_ID` for the workbook containing all five tabs (four are visible dashboard tabs; Weekly Trends is loaded internally).
 - [ ] Add `GOOGLE_SERVICE_ACCOUNT_JSON` as a secret; share the spreadsheet with the service-account email.
 - [ ] Add `ALLOWED_EMAILS` as a comma-separated list of approved Google sign-in email addresses.
 - [ ] Configure Streamlit Google OIDC sign-in using the app's `st.login("google")` flow and `[auth]` settings.
@@ -12,7 +12,7 @@
 - [ ] Verify GitHub Actions secrets for research providers and Sheets publication are configured.
 - [ ] Run a manual workflow dispatch in `manufacturing`, `other_industries`, and `all_industries` modes.
 - [ ] Verify the workbook refresh and persistent history update.
-- [ ] Confirm source links, country attribution, weekly trend tables, and opportunity tabs update correctly.
+- [ ] Confirm source links, country attribution, weekly change tabs, and the Product Feature Opportunities workbook tab update correctly. Weekly Trends is loaded internally but not displayed as its own dashboard tab.
 
 ## Security
 
@@ -45,6 +45,7 @@
 - [ ] Prepare a small, representative dataset with clearly attributed public sources; do not use fabricated findings as if they were real.
 - [ ] Test the dashboard with a full dataset, empty sheets, missing optional columns, and a stale-data scenario.
 - [ ] Confirm all charts and tables have understandable labels and that heuristics are visibly described as signals, not verified severity.
-- [ ] Create a short demo walkthrough: research scope selection → source register → findings → weekly changes → country/skill coverage → manager actions → caveats.
+- [ ] Create a short offline demo walkthrough: summary metrics → industry/problem charts → emerging Top 10 → skill signals → manager actions → raw snapshot/source links → caveats.
+- [ ] Create a separate connected dashboard walkthrough: sign-in → research scope → source register/findings → weekly changes → manager actions → visible workbook tabs → caveats. Weekly Trends is loaded internally, and Opportunity Priorities is no longer a dashboard section.
 - [ ] Keep a demo account and spreadsheet separate from personal or production data.
 - [ ] Record the date/time of the latest successful research run and refresh before presenting.
