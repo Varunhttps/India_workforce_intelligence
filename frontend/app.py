@@ -358,11 +358,12 @@ else:
     else:
         st.info("Manager recommendations will appear once research findings are available.")
 
-    st.subheader("Cumulative research overview")
+    st.subheader("Research coverage totals")
+    st.caption("Findings count individual research entries; one source may contribute multiple findings, so source and finding totals are expected to differ.")
     e, f, g = st.columns(3)
-    e.metric("Sources", len(sources))
-    f.metric("Countries identified", countries)
-    g.metric("Historical records", len(findings))
+    e.metric("Unique sources", len(sources))
+    f.metric("Countries across findings", countries)
+    g.metric("Total findings", len(findings))
 
     tabs = st.tabs(SHEET_NAMES)
     for tab, name in zip(tabs, SHEET_NAMES):
