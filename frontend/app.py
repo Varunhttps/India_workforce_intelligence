@@ -193,7 +193,7 @@ else:
     else:
         st.info("Workforce challenge rankings will appear when findings are available.")
 
-    st.subheader("Emerging Workforce Planning Challenges · Top 10")
+    st.subheader("Workforce Planning Challenges - Top 10")
     monthly_source = findings.copy()
     date_candidates = ["Research Date", "Latest Week", "Last Seen", "First Seen"]
     trend_date = pd.Series(pd.NaT, index=monthly_source.index, dtype="datetime64[ns]")
