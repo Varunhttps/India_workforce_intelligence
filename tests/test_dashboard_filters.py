@@ -66,7 +66,7 @@ class DashboardIndustryFilterTests(unittest.TestCase):
         ])
         statuses = weekly_statuses(frame, current_week="2026-11-23")
         self.assertEqual(statuses.tolist(), [
-            "Recurring this week", "New this week", "Last seen before this week"
+            "Recurring this week", "New this week", "Last seen before this week", "Recurring this week"
         ])
 
 if __name__ == "__main__":
