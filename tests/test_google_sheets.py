@@ -91,29 +91,6 @@ class GoogleSheetsPayloadTests(unittest.TestCase):
         self.assertEqual(research_row["First Seen"], "28112026")
         self.assertEqual(research_row["Latest Week"], "23112026")
 
-    def test_source_register_subindustry_and_dates_are_formatted(self):
-        url = "https://example.com/published"
-        findings = [{
-            "problem_type": "Skills gap", "description": "Example evidence",
-            "industry": "Manufacturing", "sub_industry": "Electronics",
-            "source_url": url, "country": "India",
-        }]
-        sources = [{
-            "Source title": "Original article title", "Source URL": url,
-            "Source platform": "Web", "Industry searched": "Manufacturing",
-            "Publication date": "2026-11-20", "Access Date": "2026-11-28",
-        }]
-        payloads = build_sheet_payloads(findings, sources, research_date="2026-11-28")
-        source_row = dict(zip(payloads["Source Register"][0], payloads["Source Register"][1]))
-        self.assertEqual(source_row["Sub-industry"], "Electronics")
-        self.assertTrue(source_row["Related Research IDs"].startswith("RES-"))
-        self.assertEqual(source_row["Publication Date"], "20112026")
-        self.assertEqual(source_row["Access Date"], "28112026")
-        research_row = dict(zip(payloads["Market Research"][0], payloads["Market Research"][1]))
-        self.assertEqual(research_row["Research Date"], "28112026")
-        self.assertEqual(research_row["First Seen"], "28112026")
-        self.assertEqual(research_row["Latest Week"], "23112026")
-
     def test_market_research_exports_exact_observation_weeks_for_dashboard(self):
         history = [{
             "problem_type": "Skilled worker shortage",
