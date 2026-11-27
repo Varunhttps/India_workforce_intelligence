@@ -11,7 +11,7 @@ This dashboard module maps reported workforce problems to a transparent keyword 
 - **Emerging signal**: recent observation, at least two distinct sources, and no more than two observed weeks.
 - **Persistent signal**: three or more recorded observation weeks.
 - **Cross-industry signal**: evidence from at least two industries without meeting emerging/persistent conditions.
-- **Recent signal / Historical signal**: temporal fallback labels.
+- **Recent signal / Older finding**: temporal fallback labels (Older finding means the evidence is not recent in the current research snapshot; it does not imply the workforce issue is resolved or obsolete).
 
 ## Score
 The score combines source breadth, industry breadth, country breadth, observation-week breadth and a recent-evidence bonus, capped at 100. It is a sorting aid, not a measure of labor demand or skill scarcity.
