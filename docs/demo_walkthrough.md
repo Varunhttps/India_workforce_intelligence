@@ -25,17 +25,18 @@ streamlit run frontend/demo.py
 - **Extraction:** Gemini proposes workforce findings; accepted findings require a supporting excerpt checked against collected text.
 - **Quality:** URL normalization, duplicate handling, relevance/source/date/geography checks and human-review caveats.
 - **Persistence:** Append-only JSONL research history and a persistent Google Sheets report.
-- **Analysis:** Country coverage, keyword-mapped skills, manager actions and opportunity-priority heuristics.
+- **Analysis:** Country attribution, keyword-mapped skills and manager-action suggestions; product-opportunity mappings remain workbook-based.
 - **Presentation:** A connected Streamlit dashboard for authorized users and a separate read-only offline snapshot demo.
 
 ## Portfolio explanation (use your own words)
 
-“I built a global workforce research pipeline that turns public reporting into traceable workforce signals. It discovers sources, collects bounded public documents, extracts source-supported findings with an LLM, deduplicates and annotates records, maintains cumulative history, and publishes to Google Sheets and a Streamlit dashboard. The offline demo lets people explore a committed snapshot without credentials or research dispatch. I added decision-support layers for country coverage, emerging skills, manager actions and product opportunities, while keeping their heuristic limitations visible.”
+“I built a global workforce research pipeline that turns public reporting into traceable workforce signals. It discovers sources, collects bounded public documents, extracts source-supported findings with an LLM, deduplicates and annotates records, maintains cumulative history, and publishes to Google Sheets and a Streamlit dashboard. The offline demo lets people explore a committed snapshot without credentials or research dispatch. I added decision-support layers for country attribution, emerging skills and manager actions, while keeping their heuristic limitations visible; product-opportunity mappings are maintained in the workbook.”
 
 ## Offline demo checklist
 
 - Run the demo from the repository root using the command above.
-- Confirm the snapshot loads and an industry filter updates the displayed metrics and tables.
+- Confirm the snapshot loads and an industry filter updates the displayed metrics and charts.
+- Confirm the country-attributed KPI updates with the industry filter and use the raw snapshot table for source traceability.
 - Choose 2–3 examples with accessible source URLs and clear geography.
 - Avoid presenting heuristic scores or evidence volume as validated workforce severity.
 - Keep a screenshot or snapshot demo available if live services are unavailable.
