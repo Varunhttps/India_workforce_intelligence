@@ -172,14 +172,32 @@ class FrontendSmokeTests(unittest.TestCase):
         self.assertNotIn("summarize_country_coverage", source)
         self.assertNotIn("Ranked horizontal bar chart", source)
         self.assertIn("import altair as alt", source)
-        self.assertIn("mark_bar()", source)
-        self.assertIn('mark_text(align="left", dx=5)', source)
+        self.assertIn("mark_bar(size=22, cornerRadiusEnd=4)", source)
+        self.assertIn('mark_text(align="left", dx=6, fontWeight="bold")', source)
         self.assertIn('"Recent findings"', source)
         self.assertIn('"Change"', source)
         self.assertIn("st.altair_chart", source)
+        self.assertIn("Display Challenge", source)
+        self.assertIn('field="Rank", order="ascending"', source)
         self.assertIn("has_comparison = False", source)
         self.assertIn("only one month available; ranked by counts", source)
         self.assertIn("Bar labels show counts only.", source)
+        self.assertNotIn('st.subheader("Opportunity Priorities")', source)
+
+    def test_dashboard_hides_weekly_trends_tab_but_keeps_data_for_logic(self):
+        app_path = Path(__file__).resolve().parents[1] / "frontend" / "app.py"
+        source = app_path.read_text(encoding="utf-8")
+        self.assertIn('SHEET_NAMES = ["Source Register", "Market Research", "Market Insights & Trends", "Product Feature Opportunities"]', source)
+        self.assertIn('LOAD_SHEET_NAMES = [*SHEET_NAMES, "Weekly Trends"]', source)
+        self.assertIn('for name in LOAD_SHEET_NAMES:', source)
+        self.assertNotIn('st.subheader("Weekly Trends")', source)
+        self.assertNotIn('st.dataframe(trends[trend_cols]', source)
+
+    def test_product_features_tab_hides_duplicate_workforce_planning_area(self):
+        app_path = Path(__file__).resolve().parents[1] / "frontend" / "app.py"
+        source = app_path.read_text(encoding="utf-8")
+        self.assertIn('elif name == "Product Feature Opportunities":', source)
+        self.assertIn('frame = frame.drop(columns=["Workforce Planning Area"], errors="ignore")', source)
 
     def test_dashboard_hides_research_run_health_panel(self):
         app_path = Path(__file__).resolve().parents[1] / "frontend" / "app.py"
