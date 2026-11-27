@@ -69,6 +69,7 @@ h1 {letter-spacing: -0.035em;}
 </style>
 """, unsafe_allow_html=True)
 
+LOAD_SHEET_NAMES = ["Source Register", "Market Research", "Market Insights & Trends", "Product Feature Opportunities", "Weekly Trends"]
 SHEET_NAMES = ["Source Register", "Market Research", "Market Insights & Trends", "Product Feature Opportunities"]
 
 
@@ -82,7 +83,7 @@ def load_sheets():
     client = gspread.service_account_from_dict(json.loads(credentials))
     book = client.open_by_key(sheet_id)
     data = {}
-    for name in SHEET_NAMES:
+    for name in LOAD_SHEET_NAMES:
         try:
             values = book.worksheet(name).get_all_records()
             data[name] = pd.DataFrame(values)
@@ -188,7 +189,24 @@ else:
     st.subheader("Most Critical Workforce Planning Challenges")
     problem_counts = findings["Identified Problem"].dropna().value_counts().head(10)
     if not problem_counts.empty:
-        st.bar_chart(problem_counts, height=320)
+        critical_chart = problem_counts.rename_axis("Challenge").reset_index(name="Findings")
+        critical_chart["Rank"] = range(1, len(critical_chart) + 1)
+        critical_chart["Display Challenge"] = critical_chart.apply(
+            lambda row: f"{int(row['Rank']):02d}  {row['Challenge']}", axis=1
+        )
+        critical_chart["Label"] = critical_chart["Findings"].astype(int).astype(str)
+        scale = alt.Scale(domain=[0, max(1, int(critical_chart["Findings"].max())) * 1.25])
+        critical_bars = alt.Chart(critical_chart).mark_bar(size=22, cornerRadiusEnd=4).encode(
+            x=alt.X("Findings:Q", title="Finding count", scale=scale),
+            y=alt.Y("Display Challenge:N", sort=alt.EncodingSortField(field="Rank", order="ascending"), title=None),
+            tooltip=["Challenge:N", "Findings:Q"],
+        )
+        critical_labels = alt.Chart(critical_chart).mark_text(align="left", dx=6, fontWeight="bold").encode(
+            x=alt.X("Findings:Q", scale=scale),
+            y=alt.Y("Display Challenge:N", sort=alt.EncodingSortField(field="Rank", order="ascending")),
+            text="Label:N",
+        )
+        st.altair_chart((critical_bars + critical_labels).properties(height=360), use_container_width=True)
     else:
         st.info("Workforce challenge rankings will appear when findings are available.")
 
@@ -262,9 +280,6 @@ else:
         chart_data["Rank"] = range(1, len(chart_data) + 1)
         chart_data["Display Challenge"] = chart_data.apply(
             lambda row: f"{int(row['Rank']):02d}  {row['Challenge']}", axis=1
-        )
-        chart_sort = alt.EncodingSortField(
-            field="Change" if rank_by_change else "Recent findings", order="descending"
         )
         chart_data["Label"] = chart_data.apply(
             lambda row: (
