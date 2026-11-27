@@ -22,6 +22,17 @@ def _display_dates(frame, columns):
     return frame
 
 
+def _display_dates(frame, columns):
+    """Format display-only date fields as DDMMYYYY."""
+    frame = frame.copy()
+    for column in columns:
+        if column in frame.columns:
+            parsed = pd.to_datetime(frame[column], errors="coerce", format="%Y-%m-%d")
+            parsed = parsed.fillna(pd.to_datetime(frame[column], errors="coerce", format="%d%m%Y"))
+            frame[column] = parsed.dt.strftime("%d%m%Y").where(parsed.notna(), frame[column])
+    return frame
+
+
 st.set_page_config(page_title="Global Workforce Intelligence · Demo", page_icon="🌍", layout="wide")
 st.title("🌍 Global Workforce Intelligence")
 st.caption("Offline portfolio demo · Snapshot of committed research history · No API credentials required")
