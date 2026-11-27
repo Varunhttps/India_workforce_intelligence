@@ -408,7 +408,7 @@ def build_sheet_payloads(findings, sources, research_date=None, history_records=
         trend_rows.append([
             trend_id, trend["industry"], trend["problem_type"],
             _cell(trend["supporting_sources"]), int(trend["weeks_observed"]),
-            _cell(trend.get("last_seen")),
+            _format_ddmmyyyy(trend.get("last_seen")),
         ])
 
     source_rows.sort(key=lambda row: (str(row[5] or "").casefold(), str(row[1] or "").casefold()))
