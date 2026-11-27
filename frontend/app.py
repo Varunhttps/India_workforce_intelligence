@@ -15,7 +15,6 @@ sys.path.insert(0, str(PROJECT_ROOT))
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 from workforce_intelligence.dashboard_filters import industry_options, filter_frames_by_industry, weekly_statuses
-from workforce_intelligence.opportunity_prioritization import build_opportunity_priorities
 from workforce_intelligence.skill_trends import analyze_skill_trends
 from workforce_intelligence.manager_actions import recommend_manager_actions
 from frontend.private_access import (
@@ -70,7 +69,8 @@ h1 {letter-spacing: -0.035em;}
 </style>
 """, unsafe_allow_html=True)
 
-SHEET_NAMES = ["Source Register", "Market Research", "Market Insights & Trends", "Product Feature Opportunities", "Weekly Trends"]
+LOAD_SHEET_NAMES = ["Source Register", "Market Research", "Market Insights & Trends", "Product Feature Opportunities", "Weekly Trends"]
+SHEET_NAMES = ["Source Register", "Market Research", "Market Insights & Trends", "Product Feature Opportunities"]
 
 
 @st.cache_data(ttl=90)
@@ -83,7 +83,7 @@ def load_sheets():
     client = gspread.service_account_from_dict(json.loads(credentials))
     book = client.open_by_key(sheet_id)
     data = {}
-    for name in SHEET_NAMES:
+    for name in LOAD_SHEET_NAMES:
         try:
             values = book.worksheet(name).get_all_records()
             data[name] = pd.DataFrame(values)
@@ -189,7 +189,24 @@ else:
     st.subheader("Most Critical Workforce Planning Challenges")
     problem_counts = findings["Identified Problem"].dropna().value_counts().head(10)
     if not problem_counts.empty:
-        st.bar_chart(problem_counts, height=320)
+        critical_chart = problem_counts.rename_axis("Challenge").reset_index(name="Findings")
+        critical_chart["Rank"] = range(1, len(critical_chart) + 1)
+        critical_chart["Display Challenge"] = critical_chart.apply(
+            lambda row: f"{int(row['Rank']):02d}  {row['Challenge']}", axis=1
+        )
+        critical_chart["Label"] = critical_chart["Findings"].astype(int).astype(str)
+        scale = alt.Scale(domain=[0, max(1, int(critical_chart["Findings"].max())) * 1.25])
+        critical_bars = alt.Chart(critical_chart).mark_bar(size=22, cornerRadiusEnd=4).encode(
+            x=alt.X("Findings:Q", title="Finding count", scale=scale),
+            y=alt.Y("Display Challenge:N", sort=alt.EncodingSortField(field="Rank", order="ascending"), title=None),
+            tooltip=["Challenge:N", "Findings:Q"],
+        )
+        critical_labels = alt.Chart(critical_chart).mark_text(align="left", dx=6, fontWeight="bold").encode(
+            x=alt.X("Findings:Q", scale=scale),
+            y=alt.Y("Display Challenge:N", sort=alt.EncodingSortField(field="Rank", order="ascending")),
+            text="Label:N",
+        )
+        st.altair_chart((critical_bars + critical_labels).properties(height=360), use_container_width=True)
     else:
         st.info("Workforce challenge rankings will appear when findings are available.")
 
@@ -259,9 +276,10 @@ else:
             "Challenge": emerging_names,
             "Recent findings": [int(recent_totals.get(name, 0)) for name in emerging_names],
             "Change": [int(change.get(name, 0)) if has_comparison else None for name in emerging_names],
-        })
-        chart_sort = alt.EncodingSortField(
-            field="Change" if rank_by_change else "Recent findings", order="descending"
+        }).head(10).reset_index(drop=True)
+        chart_data["Rank"] = range(1, len(chart_data) + 1)
+        chart_data["Display Challenge"] = chart_data.apply(
+            lambda row: f"{int(row['Rank']):02d}  {row['Challenge']}", axis=1
         )
         chart_data["Label"] = chart_data.apply(
             lambda row: (
@@ -271,19 +289,19 @@ else:
         )
         max_value = max(1, int(chart_data["Recent findings"].max()))
         x_scale = alt.Scale(domain=[0, max_value * 1.25])
-        bars = alt.Chart(chart_data).mark_bar().encode(
-            x=alt.X("Recent findings:Q", title="Findings in recent period", scale=x_scale),
-            y=alt.Y("Challenge:N", sort=chart_sort, title=None),
+        bars = alt.Chart(chart_data).mark_bar(size=22, cornerRadiusEnd=4).encode(
+            x=alt.X("Recent findings:Q", title="Recent observation count", scale=x_scale),
+            y=alt.Y("Display Challenge:N", sort=alt.EncodingSortField(field="Rank", order="ascending"), title=None),
             tooltip=["Challenge:N", "Recent findings:Q", "Change:Q"],
         )
-        labels = alt.Chart(chart_data).mark_text(align="left", dx=5).encode(
+        labels = alt.Chart(chart_data).mark_text(align="left", dx=6, fontWeight="bold").encode(
             x=alt.X("Recent findings:Q", scale=x_scale),
-            y=alt.Y("Challenge:N", sort=chart_sort),
+            y=alt.Y("Display Challenge:N", sort=alt.EncodingSortField(field="Rank", order="ascending")),
             text="Label:N",
         )
         caption = ranking + (" · Bar labels show recent count and change." if has_comparison else " · Bar labels show counts only.")
         st.caption(caption)
-        st.altair_chart((bars + labels).properties(height=max(320, 34 * len(chart_data))), use_container_width=True)
+        st.altair_chart((bars + labels).properties(height=max(360, 38 * len(chart_data))), use_container_width=True)
     else:
         st.info("Emerging workforce challenges will appear when findings include research dates.")
 
@@ -302,18 +320,10 @@ else:
                 ] if c in frame.columns]
                 st.dataframe(frame[columns], use_container_width=True, hide_index=True)
 
-    st.subheader("Weekly Trends")
     trends = data.get("Weekly Trends", pd.DataFrame()).copy()
     if not trends.empty and "Weeks Seen" in trends.columns:
         trends["Weeks Seen"] = pd.to_numeric(trends["Weeks Seen"], errors="coerce").fillna(0).astype(int)
         trends = trends.sort_values("Weeks Seen", ascending=False)
-        trend_cols = [col for col in [
-            "Industry", "Workforce Problem", "Supporting Sources", "Weeks Seen"
-        ] if col in trends.columns]
-        st.caption("Weeks Seen is the numeric count of distinct weeks this workforce problem appears in the research history. It indicates observation persistence, not problem severity.")
-        st.dataframe(trends[trend_cols], use_container_width=True, hide_index=True)
-    else:
-        st.info("Weekly trend counts will appear after the cumulative history is published.")
 
     st.subheader("Emerging Skills & Workforce Trends")
     skill_records = []
@@ -365,45 +375,6 @@ else:
     else:
         st.info("Manager recommendations will appear once research findings are available.")
 
-    st.subheader("Opportunity Priorities")
-    priority_rows = build_opportunity_priorities(
-        findings, data.get("Product Feature Opportunities", pd.DataFrame()), sources
-    )
-    if priority_rows:
-        priority_frame = pd.DataFrame(priority_rows)
-        filter_cols = st.columns(3)
-        track_options = ["All tracks", *sorted(priority_frame["Track"].dropna().unique().tolist())]
-        track_choice = filter_cols[0].selectbox("Opportunity track", track_options, key="opportunity_track_filter")
-        priority_options = ["All priorities", "High priority", "Investigate", "Monitor"]
-        priority_choice = filter_cols[1].selectbox("Priority level", priority_options, key="opportunity_priority_filter")
-        country_options = ["All countries", *sorted({country for row in priority_rows for country in str(row.get("Countries") or "").split(",") if country.strip()})]
-        country_choice = filter_cols[2].selectbox("Evidence country", country_options, key="opportunity_country_filter")
-        filtered_priorities = priority_frame.copy()
-        if track_choice != "All tracks":
-            filtered_priorities = filtered_priorities[filtered_priorities["Track"] == track_choice]
-        if priority_choice != "All priorities":
-            filtered_priorities = filtered_priorities[filtered_priorities["Priority"] == priority_choice]
-        if country_choice != "All countries":
-            filtered_priorities = filtered_priorities[filtered_priorities["Countries"].astype(str).str.contains(country_choice, case=False, regex=False)]
-        score_columns = ["Score", "Priority", "Track", "Industry", "Market Need", "Capability", "Source Count", "Country Count", "Latest Evidence"]
-        st.caption("Scores are transparent heuristics based on evidence breadth, recency, reported impact, source credibility and mapped actionability. They are prioritization aids—not proof of shortage severity.")
-        st.dataframe(filtered_priorities[score_columns], use_container_width=True, hide_index=True)
-        for _, opportunity in filtered_priorities.iterrows():
-            title = f"{opportunity['Priority']} · {opportunity['Industry']} · {opportunity['Market Need']}"
-            with st.expander(title):
-                st.write(opportunity["Suggested Feature"])
-                st.write("**Business value:** " + str(opportunity["Business Value"] or "Not specified in mapping"))
-                st.write("**Countries:** " + str(opportunity["Countries"] or "Not identified"))
-                st.write("**Evidence source URLs:**")
-                for source_url in str(opportunity["Supporting Source URLs"] or "").split(","):
-                    source_url = source_url.strip()
-                    if source_url:
-                        st.markdown(f"- [{source_url}]({source_url})")
-                st.write("**Score breakdown (out of 100):**")
-                st.json(opportunity["Score Breakdown"])
-                st.caption(opportunity["Scoring Note"])
-    else:
-        st.info("Mapped opportunities will appear after research and opportunity mapping are available.")
 
     st.subheader("Cumulative research overview")
     e, f, g = st.columns(3)
@@ -419,7 +390,7 @@ else:
                 hide = ["Collection Status", "Key Information", "Evidence / Supporting Information", "Review Notes"]
                 frame = frame.drop(columns=[col for col in hide if col in frame.columns], errors="ignore")
             elif name == "Market Research":
-                hide = ["Evidence / Supporting Information", "Supporting Evidence", "Review Notes", "Occurrences", "Weekly Status", "Research Status", "Interpretation Status", "Review Status"]
+                hide = ["Workforce Planning Area", "Evidence / Supporting Information", "Supporting Evidence", "Review Notes", "Occurrences", "Weekly Status", "Research Status", "Interpretation Status", "Review Status"]
                 frame = frame.drop(columns=[col for col in hide if col in frame.columns], errors="ignore")
             st.dataframe(frame, use_container_width=True, hide_index=True)
     st.link_button("Open full Google Spreadsheet", sheet_url)

@@ -9,7 +9,6 @@ import streamlit as st
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from workforce_intelligence.skill_trends import analyze_skill_trends
 from workforce_intelligence.manager_actions import recommend_manager_actions
-from workforce_intelligence.opportunity_prioritization import build_opportunity_priorities
 from frontend.demo_data import load_demo_findings, build_emerging_challenge_chart_data
 
 st.set_page_config(page_title="Global Workforce Intelligence · Demo", page_icon="🌍", layout="wide")
@@ -96,21 +95,25 @@ emerging_chart_data, emerging_caption = build_emerging_challenge_chart_data(
     df.to_dict("records"), top_n=10
 )
 if emerging_chart_data:
-    emerging_frame = pd.DataFrame(emerging_chart_data)
-    sort_order = alt.EncodingSortField(field="Rank score", order="descending")
+    emerging_frame = pd.DataFrame(emerging_chart_data).head(10).reset_index(drop=True)
+    emerging_frame["Rank"] = range(1, len(emerging_frame) + 1)
+    emerging_frame["Display Challenge"] = emerging_frame.apply(
+        lambda row: f"{int(row['Rank']):02d}  {row['Challenge']}", axis=1
+    )
+    sort_order = alt.EncodingSortField(field="Rank", order="ascending")
     max_value = max(1, int(emerging_frame["Weekly observations"].max()))
     scale = alt.Scale(domain=[0, max_value * 1.25])
-    bars = alt.Chart(emerging_frame).mark_bar().encode(
-        x=alt.X("Weekly observations:Q", title="Weekly observations in recent period", scale=scale),
-        y=alt.Y("Challenge:N", sort=sort_order, title=None),
+    bars = alt.Chart(emerging_frame).mark_bar(size=22, cornerRadiusEnd=4).encode(
+        x=alt.X("Weekly observations:Q", title="Recent observation count", scale=scale),
+        y=alt.Y("Display Challenge:N", sort=sort_order, title=None),
         tooltip=["Challenge:N", "Weekly observations:Q", "Change:Q"],
     )
-    labels = alt.Chart(emerging_frame).mark_text(align="left", dx=5).encode(
+    labels = alt.Chart(emerging_frame).mark_text(align="left", dx=6, fontWeight="bold").encode(
         x=alt.X("Weekly observations:Q", scale=scale),
-        y=alt.Y("Challenge:N", sort=sort_order),
+        y=alt.Y("Display Challenge:N", sort=sort_order),
         text="Label:N",
     )
-    st.altair_chart((bars + labels).properties(height=max(320, 34 * len(emerging_frame))), use_container_width=True)
+    st.altair_chart((bars + labels).properties(height=max(360, 38 * len(emerging_frame))), use_container_width=True)
     st.caption(emerging_caption + " · Labels show counts and change when a comparison is possible.")
 else:
     st.info("Emerging workforce challenges will appear when findings are available.")
@@ -144,13 +147,6 @@ if manager:
 else:
     st.info("Manager action suggestions need more populated data.")
 
-st.subheader("Opportunity priorities")
-opportunities = build_opportunity_priorities(df, pd.DataFrame(), pd.DataFrame())
-if opportunities:
-    opp_df = pd.DataFrame(opportunities)
-    st.dataframe(opp_df, use_container_width=True, hide_index=True)
-else:
-    st.info("No mapped product-capability opportunities are included in this offline snapshot. Use the connected dashboard for workbook-mapped opportunity priorities.")
 
 st.subheader("Raw research snapshot")
 display_cols = ["Industry", "Identified Problem", "Problem Description", "Country", "Source Name", "Source Platform", "Weeks Seen", "Source URL"]
