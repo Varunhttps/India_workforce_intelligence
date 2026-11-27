@@ -74,8 +74,8 @@ class FrontendSmokeTests(unittest.TestCase):
         self.assertIn("render_labeled_horizontal_bars", source)
         self.assertIn('mark_text(align="left", dx=5)', source)
         self.assertIn('alt.EncodingSortField(field=value, order="descending")', source)
-        self.assertIn('alt.EncodingSortField(field="Rank score", order="descending")', source)
-        self.assertIn("Weekly observations in recent period", source)
+        self.assertIn('alt.EncodingSortField(field="Rank", order="ascending")', source)
+        self.assertIn("Recent observation count", source)
 
     def test_emerging_challenges_show_counts_without_fake_delta_for_one_month(self):
         records = [
@@ -147,15 +147,15 @@ class FrontendSmokeTests(unittest.TestCase):
         module = ast.parse(source, filename=str(loader_path))
         tabs_node = next(node for node in module.body if isinstance(node, ast.Assign) and any(isinstance(target, ast.Name) and target.id == "TABS" for target in node.targets))
         tabs = ast.literal_eval(tabs_node.value)
-        self.assertEqual(len(tabs), 5)
-        self.assertIn("Weekly Trends", tabs)
+        self.assertEqual(len(tabs), 4)
+        self.assertNotIn("Weekly Trends", tabs)
 
-    def test_dashboard_weekly_trends_uses_numeric_count(self):
+    def test_dashboard_weekly_trends_table_removed_but_data_retained_for_logic(self):
         app_path = Path(__file__).resolve().parents[1] / "frontend" / "app.py"
         source = app_path.read_text(encoding="utf-8")
-        self.assertIn('st.subheader("Weekly Trends")', source)
+        self.assertNotIn('st.subheader("Weekly Trends")', source)
         self.assertIn('pd.to_numeric(trends["Weeks Seen"]', source)
-        self.assertIn('"Industry", "Workforce Problem", "Supporting Sources", "Weeks Seen"', source)
+        self.assertNotIn('st.dataframe(trends[trend_cols]', source)
 
     def test_dashboard_prioritizes_requested_workforce_challenge_sections_and_removes_country_signals(self):
         app_path = Path(__file__).resolve().parents[1] / "frontend" / "app.py"
