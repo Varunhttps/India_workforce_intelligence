@@ -175,13 +175,15 @@ class FrontendSmokeTests(unittest.TestCase):
         self.assertNotIn("Ranked horizontal bar chart", source)
         self.assertIn("import altair as alt", source)
         self.assertIn("mark_bar(size=22, cornerRadiusEnd=4)", source)
-        self.assertIn('mark_text(align="left", dx=5)', source)
+        self.assertIn('mark_text(align="left", dx=6, fontWeight="bold")', source)
         self.assertIn('"Recent findings"', source)
         self.assertIn('"Change"', source)
         self.assertIn("st.altair_chart", source)
         self.assertIn("has_comparison = False", source)
         self.assertIn("only one month available; ranked by counts", source)
         self.assertIn("Bar labels show counts only.", source)
+        self.assertNotIn('st.subheader("Opportunity Priorities")', source)
+        self.assertIn('"Workforce Planning Area"', source)
 
     def test_dashboard_hides_research_run_health_panel(self):
         app_path = Path(__file__).resolve().parents[1] / "frontend" / "app.py"
