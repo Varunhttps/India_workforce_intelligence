@@ -67,7 +67,7 @@ class FrontendSmokeTests(unittest.TestCase):
         sections = [
             'st.subheader("Top 5 Industries Facing Workforce Planning Challenges")',
             'st.subheader("Most Critical Workforce Planning Challenges")',
-            'st.subheader("Emerging Workforce Planning Challenges · Top 10")',
+            'st.subheader("Workforce Planning Challenges - Top 10")',
         ]
         positions = [source.index(section) for section in sections]
         self.assertEqual(positions, sorted(positions))
@@ -169,7 +169,7 @@ class FrontendSmokeTests(unittest.TestCase):
         sections = [
             'st.subheader("Top 5 Industries Facing Workforce Planning Challenges")',
             'st.subheader("Most Critical Workforce Planning Challenges")',
-            'st.subheader("Emerging Workforce Planning Challenges · Top 10")',
+            'st.subheader("Workforce Planning Challenges - Top 10")',
         ]
         positions = [source.index(section) for section in sections]
         self.assertEqual(positions, sorted(positions))
@@ -181,6 +181,7 @@ class FrontendSmokeTests(unittest.TestCase):
         self.assertIn("mark_bar(size=22, cornerRadiusEnd=4)", source)
         self.assertIn('mark_text(align="left", dx=6, fontWeight="bold")', source)
         self.assertIn('"Recent findings"', source)
+        self.assertIn('"Signal Pattern"', source)
         self.assertIn('"Change"', source)
         self.assertIn("st.altair_chart", source)
         self.assertIn("Display Challenge", source)
