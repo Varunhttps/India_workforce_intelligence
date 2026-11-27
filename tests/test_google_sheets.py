@@ -38,7 +38,6 @@ class GoogleSheetsPayloadTests(unittest.TestCase):
         self.assertEqual(row["Source URL"], url)
         self.assertEqual(row["Source Type"], "LinkedIn")
         self.assertEqual(row["Sub-industry"], "EV manufacturing")
-        self.assertEqual(row["Sub-industry"], "EV manufacturing")
         self.assertNotIn("Source Credibility Assessment", row)
         self.assertNotIn("Relevance Status", row)
         self.assertTrue(row["Source ID"].startswith("SRC-"))
@@ -73,8 +72,8 @@ class GoogleSheetsPayloadTests(unittest.TestCase):
         url = "https://example.com/published"
         findings = [{
             "problem_type": "Skills gap", "description": "Example evidence",
-            "industry": "Manufacturing", "sub_industry": "Electronics",
-            "source_url": url, "country": "India", "sub_industry": "EV manufacturing",
+            "industry": "Manufacturing", "sub_industry": "EV manufacturing",
+            "source_url": url, "country": "India",
         }]
         sources = [{
             "Source title": "Original article title", "Source URL": url,
