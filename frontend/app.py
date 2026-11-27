@@ -69,6 +69,17 @@ h1 {letter-spacing: -0.035em;}
 </style>
 """, unsafe_allow_html=True)
 
+def _display_dates(frame, columns):
+    """Return a presentation copy with date columns rendered as DDMMYYYY."""
+    frame = frame.copy()
+    for column in columns:
+        if column in frame.columns:
+            parsed = pd.to_datetime(frame[column], errors="coerce", format="%Y-%m-%d")
+            parsed = parsed.fillna(pd.to_datetime(frame[column], errors="coerce", format="%d%m%Y"))
+            frame[column] = parsed.dt.strftime("%d%m%Y").where(parsed.notna(), frame[column])
+    return frame
+
+
 SHEET_NAMES = ["Source Register", "Market Research", "Market Insights & Trends", "Product Feature Opportunities"]
 LOAD_SHEET_NAMES = [*SHEET_NAMES, "Weekly Trends"]
 
@@ -164,7 +175,7 @@ else:
     if "Research Date" in findings.columns and not findings.empty:
         parsed_dates = pd.to_datetime(findings["Research Date"], errors="coerce")
         if parsed_dates.notna().any():
-            latest_research_date = parsed_dates.max().date().isoformat()
+            latest_research_date = parsed_dates.max().strftime("%d%m%Y")
     a, b, c, d, e = st.columns(5)
     a.metric("Historical findings", len(findings))
     b.metric("New this week", len(new_week))
@@ -377,6 +388,8 @@ else:
                 frame = frame.drop(columns=[col for col in hide if col in frame.columns], errors="ignore")
             if name == "Product Feature Opportunities":
                 frame = frame.drop(columns=["Workforce Planning Area"], errors="ignore")
+            date_columns = ["Publication Date", "Access Date", "Research Date", "First Seen", "Latest Week", "Latest Evidence Date", "Last Updated"]
+            frame = _display_dates(frame, date_columns)
             st.dataframe(frame, use_container_width=True, hide_index=True)
     st.link_button("Open full Google Spreadsheet", sheet_url)
 
