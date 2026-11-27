@@ -335,29 +335,6 @@ else:
         st.dataframe(skill_frame[display_skill_columns], use_container_width=True, hide_index=True)
     else:
         st.info("Skill signals will appear when published findings match skill-cluster keywords.")
-    st.subheader("Manager Action & Opportunity Intelligence")
-    st.caption("Ranked investigation suggestions from research evidence. Scores measure research coverage and recency—not verified workforce severity.")
-    manager_rows = recommend_manager_actions(findings, trends if "trends" in locals() else pd.DataFrame())
-    if manager_rows:
-        manager_frame = pd.DataFrame(manager_rows)
-        top_count = min(5, len(manager_frame))
-        top_manager = manager_frame.head(top_count)
-        manager_metrics = st.columns(3)
-        manager_metrics[0].metric("Action candidates", len(manager_frame))
-        manager_metrics[1].metric("Validate now", int((manager_frame["Priority"] == "Act / validate now").sum()))
-        manager_metrics[2].metric("Investigate next", int((manager_frame["Priority"] == "Investigate next").sum()))
-        st.bar_chart(top_manager.set_index("Workforce Problem")["Rank Score"], height=300)
-        st.dataframe(manager_frame[["Rank Score", "Industry", "Workforce Problem", "Manager Action", "Source Count"]], use_container_width=True, hide_index=True)
-        for _, manager_action in manager_frame.head(10).iterrows():
-            with st.expander(f"{manager_action['Priority']} · {manager_action['Industry']} · {manager_action['Workforce Problem']}"):
-                st.write("**Recommended next step:** " + str(manager_action["Recommended Next Step"]))
-                st.write("**Scoring rationale:** " + str(manager_action["Score Rationale"]))
-                st.write("**Countries:** " + ", ".join(manager_action["Countries"]) if manager_action["Countries"] else "No country attribution")
-                for evidence_url in manager_action["Evidence URLs"]:
-                    st.markdown(f"- [{evidence_url}]({evidence_url})")
-    else:
-        st.info("Manager recommendations will appear once research findings are available.")
-
     st.subheader("Cumulative research overview")
     e, f, g = st.columns(3)
     e.metric("Sources", len(sources))
