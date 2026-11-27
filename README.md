@@ -44,7 +44,7 @@ The Excel workbook contains seven tabs: Run Overview, Workforce Findings, New Fi
 
 ## Weekly comparison signals
 
-**Weekly Trends** aggregates findings by industry and workforce-problem category. **Weeks Seen** is a numeric count of distinct ISO weeks observed in the cumulative research history, and the tab also shows supporting source counts and latest evidence date. The dashboard uses the numeric week count for filtering and comparisons.
+**Weekly Trends** aggregates findings by industry and workforce-problem category. **Weeks Seen** is a numeric count of distinct ISO weeks observed in the cumulative research history, and the tab also shows supporting source counts and latest evidence date. The connected dashboard loads Weekly Trends for internal manager-action logic but no longer displays a separate Weekly Trends table.
 
 Source/country growth is only a signal of research coverage expansion, not proof that a workforce problem worsened. A finding not observed in the latest scan is not marked resolved. Opportunity mappings are suggestions for review, not approved product commitments.
 
@@ -96,17 +96,17 @@ pip install -r requirements.txt
 streamlit run frontend/app.py
 ```
 
-Configure Streamlit secrets (or environment variables) for `GOOGLE_SHEET_ID` and `GOOGLE_SERVICE_ACCOUNT_JSON` to read the five tabs. To enable the **Start Research** control, also configure `GITHUB_TOKEN` with permission to dispatch repository Actions workflows. Do not commit these credentials. The control currently supports the existing research scopes (Manufacturing, Other Industries, All Industries), optional comma-separated country filters (blank means global) and the source cap per industry. Multiple countries trigger separate targeted discovery searches; extracted country attribution is still accepted only when explicitly supported by the source text. The pipeline's existing discovery channels are web search and public, search-indexed LinkedIn.
+Configure Streamlit secrets (or environment variables) for `GOOGLE_SHEET_ID` and `GOOGLE_SERVICE_ACCOUNT_JSON` to read all five workbook tabs. Four tabs are displayed in the dashboard; Weekly Trends is loaded internally. To enable the **Start Research** control, also configure `GITHUB_TOKEN` with permission to dispatch repository Actions workflows. Do not commit these credentials. The control currently supports the existing research scopes (Manufacturing, Other Industries, All Industries), optional comma-separated country filters (blank means global) and the source cap per industry. Multiple countries trigger separate targeted discovery searches; extracted country attribution is still accepted only when explicitly supported by the source text. The pipeline's existing discovery channels are web search and public, search-indexed LinkedIn.
 
 The dashboard supports a global industry filter across tables and summary metrics, displays distinct problem counts by industry when unfiltered, and links to the full spreadsheet. Research findings and generated opportunity mappings are candidates for human review, not verified market conclusions or approved Nexplan product commitments.
 
-## Manager Opportunity Priorities
+## Manager Action Intelligence
 
-The dashboard includes a **Opportunity Priorities** section that ranks mapped workforce opportunities across Staffing & Recruitment and Nexplan enterprise planning. Scores use transparent heuristics (source breadth, recency, reported impact, source credibility and actionability) and show component breakdowns plus linked evidence sources. Rankings are decision-support indicators, not verified shortage assessments.
+The connected dashboard and offline demo surface ranked investigation suggestions from workforce research, including recommended next steps, supporting evidence links and rationale. These are decision-support candidates, not approved actions or verified shortage assessments. Product-feature opportunity mappings remain in the workbook; the separate Opportunity Priorities dashboard section has been removed.
 
-## Weekly evidence momentum dashboard
+## Weekly research changes
 
-The dashboard includes a current-versus-previous ISO week comparison of unique supporting sources for workforce problem signals, with trend direction, country breadth, and an industry ranking. These are research coverage indicators—not proof of workforce problem severity. See [`docs/signal_momentum.md`](docs/signal_momentum.md) for methodology and caveats.
+The connected dashboard shows new, recurring and not-observed-this-week findings in separate weekly-change views. Its manager-action layer also consumes the internal Weekly Trends data. These are research coverage signals—not proof of workforce problem severity. See [`docs/signal_momentum.md`](docs/signal_momentum.md) for methodology and caveats.
 
 ## Evidence integrity & traceability
 
