@@ -184,6 +184,16 @@ class FrontendSmokeTests(unittest.TestCase):
         self.assertIn("Bar labels show counts only.", source)
         self.assertNotIn('st.subheader("Opportunity Priorities")', source)
         self.assertIn('"Workforce Planning Area"', source)
+        self.assertIn('frame = frame.drop(columns=["Workforce Planning Area"], errors="ignore")', source)
+        self.assertIn('elif name == "Product Feature Opportunities":', source)
+
+    def test_dashboard_hides_weekly_trends_tab_but_loads_history_for_logic(self):
+        app_path = Path(__file__).resolve().parents[1] / "frontend" / "app.py"
+        source = app_path.read_text(encoding="utf-8")
+        self.assertIn('SHEET_NAMES = ["Source Register", "Market Research", "Market Insights & Trends", "Product Feature Opportunities"]', source)
+        self.assertIn('LOAD_SHEET_NAMES = [*SHEET_NAMES, "Weekly Trends"]', source)
+        self.assertIn('for name in LOAD_SHEET_NAMES:', source)
+        self.assertNotIn('"Weekly Trends"]\nSHEET_NAMES', source)
 
     def test_dashboard_hides_research_run_health_panel(self):
         app_path = Path(__file__).resolve().parents[1] / "frontend" / "app.py"
