@@ -72,7 +72,7 @@ class FrontendSmokeTests(unittest.TestCase):
         self.assertNotIn('st.subheader("Country coverage")', source)
         self.assertNotIn("summarize_country_coverage", source)
         self.assertIn("render_labeled_horizontal_bars", source)
-        self.assertIn('mark_text(align="left", dx=5)', source)
+        self.assertIn('mark_text(align="left", dx=6, fontWeight="bold")', source)
         self.assertIn('alt.EncodingSortField(field=value, order="descending")', source)
         self.assertIn('alt.EncodingSortField(field="Rank", order="ascending")', source)
         self.assertIn("Recent observation count", source)
@@ -131,7 +131,7 @@ class FrontendSmokeTests(unittest.TestCase):
         self.assertIn("rank_by_change = False", source)
         self.assertIn('chart_sort = alt.EncodingSortField(', source)
         self.assertIn('field="Change" if rank_by_change else "Recent findings"', source)
-        self.assertIn("sort=chart_sort", source)
+        self.assertIn('sort=alt.EncodingSortField(field="Rank", order="ascending")', source)
 
     def test_streamlit_minimum_version_supports_auth_api(self):
         requirements_path = Path(__file__).resolve().parents[1] / "requirements.txt"
@@ -149,6 +149,8 @@ class FrontendSmokeTests(unittest.TestCase):
         tabs = ast.literal_eval(tabs_node.value)
         self.assertEqual(len(tabs), 4)
         self.assertNotIn("Weekly Trends", tabs)
+        self.assertIn("LOAD_SHEET_NAMES", source)
+        self.assertIn("Weekly Trends", source)
 
     def test_dashboard_weekly_trends_table_removed_but_data_retained_for_logic(self):
         app_path = Path(__file__).resolve().parents[1] / "frontend" / "app.py"
@@ -172,7 +174,7 @@ class FrontendSmokeTests(unittest.TestCase):
         self.assertNotIn("summarize_country_coverage", source)
         self.assertNotIn("Ranked horizontal bar chart", source)
         self.assertIn("import altair as alt", source)
-        self.assertIn("mark_bar()", source)
+        self.assertIn("mark_bar(size=22, cornerRadiusEnd=4)", source)
         self.assertIn('mark_text(align="left", dx=5)', source)
         self.assertIn('"Recent findings"', source)
         self.assertIn('"Change"', source)
