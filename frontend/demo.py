@@ -90,7 +90,7 @@ if not problem_counts.empty:
 else:
     st.info("Workforce challenge rankings will appear when findings are available.")
 
-st.subheader("Emerging Workforce Planning Challenges · Top 10")
+st.subheader("Workforce Planning Challenges - Top 10")
 emerging_chart_data, emerging_caption = build_emerging_challenge_chart_data(
     df.to_dict("records"), top_n=10
 )
@@ -123,7 +123,7 @@ skill_inputs = [{
 } for _, row in df.iterrows()]
 skills = analyze_skill_trends(skill_inputs)
 if skills:
-    skill_df = pd.DataFrame(skills)
+    skill_df = pd.DataFrame(skills).rename(columns={"trend": "Signal Pattern"})
     display_skill_columns = [column for column in skill_df.columns if column != "signal_score"]
     st.dataframe(skill_df[display_skill_columns], use_container_width=True, hide_index=True)
 else:

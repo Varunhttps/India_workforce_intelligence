@@ -86,6 +86,7 @@ class FrontendSmokeTests(unittest.TestCase):
         self.assertIn('alt.EncodingSortField(field=value, order="descending")', source)
         self.assertIn('alt.EncodingSortField(field="Rank score", order="descending")', source)
         self.assertIn("Weekly observations in recent period", source)
+        self.assertIn('"Signal Pattern"', source)
 
     def test_emerging_challenges_show_counts_without_fake_delta_for_one_month(self):
         records = [
