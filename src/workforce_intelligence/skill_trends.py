@@ -189,7 +189,7 @@ def analyze_skill_trends(records, reference_date=None):
         elif recent:
             trend = "Recent signal"
         else:
-            trend = "Historical signal"
+            trend = "Older finding"
         score = min(100, source_count * 12 + industry_count * 10 + country_count * 6 + week_count * 4 + (12 if recent else 0))
         results.append({
             "skill": bucket["skill"], "manufacturing_focus": SKILL_TAXONOMY[bucket["skill"]]["manufacturing"],
