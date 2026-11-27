@@ -8,7 +8,7 @@ class GoogleSheetsPayloadTests(unittest.TestCase):
         findings = [{
             "problem_type": "Skilled worker shortage",
             "description": "Difficulty hiring production workers.",
-            "industry": "Automotive manufacturing",
+            "industry": "Automotive manufacturing", "sub_industry": "EV manufacturing",
             "source_name": "Company post",
             "source_url": url,
             "source_platform": "LinkedIn",
@@ -36,6 +36,7 @@ class GoogleSheetsPayloadTests(unittest.TestCase):
         headers = payloads["Source Register"][0]
         row = dict(zip(headers, payloads["Source Register"][1]))
         self.assertEqual(row["Source URL"], url)
+        self.assertEqual(row["Sub-industry"], "EV manufacturing")
         self.assertEqual(row["Publication Date"], "20112026")
         self.assertEqual(row["Source Type"], "LinkedIn")
         self.assertNotIn("Source Credibility Assessment", row)
