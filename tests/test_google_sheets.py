@@ -72,7 +72,7 @@ class GoogleSheetsPayloadTests(unittest.TestCase):
         url = "https://example.com/published"
         findings = [{
             "problem_type": "Skills gap", "description": "Example evidence",
-            "industry": "Manufacturing", "sub_industry": "EV manufacturing",
+            "industry": "Manufacturing", "sub_industry": "Electronics",
             "source_url": url, "country": "India",
         }]
         sources = [{
