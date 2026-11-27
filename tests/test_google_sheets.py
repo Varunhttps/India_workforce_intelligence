@@ -36,7 +36,7 @@ class GoogleSheetsPayloadTests(unittest.TestCase):
         headers = payloads["Source Register"][0]
         row = dict(zip(headers, payloads["Source Register"][1]))
         self.assertEqual(row["Source URL"], url)
-        self.assertEqual(row["Publication Date"], "2026-11-20")
+        self.assertEqual(row["Publication Date"], "20112026")
         self.assertEqual(row["Source Type"], "LinkedIn")
         self.assertNotIn("Source Credibility Assessment", row)
         self.assertNotIn("Relevance Status", row)
@@ -85,8 +85,29 @@ class GoogleSheetsPayloadTests(unittest.TestCase):
         payloads = build_sheet_payloads([], [], research_date="2026-11-23", history_records=history)
         headers, values = payloads["Market Research"][0], payloads["Market Research"][1]
         row = dict(zip(headers, values))
-        self.assertEqual(row["Observation Weeks"], "2026-11-02, 2026-11-09, 2026-11-23")
+        self.assertEqual(row["Observation Weeks"], "02112026, 09112026, 23112026")
 
+
+    def test_sheet_date_cells_are_published_ddmmyyyy(self):
+        url = "https://example.org/date-format"
+        findings = [{
+            "problem_type": "Skills gap", "description": "Example", "industry": "Manufacturing",
+            "source_url": url, "country": "India",
+        }]
+        sources = [{
+            "Source title": "Example", "Source URL": url, "Source platform": "Web",
+            "Industry searched": "Manufacturing", "Publication date": "2026-11-20",
+            "Access Date": "2026-11-28",
+        }]
+        payloads = build_sheet_payloads(findings, sources, research_date="2026-11-28")
+        register = dict(zip(payloads["Source Register"][0], payloads["Source Register"][1]))
+        research = dict(zip(payloads["Market Research"][0], payloads["Market Research"][1]))
+        self.assertEqual(register["Publication Date"], "20112026")
+        self.assertEqual(register["Access Date"], "28112026")
+        self.assertEqual(research["Research Date"], "28112026")
+        self.assertEqual(research["First Seen"], "28112026")
+        self.assertEqual(research["Latest Week"], "23112026")
+        self.assertEqual(research["Observation Weeks"], "23112026")
 
     def test_empty_run_returns_five_headers_including_weekly_trends(self):
         payloads = build_sheet_payloads([], [])
