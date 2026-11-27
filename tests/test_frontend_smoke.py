@@ -23,6 +23,8 @@ class FrontendSmokeTests(unittest.TestCase):
         self.assertNotIn("requests.post", calls)
         self.assertNotIn("trigger_research", source)
         self.assertNotIn("GITHUB_TOKEN", source)
+        self.assertNotIn("build_opportunity_priorities", source)
+        self.assertNotIn('st.subheader("Opportunity priorities")', source)
 
     def test_offline_demo_runs_without_streamlit_runtime_exceptions(self):
         demo_path = Path(__file__).resolve().parents[1] / "frontend" / "demo.py"
@@ -65,7 +67,7 @@ class FrontendSmokeTests(unittest.TestCase):
         sections = [
             'st.subheader("Top 5 Industries Facing Workforce Planning Challenges")',
             'st.subheader("Most Critical Workforce Planning Challenges")',
-            'st.subheader("Emerging Workforce Planning Challenges · Top 10")',
+            'st.subheader("Workforce Planning Challenges - Top 10")',
         ]
         positions = [source.index(section) for section in sections]
         self.assertEqual(positions, sorted(positions))
@@ -125,13 +127,16 @@ class FrontendSmokeTests(unittest.TestCase):
         self.assertEqual(rows[0]["Label"], "4 (Δ +2)")
         self.assertIn("latest two months", caption)
 
-    def test_dashboard_emerging_chart_sorts_by_trend_or_recent_counts(self):
+    def test_dashboard_emerging_chart_is_ranked_top_ten_with_labels(self):
         app_path = Path(__file__).resolve().parents[1] / "frontend" / "app.py"
         source = app_path.read_text(encoding="utf-8")
-        self.assertIn("rank_by_change = False", source)
-        self.assertIn('chart_sort = alt.EncodingSortField(', source)
-        self.assertIn('field="Change" if rank_by_change else "Recent findings"', source)
-        self.assertIn("sort=chart_sort", source)
+        self.assertIn('}).head(10).reset_index(drop=True)', source)
+        self.assertIn('chart_data["Rank"] = range(1, len(chart_data) + 1)', source)
+        self.assertIn('"Display Challenge"', source)
+        self.assertIn('field="Rank", order="ascending"', source)
+        self.assertIn('mark_bar(size=22, cornerRadiusEnd=4)', source)
+        self.assertIn('mark_text(align="left", dx=6, fontWeight="bold")', source)
+        self.assertIn('text="Label:N"', source)
 
     def test_streamlit_minimum_version_supports_auth_api(self):
         requirements_path = Path(__file__).resolve().parents[1] / "requirements.txt"
@@ -150,12 +155,13 @@ class FrontendSmokeTests(unittest.TestCase):
         self.assertEqual(len(tabs), 5)
         self.assertIn("Weekly Trends", tabs)
 
-    def test_dashboard_weekly_trends_uses_numeric_count(self):
+    def test_dashboard_weekly_trends_table_removed_but_internal_data_retained(self):
         app_path = Path(__file__).resolve().parents[1] / "frontend" / "app.py"
         source = app_path.read_text(encoding="utf-8")
-        self.assertIn('st.subheader("Weekly Trends")', source)
+        self.assertNotIn('st.subheader("Weekly Trends")', source)
+        self.assertNotIn('st.dataframe(trends[trend_cols]', source)
         self.assertIn('pd.to_numeric(trends["Weeks Seen"]', source)
-        self.assertIn('"Industry", "Workforce Problem", "Supporting Sources", "Weeks Seen"', source)
+        self.assertIn('LOAD_SHEET_NAMES = [*SHEET_NAMES, "Weekly Trends"]', source)
 
     def test_dashboard_prioritizes_requested_workforce_challenge_sections_and_removes_country_signals(self):
         app_path = Path(__file__).resolve().parents[1] / "frontend" / "app.py"
@@ -163,7 +169,7 @@ class FrontendSmokeTests(unittest.TestCase):
         sections = [
             'st.subheader("Top 5 Industries Facing Workforce Planning Challenges")',
             'st.subheader("Most Critical Workforce Planning Challenges")',
-            'st.subheader("Emerging Workforce Planning Challenges · Top 10")',
+            'st.subheader("Workforce Planning Challenges - Top 10")',
         ]
         positions = [source.index(section) for section in sections]
         self.assertEqual(positions, sorted(positions))
@@ -172,14 +178,33 @@ class FrontendSmokeTests(unittest.TestCase):
         self.assertNotIn("summarize_country_coverage", source)
         self.assertNotIn("Ranked horizontal bar chart", source)
         self.assertIn("import altair as alt", source)
-        self.assertIn("mark_bar()", source)
-        self.assertIn('mark_text(align="left", dx=5)', source)
+        self.assertIn("mark_bar(size=22, cornerRadiusEnd=4)", source)
+        self.assertIn('mark_text(align="left", dx=6, fontWeight="bold")', source)
         self.assertIn('"Recent findings"', source)
+        self.assertIn('"Signal Pattern"', source)
         self.assertIn('"Change"', source)
         self.assertIn("st.altair_chart", source)
+        self.assertIn("Display Challenge", source)
+        self.assertIn('field="Rank", order="ascending"', source)
         self.assertIn("has_comparison = False", source)
         self.assertIn("only one month available; ranked by counts", source)
         self.assertIn("Bar labels show counts only.", source)
+        self.assertNotIn('st.subheader("Opportunity Priorities")', source)
+
+    def test_dashboard_hides_weekly_trends_tab_but_keeps_data_for_logic(self):
+        app_path = Path(__file__).resolve().parents[1] / "frontend" / "app.py"
+        source = app_path.read_text(encoding="utf-8")
+        self.assertIn('SHEET_NAMES = ["Source Register", "Market Research", "Market Insights & Trends", "Product Feature Opportunities"]', source)
+        self.assertIn('LOAD_SHEET_NAMES = [*SHEET_NAMES, "Weekly Trends"]', source)
+        self.assertIn('for name in LOAD_SHEET_NAMES:', source)
+        self.assertNotIn('st.subheader("Weekly Trends")', source)
+        self.assertNotIn('st.dataframe(trends[trend_cols]', source)
+
+    def test_product_features_tab_hides_duplicate_workforce_planning_area(self):
+        app_path = Path(__file__).resolve().parents[1] / "frontend" / "app.py"
+        source = app_path.read_text(encoding="utf-8")
+        self.assertIn('if name == "Product Feature Opportunities":', source)
+        self.assertIn('frame = frame.drop(columns=["Workforce Planning Area"], errors="ignore")', source)
 
     def test_dashboard_hides_research_run_health_panel(self):
         app_path = Path(__file__).resolve().parents[1] / "frontend" / "app.py"

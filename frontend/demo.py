@@ -9,7 +9,6 @@ import streamlit as st
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from workforce_intelligence.skill_trends import analyze_skill_trends
 from workforce_intelligence.manager_actions import recommend_manager_actions
-from workforce_intelligence.opportunity_prioritization import build_opportunity_priorities
 from frontend.demo_data import load_demo_findings, build_emerging_challenge_chart_data
 
 st.set_page_config(page_title="Global Workforce Intelligence · Demo", page_icon="🌍", layout="wide")
@@ -143,14 +142,6 @@ if manager:
                 st.markdown(f"- [Open source]({url})")
 else:
     st.info("Manager action suggestions need more populated data.")
-
-st.subheader("Opportunity priorities")
-opportunities = build_opportunity_priorities(df, pd.DataFrame(), pd.DataFrame())
-if opportunities:
-    opp_df = pd.DataFrame(opportunities)
-    st.dataframe(opp_df, use_container_width=True, hide_index=True)
-else:
-    st.info("No mapped product-capability opportunities are included in this offline snapshot. Use the connected dashboard for workbook-mapped opportunity priorities.")
 
 st.subheader("Raw research snapshot")
 display_cols = ["Industry", "Identified Problem", "Problem Description", "Country", "Source Name", "Source Platform", "Weeks Seen", "Source URL"]

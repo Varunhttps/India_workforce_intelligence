@@ -45,6 +45,14 @@ class SkillTrendTests(unittest.TestCase):
                    if r["skill"] == "Maintenance & reliability")
         self.assertEqual(row["trend"], "Persistent signal")
 
+    def test_old_single_industry_signal_is_labeled_older_finding(self):
+        rows = [{"problem_type": "Cybersecurity skill shortage", "industry": "Technology",
+                 "source_url": "https://example.com", "weeks_seen": ["2026-08-10"],
+                 "last_seen": "2026-08-10"}]
+        row = next(r for r in analyze_skill_trends(rows, reference_date="2026-11-21")
+                   if r["skill"] == "Cybersecurity")
+        self.assertEqual(row["trend"], "Older finding")
+
     def test_no_keyword_match_returns_empty(self):
         rows = [{"problem_type": "General workforce concern", "industry": "Retail",
                   "description": "Unrelated", "source_url": "https://example.com"}]
