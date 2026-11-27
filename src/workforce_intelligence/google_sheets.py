@@ -54,16 +54,6 @@ def _format_ddmmyyyy(value: Any) -> Any:
         return value
 
 
-def _format_ddmmyyyy(value: Any) -> Any:
-    """Format ISO date strings as DDMMYYYY for published spreadsheet cells."""
-    if value is None or str(value).strip() == "":
-        return ""
-    text = str(value).strip()
-    try:
-        return date.fromisoformat(text[:10]).strftime("%d%m%Y")
-    except (TypeError, ValueError):
-        return value
-
 
 def _stable_id(prefix: str, value: str) -> str:
     digest = hashlib.sha1(value.encode("utf-8")).hexdigest()[:10].upper()
@@ -289,12 +279,7 @@ def build_sheet_payloads(findings, sources, research_date=None, history_records=
         if url and subindustry:
             subindustries_by_url.setdefault(url, set()).add(subindustry)
 
-    subindustries_by_url = {}
-    for finding in normalized:
-        url = finding.get("source_url") or ""
-        subindustry = str(finding.get("sub_industry") or "").strip()
-        if url and subindustry:
-            subindustries_by_url.setdefault(url, set()).add(subindustry)
+
 
     source_id_by_url = {}
     source_rows = []
