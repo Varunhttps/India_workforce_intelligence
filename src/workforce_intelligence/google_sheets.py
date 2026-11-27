@@ -17,7 +17,7 @@ from .source_history import save_source_history
 SHEET_HEADERS = {
     "Source Register": [
         "Source ID", "Source Title", "Source URL", "Source Type",
-        "Publisher / Author", "Industry", "Publication Date", "Access Date",
+        "Publisher / Author", "Industry", "Sub-industry", "Publication Date", "Access Date",
         "Related Research IDs",
     ],
     "Market Research": [
@@ -41,6 +41,18 @@ SHEET_HEADERS = {
         "Trend ID", "Industry", "Workforce Problem", "Supporting Sources", "Weeks Seen", "Latest Evidence Date",
     ],
 }
+
+
+def _format_ddmmyyyy(value: Any) -> Any:
+    """Format ISO date strings as DDMMYYYY for published spreadsheet cells."""
+    if value is None or str(value).strip() == "":
+        return ""
+    text = str(value).strip()
+    try:
+        return date.fromisoformat(text[:10]).strftime("%d%m%Y")
+    except (TypeError, ValueError):
+        return value
+
 
 
 def _stable_id(prefix: str, value: str) -> str:
@@ -260,6 +272,15 @@ def build_sheet_payloads(findings, sources, research_date=None, history_records=
             })
             known_urls.add(url)
 
+    subindustries_by_url = {}
+    for finding in normalized:
+        url = finding.get("source_url") or ""
+        subindustry = str(finding.get("sub_industry") or "").strip()
+        if url and subindustry:
+            subindustries_by_url.setdefault(url, set()).add(subindustry)
+
+
+
     source_id_by_url = {}
     source_rows = []
     for source in sources:
@@ -269,8 +290,9 @@ def build_sheet_payloads(findings, sources, research_date=None, history_records=
         source_rows.append([
             source_id, _cell(source.get("Source title")), _cell(url),
             _cell(source.get("Source platform") or "Website"), "",
-            _cell(source.get("Industry searched")), _cell(source.get("Publication date")),
-            _cell(source.get("Access Date") or source_dates.get(url) or today), "",
+            _cell(source.get("Industry searched")), ", ".join(sorted(subindustries_by_url.get(url, set()), key=str.casefold)),
+            _format_ddmmyyyy(source.get("Publication date")),
+            _format_ddmmyyyy(source.get("Access Date") or source_dates.get(url) or today), "",
         ])
 
     finding_ids = {}
@@ -289,10 +311,10 @@ def build_sheet_payloads(findings, sources, research_date=None, history_records=
         research_rows.append([
             rid, sid, _cell(row.get("industry")), _cell(row.get("sub_industry")),
             _cell(row.get("problem_type") or "Workforce planning"), _cell(row.get("problem_type")),
-            _cell(row.get("description")), _cell(meta.get("last_seen") or today),
+            _cell(row.get("description")), _format_ddmmyyyy(meta.get("last_seen") or today),
             _cell(row.get("country")), _cell(row.get("region")), _cell(row.get("source_url")),
-            _cell(meta.get("first_seen")),
-            _cell(meta.get("last_seen_week") or week_start(meta.get("last_seen") or today)),
+            _format_ddmmyyyy(meta.get("first_seen")),
+            _format_ddmmyyyy(meta.get("last_seen_week") or week_start(meta.get("last_seen") or today)),
             _observation_weeks(meta),
         ])
         problem = " ".join(str(row.get("problem_type") or "Unclassified").casefold().split())
@@ -315,11 +337,11 @@ def build_sheet_payloads(findings, sources, research_date=None, history_records=
                 oid, _cell(row.get("industry")), _cell(row.get("problem_type")),
                 mapped["market_need"], mapped["capability"], mapped["feature"],
                 mapped["business_value"], mapped["priority"], rid, _cell(row.get("source_url")),
-                _cell(meta.get("last_seen") or today),
+                _format_ddmmyyyy(meta.get("last_seen") or today),
             ])
 
     for source in source_rows:
-        source[8] = ", ".join(finding_ids.get(source[2], []))
+        source[9] = ", ".join(finding_ids.get(source[2], []))
 
     # Manager-facing summary: one row per industry, with detailed records retained in Market Research.
     industry_summaries = {}
@@ -342,7 +364,7 @@ def build_sheet_payloads(findings, sources, research_date=None, history_records=
             _stable_id("INS", industry), "Industry Summary", industry,
             "; ".join(problems), len(summary["problem_keys"]), len(summary["urls"]),
             ", ".join(sorted(set(summary["ids"]))),
-            ", ".join(sorted(summary["countries"])), summary["latest_evidence_date"] or today,
+            ", ".join(sorted(summary["countries"])), _format_ddmmyyyy(summary["latest_evidence_date"] or today),
         ])
 
     opportunity_rows = list({row[0]: row for row in opportunity_rows}.values())
@@ -371,7 +393,7 @@ def build_sheet_payloads(findings, sources, research_date=None, history_records=
         trend_rows.append([
             trend_id, trend["industry"], trend["problem_type"],
             _cell(trend["supporting_sources"]), int(trend["weeks_observed"]),
-            _cell(trend.get("last_seen")),
+            _format_ddmmyyyy(trend.get("last_seen")),
         ])
 
     source_rows.sort(key=lambda row: (str(row[5] or "").casefold(), str(row[1] or "").casefold()))

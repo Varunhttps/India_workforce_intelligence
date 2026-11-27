@@ -11,6 +11,21 @@ from workforce_intelligence.skill_trends import analyze_skill_trends
 from workforce_intelligence.manager_actions import recommend_manager_actions
 from frontend.demo_data import load_demo_findings, build_emerging_challenge_chart_data
 
+def _parse_date_series(series):
+    parsed = pd.to_datetime(series, errors="coerce", format="%Y-%m-%d")
+    return parsed.fillna(pd.to_datetime(series, errors="coerce", format="%d%m%Y"))
+
+
+def _display_dates(frame, columns):
+    """Format display-only date fields as DDMMYYYY."""
+    frame = frame.copy()
+    for column in columns:
+        if column in frame.columns:
+            parsed = _parse_date_series(frame[column])
+            frame[column] = parsed.dt.strftime("%d%m%Y").where(parsed.notna(), frame[column])
+    return frame
+
+
 st.set_page_config(page_title="Global Workforce Intelligence · Demo", page_icon="🌍", layout="wide")
 st.title("🌍 Global Workforce Intelligence")
 st.caption("Offline portfolio demo · Snapshot of committed research history · No API credentials required")
@@ -31,8 +46,8 @@ with st.sidebar:
 
 source_count = df["Source URL"].loc[df["Source URL"].astype(str).str.strip() != ""].nunique()
 country_count = df.loc[df["Country"] != "Not specified", "Country"].nunique()
-latest_recorded = pd.to_datetime(df["Last Seen"], errors="coerce").max()
-latest_recorded_label = latest_recorded.strftime("%d %b %Y") if pd.notna(latest_recorded) else "Unknown"
+latest_recorded = _parse_date_series(df["Last Seen"]).max()
+latest_recorded_label = latest_recorded.strftime("%d%m%Y") if pd.notna(latest_recorded) else "Unknown"
 k1, k2, k3, k4, k5 = st.columns(5)
 k1.metric("Research findings", len(df))
 k2.metric("Industries", df["Industry"].nunique())
@@ -125,7 +140,8 @@ skills = analyze_skill_trends(skill_inputs)
 if skills:
     skill_df = pd.DataFrame(skills).rename(columns={"trend": "Signal Pattern"})
     display_skill_columns = [column for column in skill_df.columns if column != "signal_score"]
-    st.dataframe(skill_df[display_skill_columns], use_container_width=True, hide_index=True)
+    skill_display = _display_dates(skill_df[display_skill_columns], ["First Seen", "Last Seen"])
+    st.dataframe(skill_display, use_container_width=True, hide_index=True)
 else:
     st.info("No keyword-mapped skills were detected in this snapshot.")
 
@@ -133,7 +149,8 @@ st.subheader("Manager action intelligence")
 manager = recommend_manager_actions(df, pd.DataFrame())
 if manager:
     manager_df = pd.DataFrame(manager)
-    st.dataframe(manager_df, use_container_width=True, hide_index=True)
+    manager_display = _display_dates(manager_df, ["First Seen", "Last Seen", "Latest Evidence Date", "Last Updated"])
+    st.dataframe(manager_display, use_container_width=True, hide_index=True)
     for _, item in manager_df.head(5).iterrows():
         with st.expander(f"{item['Priority']} · {item['Industry']} · {item['Workforce Problem']}"):
             st.write("**Suggested action:**", item.get("Recommended Next Step"))
@@ -145,4 +162,5 @@ else:
 
 st.subheader("Raw research snapshot")
 display_cols = ["Industry", "Identified Problem", "Problem Description", "Country", "Source Name", "Source Platform", "Weeks Seen", "Source URL"]
-st.dataframe(df[display_cols], use_container_width=True, hide_index=True)
+display_frame = _display_dates(df[display_cols], ["First Seen", "Last Seen"])
+st.dataframe(display_frame, use_container_width=True, hide_index=True)
