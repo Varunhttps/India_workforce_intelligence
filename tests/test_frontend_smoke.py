@@ -200,6 +200,13 @@ class FrontendSmokeTests(unittest.TestCase):
         self.assertNotIn('st.subheader("Weekly Trends")', source)
         self.assertNotIn('st.dataframe(trends[trend_cols]', source)
 
+    def test_source_register_frontend_includes_publication_date_column(self):
+        app_path = Path(__file__).resolve().parents[1] / "frontend" / "app.py"
+        source = app_path.read_text(encoding="utf-8")
+        self.assertIn('if name == "Source Register":', source)
+        self.assertIn('if "Publication Date" not in frame.columns:', source)
+        self.assertIn('frame["Publication Date"] = ""', source)
+
     def test_product_features_tab_hides_duplicate_workforce_planning_area(self):
         app_path = Path(__file__).resolve().parents[1] / "frontend" / "app.py"
         source = app_path.read_text(encoding="utf-8")
