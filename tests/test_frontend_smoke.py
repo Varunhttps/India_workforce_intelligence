@@ -14,6 +14,15 @@ class FrontendSmokeTests(unittest.TestCase):
         app_path = Path(__file__).resolve().parents[1] / "frontend" / "app.py"
         ast.parse(app_path.read_text(encoding="utf-8"), filename=str(app_path))
 
+    def test_frontend_date_format_is_ddmmyyyy(self):
+        root = Path(__file__).resolve().parents[1]
+        app = (root / "frontend" / "app.py").read_text(encoding="utf-8")
+        demo = (root / "frontend" / "demo.py").read_text(encoding="utf-8")
+        self.assertIn('strftime("%d%m%Y")', app)
+        self.assertIn('strftime("%d%m%Y")', demo)
+        self.assertIn('_format_display_dates(frame)', app)
+        self.assertIn('_format_display_dates(df[display_cols])', demo)
+
     def test_offline_demo_parses_and_has_no_research_dispatch(self):
         demo_path = Path(__file__).resolve().parents[1] / "frontend" / "demo.py"
         source = demo_path.read_text(encoding="utf-8")
