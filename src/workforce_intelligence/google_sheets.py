@@ -17,7 +17,7 @@ from .source_history import save_source_history
 SHEET_HEADERS = {
     "Source Register": [
         "Source ID", "Source Title", "Source URL", "Source Type",
-        "Publisher / Author", "Industry", "Publication Date", "Access Date",
+        "Publisher / Author", "Industry", "Sub-industry", "Publication Date", "Access Date",
         "Related Research IDs",
     ],
     "Market Research": [
@@ -274,6 +274,13 @@ def build_sheet_payloads(findings, sources, research_date=None, history_records=
             })
             known_urls.add(url)
 
+    subindustries_by_url = {}
+    for finding in normalized:
+        url = finding.get("source_url") or ""
+        subindustry = str(finding.get("sub_industry") or "").strip()
+        if url and subindustry:
+            subindustries_by_url.setdefault(url, set()).add(subindustry)
+
     source_id_by_url = {}
     source_rows = []
     for source in sources:
@@ -283,8 +290,8 @@ def build_sheet_payloads(findings, sources, research_date=None, history_records=
         source_rows.append([
             source_id, _cell(source.get("Source title")), _cell(url),
             _cell(source.get("Source platform") or "Website"), "",
-            _cell(source.get("Industry searched")), _cell(source.get("Publication date")),
-            _cell(source.get("Access Date") or source_dates.get(url) or today), "",
+            _cell(source.get("Industry searched")), ", ".join(sorted(subindustries_by_url.get(url, set()), key=str.casefold)),
+            _cell(source.get("Publication date")), _cell(source.get("Access Date") or source_dates.get(url) or today), "",
         ])
 
     finding_ids = {}
