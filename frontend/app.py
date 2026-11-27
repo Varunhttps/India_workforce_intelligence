@@ -346,6 +346,9 @@ else:
         with tab:
             frame = data[name]
             if name == "Source Register":
+                # Publication Date is part of the sheet schema; add it for legacy sheets too.
+                if "Publication Date" not in frame.columns:
+                    frame["Publication Date"] = ""
                 hide = ["Collection Status", "Key Information", "Evidence / Supporting Information", "Review Notes"]
                 frame = frame.drop(columns=[col for col in hide if col in frame.columns], errors="ignore")
             elif name == "Market Research":
