@@ -69,8 +69,8 @@ h1 {letter-spacing: -0.035em;}
 </style>
 """, unsafe_allow_html=True)
 
-LOAD_SHEET_NAMES = ["Source Register", "Market Research", "Market Insights & Trends", "Product Feature Opportunities", "Weekly Trends"]
-SHEET_NAMES = ["Source Register", "Market Research", "Market Insights & Trends", "Product Feature Opportunities"]
+LOAD_SHEET_NAMES = ["Source Register", "Market Research", "Market Insights & Trends", "Product Feature Opportunities"]
+LOAD_SHEET_NAMES = [*SHEET_NAMES, "Weekly Trends"]
 
 
 @st.cache_data(ttl=90)
@@ -392,6 +392,8 @@ else:
             elif name == "Market Research":
                 hide = ["Workforce Planning Area", "Evidence / Supporting Information", "Supporting Evidence", "Review Notes", "Occurrences", "Weekly Status", "Research Status", "Interpretation Status", "Review Status"]
                 frame = frame.drop(columns=[col for col in hide if col in frame.columns], errors="ignore")
+            elif name == "Product Feature Opportunities":
+                frame = frame.drop(columns=["Workforce Planning Area"], errors="ignore")
             st.dataframe(frame, use_container_width=True, hide_index=True)
     st.link_button("Open full Google Spreadsheet", sheet_url)
 
