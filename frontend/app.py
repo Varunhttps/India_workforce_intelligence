@@ -330,7 +330,7 @@ else:
         skill_metrics[1].metric("Emerging signals", int((skill_frame["trend"] == "Emerging signal").sum()))
         skill_metrics[2].metric("Persistent signals", int((skill_frame["trend"] == "Persistent signal").sum()))
         skill_metrics[3].metric("Manufacturing-linked", int(skill_frame["manufacturing_focus"].sum()))
-        display_skill_columns = ["skill", "Signal Pattern", "source_count", "industry_count", "country_count", "weeks_observed", "manufacturing_records", "industries", "countries"]
+        display_skill_columns = ["skill", "Signal Pattern", "industry_count", "country_count", "weeks_observed", "manufacturing_records", "industries", "countries"]
         skill_frame = skill_frame.rename(columns={"trend": "Signal Pattern"})
         st.dataframe(skill_frame[display_skill_columns], use_container_width=True, hide_index=True)
     else:
