@@ -5,7 +5,7 @@ coverage, not validated labor-market demand or hiring volume.
 """
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
 SKILL_TAXONOMY = {
     "Industrial automation & robotics": {
@@ -95,9 +95,22 @@ def _text(record):
     )).casefold()
 
 
+def _parse_date(value):
+    text = str(value).strip()
+    try:
+        return date.fromisoformat(text[:10])
+    except (ValueError, TypeError):
+        try:
+            return datetime.strptime(text, "%d%m%Y").date()
+        except (ValueError, TypeError):
+            return None
+
+
 def _week(value):
     try:
-        parsed = date.fromisoformat(str(value).strip()[:10])
+        parsed = _parse_date(value)
+        if parsed is None:
+            return None
         return (parsed - timedelta(days=parsed.weekday())).isoformat()
     except (ValueError, TypeError):
         return None
@@ -128,7 +141,9 @@ def analyze_skill_trends(records, reference_date=None):
     Rows without matching skill keywords are intentionally omitted. A one-source
     signal is never labeled Emerging; recent emergence requires corroboration.
     """
-    today = date.fromisoformat(str(reference_date)[:10]) if reference_date else date.today()
+    today = _parse_date(reference_date) if reference_date else date.today()
+    if today is None:
+        today = date.today()
     current_week = (today - timedelta(days=today.weekday())).isoformat()
     aggregates = {}
     for record in records or []:
@@ -174,7 +189,8 @@ def analyze_skill_trends(records, reference_date=None):
         recent = False
         if bucket["last_seen"]:
             try:
-                recent = (today - date.fromisoformat(bucket["last_seen"][:10])).days <= 60
+                parsed_last_seen = _parse_date(bucket["last_seen"])
+                recent = parsed_last_seen is not None and (today - parsed_last_seen).days <= 60
             except ValueError:
                 pass
         recent = recent or current_week in weeks
