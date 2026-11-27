@@ -147,7 +147,8 @@ skills = analyze_skill_trends(skill_inputs)
 if skills:
     skill_df = pd.DataFrame(skills).rename(columns={"trend": "Signal Pattern"})
     display_skill_columns = [column for column in skill_df.columns if column != "signal_score"]
-    st.dataframe(skill_df[display_skill_columns], use_container_width=True, hide_index=True)
+    skill_display = _display_dates(skill_df[display_skill_columns], ["First Seen", "Last Seen"])
+    st.dataframe(skill_display, use_container_width=True, hide_index=True)
 else:
     st.info("No keyword-mapped skills were detected in this snapshot.")
 
@@ -155,7 +156,8 @@ st.subheader("Manager action intelligence")
 manager = recommend_manager_actions(df, pd.DataFrame())
 if manager:
     manager_df = pd.DataFrame(manager)
-    st.dataframe(manager_df, use_container_width=True, hide_index=True)
+    manager_display = _display_dates(manager_df, ["First Seen", "Last Seen", "Latest Evidence Date", "Last Updated"])
+    st.dataframe(manager_display, use_container_width=True, hide_index=True)
     for _, item in manager_df.head(5).iterrows():
         with st.expander(f"{item['Priority']} · {item['Industry']} · {item['Workforce Problem']}"):
             st.write("**Suggested action:**", item.get("Recommended Next Step"))
@@ -167,4 +169,5 @@ else:
 
 st.subheader("Raw research snapshot")
 display_cols = ["Industry", "Identified Problem", "Problem Description", "Country", "Source Name", "Source Platform", "Weeks Seen", "Source URL"]
-st.dataframe(df[display_cols], use_container_width=True, hide_index=True)
+display_frame = _display_dates(df[display_cols], ["First Seen", "Last Seen"])
+st.dataframe(display_frame, use_container_width=True, hide_index=True)
