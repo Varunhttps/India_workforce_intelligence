@@ -10,6 +10,14 @@ from frontend.demo_data import load_demo_findings, build_emerging_challenge_char
 
 
 class FrontendSmokeTests(unittest.TestCase):
+    def test_research_coverage_totals_explain_source_vs_finding_counts(self):
+        app_path = Path(__file__).resolve().parents[1] / "frontend" / "app.py"
+        source = app_path.read_text(encoding="utf-8")
+        self.assertIn('st.subheader("Research coverage totals")', source)
+        self.assertIn('"Unique sources"', source)
+        self.assertIn('"Total findings"', source)
+        self.assertIn("one source may contribute multiple findings", source)
+
     def test_streamlit_app_parses(self):
         app_path = Path(__file__).resolve().parents[1] / "frontend" / "app.py"
         ast.parse(app_path.read_text(encoding="utf-8"), filename=str(app_path))
