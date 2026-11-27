@@ -69,6 +69,11 @@ h1 {letter-spacing: -0.035em;}
 </style>
 """, unsafe_allow_html=True)
 
+def _parse_date_series(series):
+    parsed = pd.to_datetime(series, errors="coerce", format="%Y-%m-%d")
+    return parsed.fillna(pd.to_datetime(series, errors="coerce", format="%d%m%Y"))
+
+
 def _display_dates(frame, columns):
     """Return a presentation copy with date columns rendered as DDMMYYYY."""
     frame = frame.copy()
@@ -173,7 +178,7 @@ else:
     countries = findings["Country"].dropna().nunique() if "Country" in findings else 0
     latest_research_date = ""
     if "Research Date" in findings.columns and not findings.empty:
-        parsed_dates = pd.to_datetime(findings["Research Date"], errors="coerce")
+        parsed_dates = _parse_date_series(findings["Research Date"])
         if parsed_dates.notna().any():
             latest_research_date = parsed_dates.max().strftime("%d%m%Y")
     a, b, c, d, e = st.columns(5)
@@ -210,7 +215,7 @@ else:
     trend_date = pd.Series(pd.NaT, index=monthly_source.index, dtype="datetime64[ns]")
     for date_col in date_candidates:
         if date_col in monthly_source.columns:
-            parsed = pd.to_datetime(monthly_source[date_col], errors="coerce")
+            parsed = _parse_date_series(monthly_source[date_col])
             trend_date = trend_date.fillna(parsed)
     monthly_source["_trend_month"] = trend_date.dt.to_period("M")
     monthly_source = monthly_source.dropna(subset=["_trend_month", "Identified Problem"])
