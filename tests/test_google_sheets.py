@@ -17,7 +17,7 @@ class GoogleSheetsPayloadTests(unittest.TestCase):
         sources = [{
             "Source title": "Company post", "Source URL": url,
             "Source platform": "LinkedIn", "Industry searched": "Automotive manufacturing",
-            "Collection status": "Collected", "Relevance status": "Findings extracted",
+            "Publication date": "2026-11-20", "Collection status": "Collected", "Relevance status": "Findings extracted",
             "Candidate source class (domain heuristic)": "Intergovernmental / multilateral (heuristic)",
         }]
         payloads = build_sheet_payloads(findings, sources)
@@ -36,6 +36,7 @@ class GoogleSheetsPayloadTests(unittest.TestCase):
         headers = payloads["Source Register"][0]
         row = dict(zip(headers, payloads["Source Register"][1]))
         self.assertEqual(row["Source URL"], url)
+        self.assertEqual(row["Publication Date"], "2026-11-20")
         self.assertEqual(row["Source Type"], "LinkedIn")
         self.assertNotIn("Source Credibility Assessment", row)
         self.assertNotIn("Relevance Status", row)
