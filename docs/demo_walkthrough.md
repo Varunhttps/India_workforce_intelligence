@@ -12,11 +12,11 @@ streamlit run frontend/demo.py
 1. **Set the context (20 sec):** Explain that this is a read-only snapshot of committed research history. It does not trigger research, call external APIs, or require OAuth/Google Sheets credentials.
 2. **Summary metrics (30 sec):** Point out the cumulative research-finding count, number of industries, countries attributed, unique source links, and latest recorded finding date. Select an industry and note that the metrics update with the filter.
 3. **Industry/problem distribution (45 sec):** Compare the findings-by-industry chart and workforce-problem categories. Clarify that these reflect the collected snapshot, not a statistical estimate of the global labor market.
-4. **Country coverage (30 sec):** Show the explicit country attribution table. Explain that the pipeline does not infer a country from the search target alone.
+4. **Country coverage (30 sec):** Point out the country-attributed KPI. Explain that geography is accepted only when source text supports it; search target alone is not proof.
 5. **Emerging skills (40 sec):** Show keyword-mapped skill signals and explain that the mapping is heuristic; it is not a validated demand forecast.
 6. **Manager action intelligence (45 sec):** Open one priority item and show its suggested next step, rationale and source links. Explain that suggestions are decision support, not approved actions or verified severity ratings.
-7. **Opportunity priorities (30 sec):** Show any mapped opportunity rows. If the snapshot has none, explain that this view needs mapped data and that the connected dashboard uses workbook-backed opportunity priorities.
-8. **Traceability (30 sec):** Finish with the raw research snapshot table and open an original source link. Emphasize that findings are candidates for human review.
+7. **Traceability (30 sec):** Finish with the raw research snapshot table and open an original source link. Emphasize that findings are candidates for human review.
+
 
 ## Architecture story
 
