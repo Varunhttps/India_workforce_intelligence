@@ -63,6 +63,8 @@ class DashboardIndustryFilterTests(unittest.TestCase):
              "Observation Weeks": "2026-11-23"},
             {"First Seen": "2026-11-02", "Latest Week": "2026-11-09",
              "Observation Weeks": "2026-11-02, 2026-11-09"},
+            {"First Seen": "02112026", "Latest Week": "09112026",
+             "Observation Weeks": "02112026, 23112026"},
         ])
         statuses = weekly_statuses(frame, current_week="2026-11-23")
         self.assertEqual(statuses.tolist(), [
