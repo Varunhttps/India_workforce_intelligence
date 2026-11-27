@@ -48,7 +48,9 @@ def weekly_statuses(frame, current_week=None):
     current_monday = (current_date - timedelta(days=current_date.weekday())).isoformat()
 
     def week_key(value):
-        parsed = pd.to_datetime(value, errors="coerce")
+        parsed = pd.to_datetime(value, errors="coerce", format="%Y-%m-%d")
+        if pd.isna(parsed):
+            parsed = pd.to_datetime(value, errors="coerce", format="%d%m%Y")
         if pd.isna(parsed):
             return ""
         day = parsed.date()
