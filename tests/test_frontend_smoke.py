@@ -34,6 +34,15 @@ class FrontendSmokeTests(unittest.TestCase):
         self.assertNotIn("build_opportunity_priorities", source)
         self.assertNotIn('st.subheader("Opportunity priorities")', source)
 
+    def test_frontend_visible_date_fields_use_ddmmyyyy(self):
+        root = Path(__file__).resolve().parents[1]
+        app = (root / "frontend" / "app.py").read_text(encoding="utf-8")
+        demo = (root / "frontend" / "demo.py").read_text(encoding="utf-8")
+        self.assertIn('strftime("%d%m%Y")', app)
+        self.assertIn('_display_dates(frame, date_columns)', app)
+        self.assertIn('strftime("%d%m%Y")', demo)
+        self.assertIn('_display_dates', demo)
+
     def test_offline_demo_runs_without_streamlit_runtime_exceptions(self):
         demo_path = Path(__file__).resolve().parents[1] / "frontend" / "demo.py"
         app_test = AppTest.from_file(str(demo_path)).run()
