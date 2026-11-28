@@ -42,6 +42,7 @@ class WeeklyWorkflowSafetyTests(unittest.TestCase):
         self.assertIn("    needs: tests", research_job)
         self.assertIn("    permissions:", research_job)
         self.assertIn("      contents: write", research_job)
+        self.assertIn("      pull-requests: write", research_job)
         self.assertEqual(workflow.count("      contents: write"), 1,
                          "contents: write must be granted only to the publishing research job")
 
@@ -57,16 +58,27 @@ class WeeklyWorkflowSafetyTests(unittest.TestCase):
 
         research_step = research_job.split(
             "      - name: Run research and update the persistent Google Sheet", 1
-        )[1].split("      - name: Commit updated public-source research history", 1)[0]
+        )[1].split("      - name: Validate generated history files", 1)[0]
         self.assertNotIn("GH_TOKEN", research_step, "write token must not be available during research")
 
         push_step = research_job.split(
-            "      - name: Commit updated public-source research history", 1
+            "      - name: Publish updated research history to a reviewable branch", 1
         )[1]
         self.assertIn("GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}", push_step)
-        self.assertIn('git -c credential.helper="$credential_helper" push origin HEAD:main', push_step)
+        self.assertIn('git -c credential.helper="$credential_helper" push origin "HEAD:refs/heads/${BRANCH}"', push_step)
+        self.assertIn("--force-with-lease", push_step)
+        self.assertIn("gh pr create --draft", push_step)
+        self.assertNotIn("HEAD:main", push_step)
         self.assertIn("credential_helper", push_step)
         self.assertIn("rm -f", push_step)
+
+    def test_generated_history_is_validated_and_tested_before_publish(self):
+        workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
+        research_job = _job_block(workflow, "weekly-research")
+        self.assertIn("      - name: Validate generated history files", research_job)
+        self.assertIn("json.loads(line)", research_job)
+        self.assertIn("      - name: Run regression tests against generated history", research_job)
+        self.assertIn("      - name: Publish updated research history to a reviewable branch", research_job)
 
     def test_ci_workflow_is_read_only_and_does_not_persist_checkout_credentials(self):
         workflow_path = ROOT / ".github" / "workflows" / "tests.yml"

@@ -28,6 +28,7 @@ concurrency:
   group: weekly-workforce-research
   cancel-in-progress: false
 
+# Each job declares only the permissions it needs.
 jobs:
   tests:
     if: github.ref == 'refs/heads/main'
@@ -53,6 +54,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@v7
         with:
@@ -85,25 +87,68 @@ jobs:
           COUNTRY_ARGS=()
           if [ -n "$COUNTRY" ]; then COUNTRY_ARGS=(--country-searched "$COUNTRY"); fi
           PYTHONPATH=src python main.py --mode "$MODE" --max-sources-per-industry "$LIMIT" "${COUNTRY_ARGS[@]}" --output-dir research_output --history-path data/findings_history.jsonl --source-history-path data/source_history.jsonl --publish-google-sheets
-      - name: Commit updated public-source research history
+      - name: Validate generated history files
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          for path in (Path("data/findings_history.jsonl"), Path("data/source_history.jsonl")):
+              if not path.exists():
+                  raise SystemExit(f"Missing history file: {path}")
+              for line_no, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+                  if not line.strip():
+                      continue
+                  try:
+                      record = json.loads(line)
+                  except json.JSONDecodeError as exc:
+                      raise SystemExit(f"{path}:{line_no}: invalid JSON: {exc}") from exc
+                  if not isinstance(record, dict):
+                      raise SystemExit(f"{path}:{line_no}: record must be a JSON object")
+          PY
+      - name: Run regression tests against generated history
+        run: PYTHONPATH=src python -m unittest discover -s tests -v
+      - name: Publish updated research history to a reviewable branch
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          set -euo pipefail
+          BRANCH="automation/weekly-research-history"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/findings_history.jsonl data/source_history.jsonl
           if git diff --cached --quiet; then
-            echo "No history changes to commit."
-          else
-            git commit -m "Update workforce research history"
-            credential_helper="$RUNNER_TEMP/git-credential-helper.sh"
-            cat > "$credential_helper" <<'EOF'
+            echo "No research-history changes; skipping PR update."
+            exit 0
+          fi
+          git diff --cached --check
+          git commit -m "Update workforce research history"
+          remote_sha="$(git ls-remote origin "refs/heads/${BRANCH}" | awk '{print $1}')"
+          credential_helper="$RUNNER_TEMP/git-credential-helper.sh"
+          cat > "$credential_helper" <<'EOF'
           #!/bin/sh
           if [ "$1" = "get" ]; then
               printf 'username=x-access-token\npassword=%s\n\n' "$GH_TOKEN"
           fi
           EOF
-            chmod 700 "$credential_helper"
-            trap 'rm -f "$credential_helper"' EXIT
-            GIT_TERMINAL_PROMPT=0 git -c credential.helper="$credential_helper" push origin HEAD:main
+          chmod 700 "$credential_helper"
+          trap 'rm -f "$credential_helper"' EXIT
+          if [ -n "$remote_sha" ]; then
+            GIT_TERMINAL_PROMPT=0 git -c credential.helper="$credential_helper" push origin "HEAD:refs/heads/${BRANCH}" --force-with-lease="refs/heads/${BRANCH}:${remote_sha}"
+          else
+            GIT_TERMINAL_PROMPT=0 git -c credential.helper="$credential_helper" push origin "HEAD:refs/heads/${BRANCH}"
+          fi
+          if gh pr view "$BRANCH" --json number >/dev/null 2>&1; then
+            echo "Updated the existing research-history PR branch."
+          else
+            body="$(cat <<EOF
+            Automated public-source research history update.
+
+            Both JSONL files were validated and the full regression suite was run before and after generation. This workflow publishes to a reviewable branch only; it never pushes history directly to main.
+
+            GitHub suppresses PR-triggered workflows for PRs created with GITHUB_TOKEN, so tests are verified within this run.
+
+            Workflow run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID
+            EOF
+            )"
+            gh pr create --draft --base main --head "$BRANCH" --title "Update weekly workforce research history" --body "$body"
           fi
