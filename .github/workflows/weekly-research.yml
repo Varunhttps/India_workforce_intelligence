@@ -28,11 +28,7 @@ concurrency:
   group: weekly-workforce-research
   cancel-in-progress: false
 
-# Default to read-only. The research job receives only the permissions it needs
-# to publish history to a reviewable branch and open a draft PR.
-permissions:
-  contents: read
-
+# Each job declares only the permissions it needs.
 jobs:
   tests:
     if: github.ref == 'refs/heads/main'
