@@ -3,6 +3,27 @@ import unittest
 from workforce_intelligence.extraction import parse_extraction_response, build_extraction_prompt
 
 class ExtractionTests(unittest.TestCase):
+    def test_supporting_quote_case_mismatch_is_rejected(self):
+        metadata={"title":"Manufacturing report","url":"https://example.org/report","industry":"Manufacturing"}
+        source_text="Manufacturing employers report skills shortages in industrial plants."
+        response=json.dumps({"findings":[{"problem_type":"Skill shortage","description":"Manufacturing employers report skills shortages.","supporting_quote":"Manufacturing employers report Skills shortages in industrial plants."}]})
+        rows=parse_extraction_response(response,metadata,source_text=source_text)
+        self.assertEqual(rows, [])
+
+    def test_quote_matching_normalizes_linebreaks_but_preserves_case(self):
+        metadata={"title":"Manufacturing report","url":"https://example.org/report","industry":"Manufacturing"}
+        source_text="Manufacturing employers report skills\nshortages in industrial plants."
+        response=json.dumps({"findings":[{"problem_type":"Skill shortage","description":"Manufacturing employers report skills shortages.","supporting_quote":"skills shortages in industrial plants."}]})
+        rows=parse_extraction_response(response,metadata,source_text=source_text)
+        self.assertEqual(len(rows), 1)
+
+    def test_exact_supporting_quote_is_accepted(self):
+        metadata={"title":"Manufacturing report","url":"https://example.org/report","industry":"Manufacturing"}
+        source_text="Manufacturing employers report skills shortages in industrial plants."
+        response=json.dumps({"findings":[{"problem_type":"Skill shortage","description":"Manufacturing employers report skills shortages.","supporting_quote":"Manufacturing employers report skills shortages in industrial plants."}]})
+        rows=parse_extraction_response(response,metadata,source_text=source_text)
+        self.assertEqual(len(rows), 1)
+
     def test_source_metadata_overrides_model_attribution(self):
         metadata={"title":"Official report","url":"https://example.org/report"}
         response=json.dumps({"findings":[{"problem_type":"Skill shortage","description":"Shortage in plants","business_impact":"Production delays from unfilled roles.","supporting_quote":"skills shortage in industrial plants","source_url":"https://wrong.example","country":"Germany","evidence":"ignored","confidence":0.9}]})
