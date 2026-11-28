@@ -96,7 +96,10 @@ def parse_extraction_response(response_text, source_metadata, source_text=""):
         if not row.get("problem_type") or not row.get("description"):
             continue
         quote = str(item.get('supporting_quote') or '').strip()
-        if not quote or quote.casefold() not in str(source_text).casefold():
+        # Require a case-sensitive verbatim excerpt; normalize whitespace for extracted line wraps.
+        normalized_quote = re.sub(r"\s+", " ", quote).strip()
+        normalized_source = re.sub(r"\s+", " ", str(source_text))
+        if not normalized_quote or normalized_quote not in normalized_source:
             continue
         target_industry = source_metadata.get("industry", "")
         if not _industry_relevant(row, target_industry, source_text):
